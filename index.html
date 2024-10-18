@@ -756,53 +756,6 @@ function handleSignoutClick() {
 
 
 
-
-        function saveCSVToGoogleDrive() {
-    const csvContent = Papa.unparse([headers, ...parsedData]);
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-
-    const fileName = `med_list_${new Date().toLocaleDateString()}.csv`;
-
-    var metadata = {
-        name: fileName,
-        mimeType: 'text/csv',
-    };
-
-    var form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', blob);
-
-    fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
-        },
-        body: form
-    }).then(response => {
-        if (response.ok) {
-            console.log("File saved to Google Drive successfully.");
-        } else {
-            throw new Error('Failed to save to Google Drive');
-        }
-    }).catch(error => {
-        console.error("Error uploading to Google Drive:", error);
-        alert("Unable to sync with Google Drive, saving locally instead.");
-        saveCSVToLocalStorage(); // Fallback to local storage
-    });
-}
-
-
-        window.onload = function() {
-    authButton = document.getElementById('authorize_button');
-    signoutButton = document.getElementById('signout_button');
-    authStatus = document.getElementById('auth-status');
-
-    // Load the API client and auth library
-    gapi.load('client:auth2', initClient);
-};
-
-
-
         
 
 
