@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Med List</title>
+    <title>Med List</title> 
     <script async defer src="https://apis.google.com/js/api.js" onload="handleClientLoad()"></script>
-<button id="authorize_button" style="display: none;">Authorize</button>
-<button id="signout_button" style="display: none;">Sign Out</button>
-<p id="auth-status"></p>
+
+
 
     <style>
        body {
@@ -309,6 +308,11 @@ select {
 <body>
     <div class="container">
         <h1 id="title">Med List</h1>
+            
+    <button id="authorize_button" style="display: none;">Authorize</button>
+<button id="signout_button" style="display: none;">Sign Out</button>
+<p id="auth-status"></p>
+        
         <input type="file" id="fileInput" accept=".csv">
         <div class="column-selector" id="columnSelector"></div>
         <select id="columnSelect" onchange="sortRows()">
@@ -787,7 +791,16 @@ function handleSignoutClick() {
     });
 }
 
-        
+
+        window.onload = function() {
+    authButton = document.getElementById('authorize_button');
+    signoutButton = document.getElementById('signout_button');
+    authStatus = document.getElementById('auth-status');
+
+    // Load the API client and auth library
+    gapi.load('client:auth2', initClient);
+};
+
 
 
         
