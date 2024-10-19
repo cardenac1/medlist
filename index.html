@@ -286,13 +286,14 @@ select {
         <select id="columnSelect" onchange="sortRows()">
             <option value="">Select Column to Sort</option>
         </select>
+        <button onclick="resortRows()">Resort</button>
         <div class="-container">
             <input type="text" id="Input" placeholder="Search..." />
             <button onclick="searchRows()">Search</button>
         </div>
 
         <button id="exportButtonMain" onclick="exportCSV()">Export CSV</button>
-        <button onclick="resortRows()">Resort</button>
+        
         <ul class="row-list" id="rowList"></ul>
 
         <button onclick="showAddEntryModal()">Add New Entry</button>
