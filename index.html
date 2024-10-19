@@ -92,7 +92,7 @@
             color: #ffffff;
             border: 1px solid #444444;
             border-radius: 8px;
-            font-size: 1.5em; /* Increase font size for mobile editing */
+            font-size: 1.5em;
             margin: 10px auto;
             box-sizing: border-box;
         }
@@ -171,19 +171,6 @@
             background-color: #145a9d;
         }
 
-        /* Light Color Scheme */
-        .colored-text-1 { color: #82d4f0; }
-        .colored-text-2 { color: #ff5c5c; }
-        .colored-text-3 { color: #ffe066; }
-        .colored-text-4 { color: #79e89f; }
-        .colored-text-5 { color: #4fc4e8; }
-        .colored-text-6 { color: #ff9052; }
-        .colored-text-7 { color: #6ee7df; }
-        .colored-text-8 { color: #adb8e6; }
-        .colored-text-9 { color: #9ab6e2; }
-        .colored-text-10 { color: #f5a623; }
-
-        /* Delete Button */
         .delete-button {
             background-color: #e53935;
             border: none;
@@ -198,7 +185,6 @@
             background-color: #c62828;
         }
 
-        /* Modal for adding new entry */
         .modal {
             display: none;
             position: fixed;
@@ -222,14 +208,13 @@
             border-radius: 8px;
         }
 
-        /* Media Queries for Mobile */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
             }
 
             textarea {
-                font-size: 1.4em; /* Increase size for mobile */
+                font-size: 1.4em;
             }
 
             button, select {
@@ -255,42 +240,23 @@
 
         @media (max-width: 480px) {
             textarea {
-                font-size: 1.2em; /* Further increase for small screens */
+                font-size: 1.2em;
             }
 
             .modal-content {
-                width: 95%; /* Make modal full width on small screens */
+                width: 95%;
             }
         }
     </style>
+    <script async defer src="https://apis.google.com/js/api.js" onload="handleClientLoad()"></script>
 </head>
 <body>
     <div class="container">
         <h1 id="title">Med List</h1>
-        <input type="file" id="fileInput" accept=".csv">
-        <div class="column-selector" id="columnSelector"></div>
-        <select id="columnSelect" onchange="sortRows()">
-            <option value="">Select Column to Sort</option>
-        </select>
-        <button id="exportButtonMain" onclick="exportCSV()">Export CSV</button>
-        <button onclick="resortRows()">Resort</button>
-        <button id="syncButton" onclick="syncToGoogleDrive()">Sync to Google Drive</button>
+        <input type="file" id="fileInput" accept=".csv" style="display:none;">
+        <button id="uploadButton" onclick="document.getElementById('fileInput').click();">Upload CSV</button>
+        <button id="syncButton" style="display:none;" onclick="manualSync()">Manual Sync</button>
         <ul class="row-list" id="rowList"></ul>
-
-        <!-- Add Entry Button -->
-        <button onclick="showAddEntryModal()">Add New Entry</button>
-
-        <!-- Add Entry Modal -->
-        <div id="addEntryModal" class="modal">
-            <div class="modal-content">
-                <h2>Add New Entry</h2>
-                <form id="addEntryForm" onsubmit="addEntry(event)">
-                    <div id="newEntryFields"></div>
-                    <button type="submit">Save Entry</button>
-                    <button type="button" onclick="closeAddEntryModal()">Cancel</button>
-                </form>
-            </div>
-        </div>
 
         <div class="details-view" id="detailsView">
             <div class="details-header">
@@ -299,100 +265,20 @@
                 <button id="exportButton" onclick="exportCSV()">Export CSV</button>
             </div>
             <form id="editForm"></form>
-            <div class="nav-buttons">
-                <button id="prevButton" onclick="navigateDetails(-1)">Previous</button>
-                <button id="nextButton" onclick="navigateDetails(1)">Next</button>
-            </div>
-            <button class="delete-button" onclick="deleteCurrentEntry()">Delete Entry</button>
         </div>
     </div>
 
-    <!-- Include Papa Parse from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
-    <!-- Google API scripts -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="handleClientLoad()"></script>
-
     <script>
-        const CLIENT_ID = '208237293449-o3m372akgd2ut4454aaiqhi7j69s4q6m.apps.googleusercontent.com';
-        const API_KEY = 'AIzaSyA7zo4r-zU1-ItsUVqrbLS1G5fGHTh_pcM';
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        let CLIENT_ID = '208237293449-o3m372akgd2ut4454aaiqhi7j69s4q6m.apps.googleusercontent.com';
+        let API_KEY = 'AIzaSyA7zo4r-zU1-ItsUVqrbLS1G5fGHTh_pcM';
+        let SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
         let parsedData = [];
         let headers = [];
-        let currentRowIndex = -1;
-        let selectedColumns = [0, 1, 2];
-
-        const colors = [
-            'colored-text-1', 'colored-text-2', 'colored-text-3',
-            'colored-text-4', 'colored-text-5', 'colored-text-6',
-            'colored-text-7', 'colored-text-8', 'colored-text-9',
-            'colored-text-10'
-        ];
-
-        // Load Google API client
-        function handleClientLoad() {
-            gapi.load('client:auth2', initClient);
-        }
-
-        // Initialize the Google API client
-        function initClient() {
-            gapi.client.init({
-                apiKey: API_KEY,
-                clientId: CLIENT_ID,
-                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-                scope: SCOPES
-            }).then(() => {
-                // Update sign-in status
-                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-            });
-        }
-
-        // Check sign-in status
-        function updateSigninStatus(isSignedIn) {
-            if (isSignedIn) {
-                document.getElementById('syncButton').disabled = false;
-            } else {
-                document.getElementById('syncButton').disabled = true;
-            }
-        }
-
-        // Sync to Google Drive
-        function syncToGoogleDrive() {
-            if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
-                gapi.auth2.getAuthInstance().signIn();
-            } else {
-                const csvContent = Papa.unparse([headers, ...parsedData]);
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-
-                const fileName = `med_list_${new Date().toLocaleDateString()}.csv`;
-                const metadata = {
-                    name: fileName,
-                    mimeType: 'text/csv',
-                };
-                const form = new FormData();
-                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                form.append('file', blob);
-
-                fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
-                    },
-                    body: form
-                }).then(response => {
-                    if (response.ok) {
-                        alert("File synced to Google Drive successfully.");
-                    } else {
-                        throw new Error('Failed to sync to Google Drive');
-                    }
-                }).catch(error => {
-                    console.error("Error syncing to Google Drive:", error);
-                    alert("Unable to sync with Google Drive. Please check your connection.");
-                });
-            }
-        }
+        let fileId = null;
+        let autoSyncInterval = null;
 
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -401,10 +287,9 @@
                     complete: function(results) {
                         parsedData = results.data.slice(1);
                         headers = results.data[0];
-                        populateColumnSelector();
-                        populateColumnSelect();
                         displayRows();
-                        saveCSVToLocalStorage();
+                        saveCSVToGoogleDrive();
+                        startAutoSync();
                     },
                     error: function(error) {
                         console.error('Error parsing CSV:', error);
@@ -415,42 +300,131 @@
             }
         });
 
-        // Helper functions to manage UI, save data, and sorting
-        function populateColumnSelector() {
-            const columnSelector = document.getElementById('columnSelector');
-            columnSelector.innerHTML = '';
-            headers.forEach((header, colIndex) => {
-                const button = document.createElement('div');
-                button.className = 'column-button';
-                button.textContent = header;
-                if (selectedColumns.includes(colIndex)) {
-                    button.classList.add('selected');
-                }
-                button.onclick = () => toggleColumnSelection(colIndex, button);
-                columnSelector.appendChild(button);
+        function handleClientLoad() {
+            gapi.load('client:auth2', initClient);
+        }
+
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                clientId: CLIENT_ID,
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+                scope: SCOPES
+            }).then(() => {
+                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+            }).catch(error => {
+                console.error("Error initializing Google API client:", error);
             });
         }
 
-        function toggleColumnSelection(colIndex, button) {
-            if (selectedColumns.includes(colIndex)) {
-                selectedColumns = selectedColumns.filter(col => col !== colIndex);
-                button.classList.remove('selected');
+        function updateSigninStatus(isSignedIn) {
+            if (isSignedIn) {
+                checkForCSVFile();
             } else {
-                selectedColumns.push(colIndex);
-                button.classList.add('selected');
+                gapi.auth2.getAuthInstance().signIn();
             }
-            displayRows();
         }
 
-        function populateColumnSelect() {
-            const columnSelect = document.getElementById('columnSelect');
-            columnSelect.innerHTML = '<option value="">Select Column to Sort</option>';
-            headers.forEach((header, colIndex) => {
-                const option = document.createElement('option');
-                option.value = colIndex;
-                option.textContent = header;
-                columnSelect.appendChild(option);
+        function checkForCSVFile() {
+            gapi.client.drive.files.list({
+                'q': "mimeType='text/csv'",
+                'pageSize': 1,
+                'fields': 'files(id, name)'
+            }).then(response => {
+                const files = response.result.files;
+                if (files && files.length > 0) {
+                    fileId = files[0].id;
+                    loadCSVFromGoogleDrive();
+                    startAutoSync();
+                } else {
+                    document.getElementById('uploadButton').style.display = 'block';
+                }
+            }).catch(error => {
+                console.error("Error checking for existing CSV file:", error);
             });
+        }
+
+        function loadCSVFromGoogleDrive() {
+            gapi.client.drive.files.get({
+                fileId: fileId,
+                alt: 'media'
+            }).then(response => {
+                const csvContent = response.body;
+                const results = Papa.parse(csvContent, { header: false });
+                parsedData = results.data.slice(1);
+                headers = results.data[0];
+                displayRows();
+                document.getElementById('syncButton').style.display = 'block';
+            }).catch(error => {
+                console.error("Error loading CSV from Google Drive:", error);
+                alert("Unable to load CSV from Google Drive.");
+            });
+        }
+
+        function saveCSVToGoogleDrive() {
+            const csvContent = Papa.unparse([headers, ...parsedData]);
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+
+            if (fileId) {
+                updateGoogleDriveFile(blob);
+            } else {
+                uploadNewFileToGoogleDrive(blob);
+            }
+        }
+
+        function uploadNewFileToGoogleDrive(blob) {
+            const metadata = {
+                name: 'med_list.csv',
+                mimeType: 'text/csv'
+            };
+
+            const formData = new FormData();
+            formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            formData.append('file', blob);
+
+            fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
+                },
+                body: formData
+            }).then(response => response.json()).then(data => {
+                fileId = data.id;
+                console.log("File uploaded successfully.");
+            }).catch(error => {
+                console.error("Error uploading file to Google Drive:", error);
+                alert("Unable to sync with Google Drive.");
+            });
+        }
+
+        function updateGoogleDriveFile(blob) {
+            fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'Bearer ' + gapi.auth.getToken().access_token,
+                    'Content-Type': 'text/csv'
+                },
+                body: blob
+            }).then(() => {
+                console.log("File updated successfully.");
+            }).catch(error => {
+                console.error("Error updating file on Google Drive:", error);
+                alert("Unable to sync with Google Drive.");
+            });
+        }
+
+        function manualSync() {
+            saveCSVToGoogleDrive();
+        }
+
+        function startAutoSync() {
+            if (autoSyncInterval) {
+                clearInterval(autoSyncInterval);
+            }
+            autoSyncInterval = setInterval(() => {
+                saveCSVToGoogleDrive();
+            }, 300000); // 5 minutes = 300,000 ms
         }
 
         function displayRows() {
@@ -459,159 +433,11 @@
             parsedData.forEach((row, index) => {
                 const listItem = document.createElement('li');
                 listItem.className = 'row-item';
-                listItem.innerHTML = `${selectedColumns.map((colIndex, idx) => `<span class="${colors[idx % colors.length]}">${row[colIndex]}</span>`).join(' ')}`;
-                listItem.onclick = () => showDetails(index);
+                listItem.innerHTML = `${row.join(' ')}`;
                 rowList.appendChild(listItem);
             });
         }
 
-        function showDetails(index) {
-            currentRowIndex = index;
-            const detailsView = document.getElementById('detailsView');
-            const form = document.getElementById('editForm');
-            form.innerHTML = '';
-
-            parsedData[index].forEach((value, colIndex) => {
-                const label = document.createElement('label');
-                label.textContent = headers[colIndex];
-                const textarea = document.createElement('textarea');
-                textarea.value = value;
-                textarea.oninput = function() {
-                    parsedData[currentRowIndex][colIndex] = textarea.value;
-                    displayRows();
-                    saveCSVToLocalStorage();
-                };
-                form.appendChild(label);
-                form.appendChild(textarea);
-            });
-
-            detailsView.style.display = 'block';
-            updateNavButtons();
-        }
-
-        function updateNavButtons() {
-            document.getElementById('prevButton').disabled = currentRowIndex === 0;
-            document.getElementById('nextButton').disabled = currentRowIndex === parsedData.length - 1;
-        }
-
-        function backToList() {
-            document.getElementById('detailsView').style.display = 'none';
-        }
-
-        function exportCSV() {
-            const now = new Date();
-            const formattedDate = String(now.getMonth() + 1).padStart(2, '0') + "." +
-                String(now.getDate()).padStart(2, '0') + "." +
-                String(now.getFullYear()).slice(-2);
-
-            const filename = `list_${formattedDate}.csv`;
-            const csvContent = Papa.unparse([headers, ...parsedData]);
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.setAttribute('href', URL.createObjectURL(blob));
-            link.setAttribute('download', filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function deleteCurrentEntry() {
-            if (currentRowIndex !== -1) {
-                const confirmDeletion = confirm("Are you sure you want to delete this entry?");
-                if (confirmDeletion) {
-                    parsedData.splice(currentRowIndex, 1);
-                    backToList();
-                    displayRows();
-                    saveCSVToLocalStorage();
-                } else {
-                    console.log("Deletion canceled");
-                }
-            }
-        }
-
-        function addEntry(event) {
-            event.preventDefault();
-            const newEntry = [];
-            const fields = document.querySelectorAll('#newEntryFields input');
-            fields.forEach((field) => {
-                newEntry.push(field.value.trim());
-                field.value = '';
-            });
-
-            if (newEntry.every((value) => value === '')) {
-                alert('Please fill out at least one field.');
-                return;
-            }
-
-            parsedData.push(newEntry);
-            displayRows();
-            saveCSVToLocalStorage();
-            closeAddEntryModal();
-        }
-
-        function generateNewEntryFields() {
-            const newEntryFields = document.getElementById('newEntryFields');
-            newEntryFields.innerHTML = '';
-
-            headers.forEach((header) => {
-                const input = document.createElement('input');
-                input.placeholder = header;
-                newEntryFields.appendChild(input);
-            });
-        }
-
-        function showAddEntryModal() {
-            document.getElementById('addEntryModal').style.display = 'block';
-            generateNewEntryFields();
-        }
-
-        function closeAddEntryModal() {
-            document.getElementById('addEntryModal').style.display = 'none';
-        }
-
-        function saveCSVToLocalStorage() {
-            const csvContent = Papa.unparse([headers, ...parsedData]);
-            localStorage.setItem('csvData', csvContent);
-            console.log("Data saved to localStorage.");
-        }
-
-        function loadCSVFromLocalStorage() {
-            const savedData = localStorage.getItem('csvData');
-            if (savedData) {
-                const results = Papa.parse(savedData, { header: false });
-                parsedData = results.data.slice(1);
-                headers = results.data[0];
-
-                populateColumnSelector();
-                populateColumnSelect();
-                displayRows();
-                console.log("Data loaded from localStorage.");
-            } else {
-                console.log("No saved data found in localStorage.");
-            }
-        }
-
-        window.onload = function() {
-            loadCSVFromLocalStorage();
-        };
-
-        function resortRows() {
-            const columnIndex = document.getElementById('columnSelect').value;
-            if (columnIndex !== "") {
-                parsedData.sort((a, b) => {
-                    const valueA = a[columnIndex] ? a[columnIndex].toLowerCase() : "";
-                    const valueB = b[columnIndex] ? b[columnIndex].toLowerCase() : "";
-
-                    if (valueA === "" && valueB === "") return 0;
-                    if (valueA === "") return 1;
-                    if (valueB === "") return -1;
-
-                    return valueA.localeCompare(valueB);
-                });
-                displayRows();
-            }
-        }
     </script>
 </body>
 </html>
