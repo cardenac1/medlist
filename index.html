@@ -286,8 +286,8 @@ select {
         <select id="columnSelect" onchange="sortRows()">
             <option value="">Select Column to Sort</option>
         </select>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search..." />
+        <div class="-container">
+            <input type="text" id="Input" placeholder="Search..." />
             <button onclick="searchRows()">Search</button>
         </div>
 
@@ -589,16 +589,25 @@ select {
             }
         }
 
-        function searchRows() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
+function searchRows() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
 
-            const filteredData = parsedData.filter(row => {
-                return row.some(colValue => colValue.toLowerCase().includes(query));
-            });
+    if (query === "") {
+        displayRows(); // If search query is empty, show all rows
+        return;
+    }
 
-            displayFilteredRows(filteredData);
-        }
+    const filteredData = parsedData.filter(row => {
+        return row.some(colValue => colValue.toLowerCase().includes(query));
+    });
 
+    displayFilteredRows(filteredData);
+}
+
+
+
+
+        
         function displayFilteredRows(filteredData) {
             const rowList = document.getElementById('rowList');
             rowList.innerHTML = '';
