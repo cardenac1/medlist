@@ -5397,9 +5397,27 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
         const elapsedHours = ioData.elapsedHours || 24;
         const elapsedHoursDisplay = Math.round(elapsedHours);
         
+        // Calculate total intakes
+        let totalIntake = 0;
+        totalIntake += ioData.intakes.enteral.reduce((sum, entry) => sum + entry.volume, 0);
+        totalIntake += ioData.intakes.bloodProducts.reduce((sum, entry) => sum + entry.volume, 0);
+        totalIntake += ioData.intakes.other.reduce((sum, entry) => sum + entry.volume, 0);
+        
+        // Calculate total outputs
+        let totalOutput = 0;
+        totalOutput += ioData.outputs.urine.reduce((sum, entry) => sum + entry.volume, 0);
+        Object.values(ioData.outputs.drains).forEach(entries => {
+            totalOutput += entries.reduce((sum, entry) => sum + entry.volume, 0);
+        });
+        Object.values(ioData.outputs.other).forEach(entries => {
+            totalOutput += entries.reduce((sum, entry) => sum + entry.volume, 0);
+        });
+        
         // INTAKES
-        fishbone += `I:\n`;
+        fishbone += `I: ${totalIntake}\n`;
         let hasIntakes = false;
+
+		
         
         if (ioData.intakes.enteral.length > 0) {
             const totalEnteral = ioData.intakes.enteral.reduce((sum, entry) => sum + entry.volume, 0);
@@ -6746,6 +6764,16 @@ function setupViolinField(violinField) {
 }
 
 
+// ADD THIS NEW FUNCTION:
+function autoResizeContentEditable(element) {
+    element.style.height = 'auto';
+    const computed = window.getComputedStyle(element);
+    const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+    const border = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+    element.style.height = Math.max(element.scrollHeight + border, 40) + 'px';
+}
+
+		
 
 		
     </script>
