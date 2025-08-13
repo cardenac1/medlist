@@ -4903,17 +4903,28 @@ const ioData = {
                 dateTimeStr: line.match(/\(([^)]+)\)/)[1]
             };
             
-            // Categorize intake
+       // Categorize intake
             if (line.toLowerCase().includes('enteral') || 
-                line.toLowerCase().includes('tube feed')) {
+                line.toLowerCase().includes('tube feed') ||
+                line.toLowerCase().includes('feeding tube') ||
+                line.toLowerCase().includes('nasogastric') ||
+                line.toLowerCase().includes('ng tube') ||
+                line.toLowerCase().includes('peg') ||
+                line.toLowerCase().includes('jejunostomy')) {
                 ioData.intakes.enteral.push(entry);
-            } else if (line.toLowerCase().includes('blood cells') || 
+            } else if (line.toLowerCase().includes('blood') || 
+                       line.toLowerCase().includes('red blood cells') ||
+                       line.toLowerCase().includes('packed cells') ||
                        line.toLowerCase().includes('plasma') || 
-                       line.toLowerCase().includes('platelets')) {
+                       line.toLowerCase().includes('platelets') ||
+                       line.toLowerCase().includes('fresh frozen') ||
+                       line.toLowerCase().includes('cryoprecipitate') ||
+                       line.toLowerCase().includes('albumin')) {
                 ioData.intakes.bloodProducts.push(entry);
             } else {
                 ioData.intakes.other.push(entry);
             }
+			
         });
     }
 
@@ -5572,13 +5583,13 @@ if (fluidBalance !== null) {
     const hctPrev = data.labs.hct?.[1];
     const pltPrev = data.labs.plt?.[1];
 
-    let wbcStr = '--';
+   let wbcStr = '--';
     if (wbc !== undefined) {
-        if ((wbc < 4.5 || wbc > 11) && wbcPrev !== undefined) {
-            wbcStr = `${markAbnormal(wbc)}(${wbcPrev})`;
-        } else if (wbc < 4.5 || wbc > 11) {
-            wbcStr = markAbnormal(wbc);
+        if (wbc < 4.5 || wbc > 11) {
+            // Abnormal WBC - show current and previous if available
+            wbcStr = wbcPrev !== undefined ? `${markAbnormal(wbc)}(${wbcPrev})` : markAbnormal(wbc);
         } else {
+            // Normal WBC - just show current value
             wbcStr = wbc.toString();
         }
     }
@@ -5662,21 +5673,21 @@ if (hgb !== undefined) {
     let co2Str  = co2 !== undefined ? co2.toString()  : '--';
     let bunStr  = bun !== undefined ? (bun > 24 ? markAbnormal(bun) : bun.toString()) : '--';
 
-    let crStr;
+   let crStr;
     if (cr !== undefined) {
         const prevCr = data.labs.cr?.[1];
-        if (prevCr !== undefined && (cr > 1 || cr - prevCr > 0.3)) {
-            crStr = `${markAbnormal(cr)}(${prevCr})`;
-        } else if (cr > 1) {
-            crStr = markAbnormal(cr);
-        } else if (prevCr !== undefined) {
-            crStr = `${cr} (${prevCr})`;
+        if (cr > 1.2 || (prevCr !== undefined && cr - prevCr > 0.3)) {
+            // Abnormal creatinine - show current and previous if available
+            crStr = prevCr !== undefined ? `${markAbnormal(cr)}(${prevCr})` : markAbnormal(cr);
         } else {
+            // Normal creatinine - just show current value
             crStr = cr.toString();
         }
     } else {
         crStr = '--';
     }
+
+	
 
     let gluStr  = glu !== undefined ? (glu > 200 || glu < 70 ? markAbnormal(glu) : glu.toString()) : '--';
 
