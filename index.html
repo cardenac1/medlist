@@ -5478,19 +5478,19 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
             hasOutputs = true;
         }
         
-        // Drains
-        Object.entries(ioData.outputs.drains).forEach(([drainType, entries]) => {
-            if (entries.length > 0) {
-                const total = entries.reduce((sum, entry) => sum + entry.volume, 0);
-                const latest = entries.sort((a, b) => b.dateTime - a.dateTime)[0];
-                let drainStr = `${drainType}: ${total}mL/${elapsedHoursDisplay}hr - last: ${latest.dateTimeStr}`;
-                if (total > (30 * elapsedHours)) {
-                    drainStr = `${drainType}: ${markAbnormal(`${total}mL/${elapsedHoursDisplay}hr`)} - last: ${latest.dateTimeStr}`;
-                }
-                fishbone += drainStr + '\n';
-                hasOutputs = true;
-            }
-        });
+     // Drains
+Object.entries(ioData.outputs.drains).forEach(([drainType, entries]) => {
+    if (entries.length > 0) {
+        const total = entries.reduce((sum, entry) => sum + entry.volume, 0);
+        const latest = entries.sort((a, b) => b.dateTime - a.dateTime)[0];
+        let drainStr = `${markAbnormal(drainType)}: ${total}mL/${elapsedHoursDisplay}hr - last: ${latest.dateTimeStr}`;
+        if (total > (30 * elapsedHours)) {
+            drainStr = `${markAbnormal(drainType)}: ${markAbnormal(`${total}mL/${elapsedHoursDisplay}hr`)} - last: ${latest.dateTimeStr}`;
+        }
+        fishbone += drainStr + '\n';
+        hasOutputs = true;
+    }
+});
         
         // Other outputs
         Object.entries(ioData.outputs.other).forEach(([outputType, entries]) => {
