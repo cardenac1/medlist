@@ -2227,9 +2227,11 @@ input.addEventListener('input', function() {
         const nameValue = header === 'VIOLIN' ? (this.textContent || this.innerText) : this.value;
         document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
     }
-    saveToLocalStorage();
+      saveToLocalStorage();
     if (input.tagName === 'TEXTAREA') {
         autoResizeTextarea(this);
+    } else if (input.contentEditable === 'true' && header === 'VIOLIN') {
+        autoResizeContentEditable(this);
     }
 });        
         leftPanel.appendChild(label);
@@ -2244,9 +2246,12 @@ input.addEventListener('input', function() {
         
         leftPanel.appendChild(input);
         
-        if (input.tagName === 'TEXTAREA') {
-            setTimeout(() => autoResizeTextarea(input), 0);
-        }
+      if (input.tagName === 'TEXTAREA') {
+    setTimeout(() => autoResizeTextarea(input), 0);
+} else if (input.contentEditable === 'true' && header === 'VIOLIN') {
+    setTimeout(() => autoResizeContentEditable(input), 0);
+}
+		
     });
     
     // Set up To Do textarea event listener
