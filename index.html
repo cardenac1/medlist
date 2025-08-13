@@ -5454,29 +5454,41 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
         fishbone += `O:\n`;
         let hasOutputs = false;
         
-        // Urine output
-        if (ioData.outputs.urine.length > 0) {
-            const totalUrine = ioData.outputs.urine.reduce((sum, entry) => sum + entry.volume, 0);
-            const hourlyOutput = Math.round(totalUrine / elapsedHours);
-            
-            let urineStr = `UOP: ${totalUrine}mL/${elapsedHoursDisplay}hr`;
-            if (data.weight) {
-                const urinePerKgHr = (hourlyOutput / data.weight).toFixed(2);
-                urineStr += ` (${urinePerKgHr}mL/kg/hr)`;
-                if (urinePerKgHr < 0.5) {
-                    urineStr = `UOP: ${markAbnormal(`${totalUrine}mL/${elapsedHoursDisplay}hr (${urinePerKgHr}mL/kg/hr)`)}`;
-                }
-            }
-            urineStr += ` - last: ${ioData.outputs.lastUrineTimeStr}`;
-            if (ioData.outputs.urinaryCatheter) {
-                urineStr += ` ${markAbnormal('Foley')}`;
-            }
-            fishbone += urineStr + '\n';
-            hasOutputs = true;
-        } else {
-            fishbone += `${markAbnormal('No urine found')}\n`;
-            hasOutputs = true;
+
+
+
+		// Urine output
+if (ioData.outputs.urine.length > 0) {
+    const totalUrine = ioData.outputs.urine.reduce((sum, entry) => sum + entry.volume, 0);
+    const hourlyOutput = Math.round(totalUrine / elapsedHours);
+    
+    // Start with Foley if present
+    let urineStr = '';
+    if (ioData.outputs.urinaryCatheter) {
+        urineStr = `${markAbnormal('Foley')} `;
+    }
+    
+    urineStr += `UOP: ${totalUrine}mL/${elapsedHoursDisplay}hr`;
+    if (data.weight) {
+        const urinePerKgHr = (hourlyOutput / data.weight).toFixed(2);
+        urineStr += ` (${urinePerKgHr}mL/kg/hr)`;
+        if (urinePerKgHr < 0.5) {
+            // Rebuild the string to mark the UOP part as abnormal while keeping Foley at front
+            const foleyPrefix = ioData.outputs.urinaryCatheter ? `${markAbnormal('Foley')} ` : '';
+            urineStr = `${foleyPrefix}UOP: ${markAbnormal(`${totalUrine}mL/${elapsedHoursDisplay}hr (${urinePerKgHr}mL/kg/hr)`)}`;
         }
+    }
+    urineStr += ` - last: ${ioData.outputs.lastUrineTimeStr}`;
+    
+    fishbone += urineStr + '\n';
+    hasOutputs = true;
+} else {
+    fishbone += `${markAbnormal('No urine found')}\n`;
+    hasOutputs = true;
+}
+
+
+		
         
      // Drains
 Object.entries(ioData.outputs.drains).forEach(([drainType, entries]) => {
