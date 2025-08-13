@@ -5374,33 +5374,18 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
 
     fishbone += '\n';
 
-    // ===== OXYGEN THERAPY DETAILS =====
-    if (data.o2therapyCode && data.o2therapyCode !== 'RA') {
-        if (data.o2therapyCode === 'Vent') {
-            const mode = data.ventModeRaw ? data.ventModeRaw.replace(/[\s\/\+]+/g,'') : '';
-            const freq = data.ventFrequencyRaw || '';
-            const tv = data.ventTidalRaw || '';
-            const peep = data.ventPeepRaw || '';
-            const fio2 = data.ventFiO2Raw || '';
-            const settings = [freq, tv, peep, fio2 ? fio2 + '%' : ''].filter(x => x).join('/');
-            fishbone += `${markAbnormal(`Ventilator: ${mode} ${settings}`)}\n`;
-        } else {
-            const flow = data.o2flowRaw || '';
-            const therapyName = {
-                'NC': 'nasal cannula',
-                'HFNC': 'high flow nasal cannula', 
-                'NRB': 'non-rebreather',
-                'BiPAP/CPAP': 'BiPAP/CPAP',
-                'O2': 'oxygen therapy'
-            }[data.o2therapyCode] || data.o2therapyCode;
-            
-            if (flow) {
-                fishbone += `${markAbnormal(`${therapyName} ${flow}`)}\n`;
-            } else {
-                fishbone += `${markAbnormal(therapyName)}\n`;
-            }
-        }
+   // ===== OXYGEN THERAPY DETAILS ===== 
+    // Only show detailed info for ventilators (complex settings worth showing separately)
+    if (data.o2therapyCode === 'Vent') {
+        const mode = data.ventModeRaw ? data.ventModeRaw.replace(/[\s\/\+]+/g,'') : '';
+        const freq = data.ventFrequencyRaw || '';
+        const tv = data.ventTidalRaw || '';
+        const peep = data.ventPeepRaw || '';
+        const fio2 = data.ventFiO2Raw || '';
+        const settings = [freq, tv, peep, fio2 ? fio2 + '%' : ''].filter(x => x).join('/');
+        fishbone += `${markAbnormal(`Ventilator: ${mode} ${settings}`)}\n`;
     }
+	
 
     // ===== INTAKE/OUTPUT SECTION =====
     if (lastImportedData) {
