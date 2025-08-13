@@ -5447,7 +5447,7 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
         }
         
         if (!hasIntakes) {
-            fishbone += `None in last ${elapsedHoursDisplay}hr\n`;
+            fishbone += `None found (fluids, infusions, blood products, oral) in last ${elapsedHoursDisplay}hr\n`;
         }
         
         // OUTPUTS  
@@ -5474,7 +5474,7 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
             fishbone += urineStr + '\n';
             hasOutputs = true;
         } else {
-            fishbone += `${markAbnormal('No urine recorded')}\n`;
+            fishbone += `${markAbnormal('No urine found')}\n`;
             hasOutputs = true;
         }
         
