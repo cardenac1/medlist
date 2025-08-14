@@ -5403,9 +5403,9 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
         
 // Get total intake from the summary section instead of calculating
 let totalIntake = 0;
-const intakeMatch = lastImportedData.match(/Total\s+Summary[\s\S]*?Intake\s+mL\s+([\d,]+(?:\.\d+)?)/i);
-if (intakeMatch) {
-    totalIntake = parseFloat(intakeMatch[1].replace(/,/g, ''));
+const intakeSummaryMatch = lastImportedData.match(/Total\s+Summary[\s\S]*?Intake\s+mL\s+([\d,]+(?:\.\d+)?)/i);
+if (intakeSummaryMatch) {
+    totalIntake = parseFloat(intakeSummaryMatch[1].replace(/,/g, ''));
 } else {
     // Fallback to calculation if summary not found
     totalIntake += ioData.intakes.enteral.reduce((sum, entry) => sum + entry.volume, 0);
