@@ -2238,10 +2238,12 @@ input.addEventListener('input', function() {
     }
       saveToLocalStorage();
     if (input.tagName === 'TEXTAREA') {
-        autoResizeTextarea(this);
-    } else if (input.contentEditable === 'true' && header === 'VIOLIN') {
-        autoResizeContentEditable(this);
-    }
+    autoResizeTextarea(this);
+} else if (this.contentEditable === 'true' && header === 'VIOLIN') {
+    autoResizeContentEditable(this);
+}
+
+	
 });        
         leftPanel.appendChild(label);
         
