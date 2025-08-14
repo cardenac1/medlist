@@ -6801,18 +6801,27 @@ function setupViolinField(violinField) {
 
 
 function autoResizeContentEditable(element) {
-    // Reset height to auto to get accurate scrollHeight
-    element.style.height = 'auto';
-    element.style.minHeight = '2.5rem';
+    if (!element) return;
     
-    // Force a reflow to ensure scrollHeight is calculated correctly
-    void element.offsetHeight;
+    // For contentEditable, we need to use a different approach
+    // Clone the element to measure its content height
+    const clone = element.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.visibility = 'hidden';
+    clone.style.height = 'auto';
+    clone.style.minHeight = '0';
+    clone.style.maxHeight = 'none';
     
-    // Set the height based on scrollHeight
-    const newHeight = Math.max(element.scrollHeight, 40);
+    // Add to body temporarily to measure
+    document.body.appendChild(clone);
+    const contentHeight = clone.scrollHeight;
+    document.body.removeChild(clone);
+    
+    // Set the actual height with some padding
+    const minHeight = 40; // Minimum height in pixels
+    const newHeight = Math.max(contentHeight + 10, minHeight);
     element.style.height = newHeight + 'px';
-}
-		
+}	
 
 		
     </script>
