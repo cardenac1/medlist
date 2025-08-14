@@ -1049,23 +1049,14 @@ input[type="search"],
 input,
 textarea,
 select,
-.violin-field {
+/* Fix VIOLIN contentEditable field on mobile */
+.violin-field,
+div[contenteditable="true"] {
     font-size: 16px !important;
 }
 
 
 
-
-
-	.violin-field {
-    font-size: 16px !important;
-    padding: 0.75rem !important;
-    margin: 0.25rem 0 0.75rem !important;
-    min-height: auto !important;
-    line-height: 1.4 !important;
-}
-
-	
   /* Universal mobile button styling */
   button,
   .file-input-label {
@@ -1152,11 +1143,11 @@ select,
     max-width: 100%;
     margin: 0;
   }
-  textarea, input[type="text"] {
+textarea, input[type="text"], .violin-field {
     font-size: 16px;
     padding: 0.75rem;
     margin: 0.25rem 0 0.75rem;
-  }
+}
   label {
     margin-top: 0.5rem;
     font-size: 0.85rem;
