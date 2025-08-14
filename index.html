@@ -5416,15 +5416,22 @@ if (intakeSummaryMatch) {
 }
 		
         
-        // Calculate total outputs
-        let totalOutput = 0;
-        totalOutput += ioData.outputs.urine.reduce((sum, entry) => sum + entry.volume, 0);
-        Object.values(ioData.outputs.drains).forEach(entries => {
-            totalOutput += entries.reduce((sum, entry) => sum + entry.volume, 0);
-        });
-        Object.values(ioData.outputs.other).forEach(entries => {
-            totalOutput += entries.reduce((sum, entry) => sum + entry.volume, 0);
-        });
+    // Get total output from the summary section instead of calculating
+let totalOutput = 0;
+const outputSummaryMatch = lastImportedData.match(/Total\s+Summary[\s\S]*?Output\s+mL\s+([\d,]+(?:\.\d+)?)/i);
+if (outputSummaryMatch) {
+    totalOutput = parseFloat(outputSummaryMatch[1].replace(/,/g, ''));
+} else {
+    // Fallback to calculation if summary not found
+    totalOutput += ioData.outputs.urine.reduce((sum, entry) => sum + entry.volume, 0);
+    Object.values(ioData.outputs.drains).forEach(entries => {
+        totalOutput += entries.reduce((sum, entry) => sum + entry.volume, 0);
+    });
+    Object.values(ioData.outputs.other).forEach(entries => {
+        totalOutput += entries.reduce((sum, entry) => sum + entry.volume, 0);
+    });
+}
+		
         
         // INTAKES
         fishbone += `I: ${totalIntake}\n`;
@@ -5468,7 +5475,7 @@ if (intakeSummaryMatch) {
         }
         
         // OUTPUTS  
-        fishbone += `O:\n`;
+        fishbone += `O: ${totalOutput}\n`;
         let hasOutputs = false;
         
 
