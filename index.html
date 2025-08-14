@@ -865,14 +865,13 @@
 .violin-field {
     background: var(--card-bg);
     color: var(--text-primary);
-    font-family: monospace;
+    font-family: inherit;  /* Changed from monospace to match other fields */
     min-height: 2.5rem;
-    font-size: 1rem !important;  /* Add !important to match other fields */
+    font-size: 0.9rem;  /* Slightly smaller default */
     line-height: 1.4;
     resize: none;
     transition: height 0.2s ease;
 }
-
 
 
 
@@ -1059,12 +1058,6 @@ input[type="search"],
 input,
 textarea,
 select,
-/* Fix VIOLIN contentEditable field on mobile */
-.violin-field,
-div[contenteditable="true"] {
-    font-size: 16px !important;
-}
-
 
 
   /* Universal mobile button styling */
@@ -1160,11 +1153,12 @@ textarea, input[type="text"] {
 }
 
 .violin-field {
-    font-size: 16px !important;
+    font-size: 14px !important;  /* Smaller but still prevents zoom */
     min-height: 44px !important;
     padding: 0.75rem !important;
     margin: 0.25rem 0 0.75rem !important;
     line-height: 1.4 !important;
+    font-family: inherit !important;  /* Match other fields instead of monospace */
 }
 	
   label {
@@ -1273,18 +1267,6 @@ textarea, input[type="text"] {
 
 
 
-/* Specific mobile fixes for VIOLIN field */
-/* Mobile VIOLIN field fixes */
-@media (max-width: 768px) {
-    .violin-field {
-        font-size: 16px !important;
-        min-height: 44px !important;
-        line-height: 1.4 !important;
-        padding: 0.75rem !important;
-    }
-}   
-
-	
     </style>
 </head>
 <body>
