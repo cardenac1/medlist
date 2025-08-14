@@ -862,6 +862,17 @@
         linear-gradient(transparent, transparent);
 }
 
+		.violin-field {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-family: monospace;
+    min-height: 2.5rem;
+    font-size: 1rem;
+    line-height: 1.4;
+    resize: none;
+    transition: height 0.2s ease;
+}
+		
 
 
 
@@ -1143,11 +1154,20 @@ div[contenteditable="true"] {
     max-width: 100%;
     margin: 0;
   }
-textarea, input[type="text"], .violin-field {
+textarea, input[type="text"] {
     font-size: 16px;
     padding: 0.75rem;
     margin: 0.25rem 0 0.75rem;
 }
+
+.violin-field {
+    font-size: 16px !important;
+    min-height: 44px !important;
+    padding: 0.75rem !important;
+    margin: 0.25rem 0 0.75rem !important;
+    line-height: 1.4 !important;
+}
+	
   label {
     margin-top: 0.5rem;
     font-size: 0.85rem;
@@ -1255,14 +1275,15 @@ textarea, input[type="text"], .violin-field {
 
 
 /* Specific mobile fixes for VIOLIN field */
+/* Mobile VIOLIN field fixes */
 @media (max-width: 768px) {
     .violin-field {
-        min-height: 1.5rem !important;
         font-size: 16px !important;
+        min-height: 44px !important;
         line-height: 1.4 !important;
+        padding: 0.75rem !important;
     }
-}
-	    
+}   
 
 	
     </style>
@@ -2172,8 +2193,6 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input = document.createElement('div');
     input.contentEditable = true;
     input.className = 'violin-field';
-input.style.minHeight = '1.5rem'; // Smaller starting height
-input.style.fontFamily = 'inherit'; // Match other fields  
     input.style.border = '1px solid var(--border)';
     input.style.padding = '0.75rem';
     input.style.borderRadius = '0.25rem';
@@ -2181,7 +2200,8 @@ input.style.fontFamily = 'inherit'; // Match other fields
     input.style.color = 'var(--text-primary)';
     input.style.whiteSpace = 'pre-wrap';
     input.style.overflowY = 'auto';
-} else {
+}
+else {
     input = document.createElement('textarea');
 }
             
@@ -2243,9 +2263,9 @@ input.addEventListener('input', function() {
         document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
     }
       saveToLocalStorage();
-    if (input.tagName === 'TEXTAREA') {
+if (input.tagName === 'TEXTAREA') {
     autoResizeTextarea(this);
-} else if (this.contentEditable === 'true' && header === 'VIOLIN') {
+} else if (this.contentEditable === 'true') {
     autoResizeContentEditable(this);
 }
 
@@ -2437,8 +2457,6 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input = document.createElement('div');
     input.contentEditable = true;
     input.className = 'violin-field';
-input.style.minHeight = '1.5rem'; // Smaller starting height
-input.style.fontFamily = 'inherit'; // Match other fields  
     input.style.border = '1px solid var(--border)';
     input.style.padding = '0.75rem';
     input.style.borderRadius = '0.25rem';
@@ -2446,7 +2464,8 @@ input.style.fontFamily = 'inherit'; // Match other fields
     input.style.color = 'var(--text-primary)';
     input.style.whiteSpace = 'pre-wrap';
     input.style.overflowY = 'auto';
-} else {
+}
+else {
     input = document.createElement('textarea');
 }
 
@@ -2508,9 +2527,12 @@ input.addEventListener('input', function() {
         document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
     }
     saveToLocalStorage();
-    if (input.tagName === 'TEXTAREA') {
-        autoResizeTextarea(this);
-    }
+ if (input.tagName === 'TEXTAREA') {
+    autoResizeTextarea(this);
+} else if (this.contentEditable === 'true') {
+    autoResizeContentEditable(this);
+}
+	
 });
 
 
@@ -6810,25 +6832,20 @@ function setupViolinField(violinField) {
 function autoResizeContentEditable(element) {
     if (!element) return;
     
-    // For contentEditable, we need to use a different approach
-    // Clone the element to measure its content height
-    const clone = element.cloneNode(true);
-    clone.style.position = 'absolute';
-    clone.style.visibility = 'hidden';
-    clone.style.height = 'auto';
-    clone.style.minHeight = '0';
-    clone.style.maxHeight = 'none';
+    // Reset height to auto to get the natural height
+    const originalHeight = element.style.height;
+    element.style.height = 'auto';
     
-    // Add to body temporarily to measure
-    document.body.appendChild(clone);
-    const contentHeight = clone.scrollHeight;
-    document.body.removeChild(clone);
+    // Get the scroll height (content height)
+    const contentHeight = element.scrollHeight;
     
-    // Set the actual height with some padding
-    const minHeight = 40; // Minimum height in pixels
-    const newHeight = Math.max(contentHeight + 10, minHeight);
+    // Set minimum height
+    const minHeight = 44; // Minimum height in pixels
+    const newHeight = Math.max(contentHeight + 4, minHeight);
+    
+    // Apply the new height
     element.style.height = newHeight + 'px';
-}	
+}
 
 		
     </script>
