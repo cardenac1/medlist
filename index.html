@@ -1078,13 +1078,16 @@ input[type="text"],
   #consultControls .nav-buttons   { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
   .chart-check-controls           { display: grid; grid-template-columns: 1fr; grid-template-rows: repeat(3,1fr); gap:0.4rem; margin:1rem 0; }
 
-  /* DETAILS HEADER FIX */
-  .details-header {
+.details-header {
     padding: 0.75rem;
-    position: relative;
+    position: sticky;  /* Changed from relative to sticky */
+    top: 0;           /* Add this to ensure it sticks to top */
+    z-index: 100;     /* Add this to ensure it stays above content */
     background: var(--card-bg);
     border-bottom: 1px solid var(--border);
   }
+
+	
   .sticky-text {
     font-size: 1.2rem;
     margin-bottom: 0.5rem;
@@ -5398,11 +5401,18 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
         const elapsedHours = ioData.elapsedHours || 24;
         const elapsedHoursDisplay = Math.round(elapsedHours);
         
-        // Calculate total intakes
-        let totalIntake = 0;
-        totalIntake += ioData.intakes.enteral.reduce((sum, entry) => sum + entry.volume, 0);
-        totalIntake += ioData.intakes.bloodProducts.reduce((sum, entry) => sum + entry.volume, 0);
-        totalIntake += ioData.intakes.other.reduce((sum, entry) => sum + entry.volume, 0);
+// Get total intake from the summary section instead of calculating
+let totalIntake = 0;
+const intakeMatch = lastImportedData.match(/Total\s+Summary[\s\S]*?Intake\s+mL\s+([\d,]+(?:\.\d+)?)/i);
+if (intakeMatch) {
+    totalIntake = parseFloat(intakeMatch[1].replace(/,/g, ''));
+} else {
+    // Fallback to calculation if summary not found
+    totalIntake += ioData.intakes.enteral.reduce((sum, entry) => sum + entry.volume, 0);
+    totalIntake += ioData.intakes.bloodProducts.reduce((sum, entry) => sum + entry.volume, 0);
+    totalIntake += ioData.intakes.other.reduce((sum, entry) => sum + entry.volume, 0);
+}
+		
         
         // Calculate total outputs
         let totalOutput = 0;
@@ -6777,15 +6787,18 @@ function setupViolinField(violinField) {
 }
 
 
-// ADD THIS NEW FUNCTION:
 function autoResizeContentEditable(element) {
+    // Reset height to auto to get accurate scrollHeight
     element.style.height = 'auto';
-    const computed = window.getComputedStyle(element);
-    const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
-    const border = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
-    element.style.height = Math.max(element.scrollHeight + border, 40) + 'px';
+    element.style.minHeight = '2.5rem';
+    
+    // Force a reflow to ensure scrollHeight is calculated correctly
+    void element.offsetHeight;
+    
+    // Set the height based on scrollHeight
+    const newHeight = Math.max(element.scrollHeight, 40);
+    element.style.height = newHeight + 'px';
 }
-
 		
 
 		
