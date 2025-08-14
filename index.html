@@ -1254,7 +1254,14 @@ textarea, input[type="text"], .violin-field {
 
 
 
-
+/* Specific mobile fixes for VIOLIN field */
+@media (max-width: 768px) {
+    .violin-field {
+        min-height: 1.5rem !important;
+        font-size: 16px !important;
+        line-height: 1.4 !important;
+    }
+}
 	    
 
 	
@@ -2165,9 +2172,8 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input = document.createElement('div');
     input.contentEditable = true;
     input.className = 'violin-field';
-	input.style.minHeight = '2.5rem'; // Start small like other textareas
-	input.style.fontFamily = 'inherit'; // Match other fields  
-	input.style.fontSize = '1rem'; // Match other textareas
+input.style.minHeight = '1.5rem'; // Smaller starting height
+input.style.fontFamily = 'inherit'; // Match other fields  
     input.style.border = '1px solid var(--border)';
     input.style.padding = '0.75rem';
     input.style.borderRadius = '0.25rem';
@@ -2431,9 +2437,8 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input = document.createElement('div');
     input.contentEditable = true;
     input.className = 'violin-field';
-	input.style.minHeight = '2.5rem'; // Start small like other textareas
-	input.style.fontFamily = 'inherit'; // Match other fields  
-	input.style.fontSize = '1rem'; // Match other textareas
+input.style.minHeight = '1.5rem'; // Smaller starting height
+input.style.fontFamily = 'inherit'; // Match other fields  
     input.style.border = '1px solid var(--border)';
     input.style.padding = '0.75rem';
     input.style.borderRadius = '0.25rem';
