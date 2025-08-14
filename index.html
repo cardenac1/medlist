@@ -862,17 +862,16 @@
         linear-gradient(transparent, transparent);
 }
 
-		.violin-field {
+.violin-field {
     background: var(--card-bg);
     color: var(--text-primary);
     font-family: monospace;
     min-height: 2.5rem;
-    font-size: 1rem;
+    font-size: 1rem !important;  /* Add !important to match other fields */
     line-height: 1.4;
     resize: none;
     transition: height 0.2s ease;
 }
-		
 
 
 
@@ -2226,29 +2225,64 @@ if (header === 'VIOLIN') {
 
 input.addEventListener('input', function() {
     if (header === 'VIOLIN') {
-        // For contentEditable div, get text content and apply red styling
-        const plainText = this.textContent || this.innerText || '';
+        // Preserve line breaks by using innerText which maintains them
+        const plainText = this.innerText || '';
         patient[header] = plainText;
         
-        // Apply red styling to asterisked text
-        const redContent = plainText.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>');
+        // Split by line breaks to preserve them
+        const lines = plainText.split('\n');
+        const redLines = lines.map(line => 
+            line.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>')
+        );
+        const redContent = redLines.join('<br>');
         
         // Only update HTML if it's different to avoid cursor jumping
         if (this.innerHTML !== redContent) {
             const selection = window.getSelection();
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            const startOffset = range ? range.startOffset : 0;
+            
+            // Save cursor position more accurately
+            let cursorOffset = 0;
+            if (range && range.startContainer) {
+                const preCaretRange = document.createRange();
+                preCaretRange.selectNodeContents(this);
+                preCaretRange.setEnd(range.startContainer, range.startOffset);
+                cursorOffset = preCaretRange.toString().length;
+            }
             
             this.innerHTML = redContent;
             
             // Restore cursor position
             try {
-                if (this.firstChild && this.firstChild.nodeType === Node.TEXT_NODE) {
-                    const newRange = document.createRange();
-                    newRange.setStart(this.firstChild, Math.min(startOffset, this.firstChild.textContent.length));
-                    newRange.collapse(true);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
+                const newRange = document.createRange();
+                const sel = window.getSelection();
+                let charIndex = 0;
+                let nodeStack = [this];
+                let foundStart = false;
+                
+                while (nodeStack.length > 0 && !foundStart) {
+                    const node = nodeStack.pop();
+                    
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const nextCharIndex = charIndex + node.textContent.length;
+                        if (cursorOffset <= nextCharIndex) {
+                            newRange.setStart(node, cursorOffset - charIndex);
+                            newRange.collapse(true);
+                            foundStart = true;
+                            break;
+                        }
+                        charIndex = nextCharIndex;
+                    } else {
+                        let i = node.childNodes.length;
+                        while (i--) {
+                            nodeStack.push(node.childNodes[i]);
+                        }
+                    }
+                }
+                
+                if (foundStart) {
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
                 }
             } catch (e) {
                 // Ignore cursor positioning errors
@@ -2490,29 +2524,64 @@ if (header === 'VIOLIN') {
 
 input.addEventListener('input', function() {
     if (header === 'VIOLIN') {
-        // For contentEditable div, get text content and apply red styling
-        const plainText = this.textContent || this.innerText || '';
+        // Preserve line breaks by using innerText which maintains them
+        const plainText = this.innerText || '';
         patient[header] = plainText;
         
-        // Apply red styling to asterisked text
-        const redContent = plainText.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>');
+        // Split by line breaks to preserve them
+        const lines = plainText.split('\n');
+        const redLines = lines.map(line => 
+            line.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>')
+        );
+        const redContent = redLines.join('<br>');
         
         // Only update HTML if it's different to avoid cursor jumping
         if (this.innerHTML !== redContent) {
             const selection = window.getSelection();
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            const startOffset = range ? range.startOffset : 0;
+            
+            // Save cursor position more accurately
+            let cursorOffset = 0;
+            if (range && range.startContainer) {
+                const preCaretRange = document.createRange();
+                preCaretRange.selectNodeContents(this);
+                preCaretRange.setEnd(range.startContainer, range.startOffset);
+                cursorOffset = preCaretRange.toString().length;
+            }
             
             this.innerHTML = redContent;
             
             // Restore cursor position
             try {
-                if (this.firstChild && this.firstChild.nodeType === Node.TEXT_NODE) {
-                    const newRange = document.createRange();
-                    newRange.setStart(this.firstChild, Math.min(startOffset, this.firstChild.textContent.length));
-                    newRange.collapse(true);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
+                const newRange = document.createRange();
+                const sel = window.getSelection();
+                let charIndex = 0;
+                let nodeStack = [this];
+                let foundStart = false;
+                
+                while (nodeStack.length > 0 && !foundStart) {
+                    const node = nodeStack.pop();
+                    
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const nextCharIndex = charIndex + node.textContent.length;
+                        if (cursorOffset <= nextCharIndex) {
+                            newRange.setStart(node, cursorOffset - charIndex);
+                            newRange.collapse(true);
+                            foundStart = true;
+                            break;
+                        }
+                        charIndex = nextCharIndex;
+                    } else {
+                        let i = node.childNodes.length;
+                        while (i--) {
+                            nodeStack.push(node.childNodes[i]);
+                        }
+                    }
+                }
+                
+                if (foundStart) {
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
                 }
             } catch (e) {
                 // Ignore cursor positioning errors
