@@ -882,7 +882,29 @@ textarea, input[type="text"] {
 
 
 
-
+/* FIX: Force left alignment for details view form elements */
+  #editForm label,
+  #editForm input[type="text"],
+  #editForm textarea,
+  #editForm .violin-field,
+  #editForm div[contenteditable="true"] {
+    text-align: left !important;
+  }
+  
+  /* Also ensure labels are properly left-aligned */
+  .details-view label {
+    text-align: left !important;
+    display: block;
+  }
+  
+  /* Fix chart check layout text alignment */
+  .chart-check-left label,
+  .chart-check-left input,
+  .chart-check-left textarea,
+  .chart-check-left .violin-field,
+  .chart-check-right textarea {
+    text-align: left !important;
+  }
 
 
 
