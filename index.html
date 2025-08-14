@@ -6901,19 +6901,27 @@ function setupViolinField(violinField) {
 function autoResizeContentEditable(element) {
     if (!element) return;
     
+    // Store scroll position
+    const scrollTop = element.scrollTop;
+    
     // Reset height to auto to get the natural height
-    const originalHeight = element.style.height;
     element.style.height = 'auto';
     
-    // Get the scroll height (content height)
+    // Get the scroll height (content height) with some padding
     const contentHeight = element.scrollHeight;
     
-    // Set minimum height
-    const minHeight = 44; // Minimum height in pixels
-    const newHeight = Math.max(contentHeight + 4, minHeight);
+    // Set minimum height based on whether it's mobile
+    const isMobile = window.innerWidth <= 768;
+    const minHeight = isMobile ? 44 : 40;
+    
+    // Calculate new height with padding for better UX
+    const newHeight = Math.max(contentHeight + 8, minHeight);
     
     // Apply the new height
     element.style.height = newHeight + 'px';
+    
+    // Restore scroll position
+    element.scrollTop = scrollTop;
 }
 
 		
