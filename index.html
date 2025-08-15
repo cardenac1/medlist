@@ -463,10 +463,12 @@ textarea, input[type="text"] {
     margin: 0.5rem 0 1rem;
     resize: none;
     transition: all 0.3s ease;
-    overflow: hidden;
-    text-align: left; /* Add this line */
+    overflow-y: auto;
+    text-align: left;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
-
 	    
 /* Desktop view selector improvements - add this before the mobile media query */
 .view-selector {
