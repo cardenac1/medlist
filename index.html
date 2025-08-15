@@ -1161,11 +1161,21 @@ select,
     max-width: 100%;
     margin: 0;
   }
-textarea, input[type="text"] {
-    font-size: 16px;
-    padding: 0.75rem;
-    margin: 0.25rem 0 0.75rem;
-}
+
+
+
+	textarea, input[type="text"] {
+        font-size: 16px;
+        padding: 0.75rem;
+        margin: 0.25rem 0 0.75rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        overflow-y: auto;
+    }
+
+
+	
 
   label {
     margin-top: 0.5rem;
