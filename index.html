@@ -463,7 +463,7 @@ textarea, input[type="text"] {
     margin: 0.5rem 0 1rem;
     resize: none;
     transition: all 0.3s ease;
-    overflow-y: auto;
+    overflow-y: hidden;  /* ← CHANGED FROM auto TO hidden */
     text-align: left;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -2253,7 +2253,7 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input.style.background = 'var(--card-bg)';
     input.style.color = 'var(--text-primary)';
     input.style.whiteSpace = 'pre-wrap';
-    input.style.overflowY = 'auto';
+    input.style.overflowY = 'hidden';
 }
 else {
     input = document.createElement('textarea');
@@ -2552,7 +2552,7 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input.style.background = 'var(--card-bg)';
     input.style.color = 'var(--text-primary)';
     input.style.whiteSpace = 'pre-wrap';
-    input.style.overflowY = 'auto';
+    input.style.overflowY = 'hidden';
 }
 else {
     input = document.createElement('textarea');
