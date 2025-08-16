@@ -2114,9 +2114,9 @@ case 'chartcheck':
     const rightPanel = document.createElement('div');
     rightPanel.className = 'chart-check-right';
     rightPanel.innerHTML = `
-        <h3>Plan</h3>
-        <textarea id="field_To_do" placeholder="Enter patient plan...">${patient['To do'] || ''}</textarea>
-    `;
+    <h3>Plan<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('Plan')">?</button></h3>
+    <textarea id="field_To_do" placeholder="Enter patient plan...">${patient['To do'] || ''}</textarea>
+`;
     
     fieldsToShow = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
     
