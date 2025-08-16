@@ -1299,7 +1299,7 @@ select,
         <!-- Controls -->
         <div class="controls">
             <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".json">
+                <input type="file" id="fileInput" accept=".json,.csv">
                 <label for="fileInput" class="file-input-label">
                     📁 Import
                 </label>
@@ -1608,23 +1608,29 @@ const helpContent = {
             }
         }
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const jsonData = JSON.parse(e.target.result);
+
+
+		function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const fileName = file.name.toLowerCase();
+        const reader = new FileReader();
+        
+        if (fileName.endsWith('.csv')) {
+            // Handle CSV file
+            reader.onload = function(e) {
+                try {
+                    const csvText = e.target.result;
+                    const importedPatients = parseCSVData(csvText);
+                    
+                    if (importedPatients && importedPatients.length > 0) {
+                        // Ask user if they want to replace or append
+                        const replace = confirm(`Found ${importedPatients.length} patients in CSV.\n\nClick OK to REPLACE current list, or Cancel to ADD to current list.`);
                         
-                        // Check if it's the new JSON format
-                        if (jsonData.patients && Array.isArray(jsonData.patients)) {
-                            patientData = jsonData.patients;
-                        } else if (Array.isArray(jsonData)) {
-                            // Handle if it's just an array of patients
-                            patientData = jsonData;
+                        if (replace) {
+                            patientData = importedPatients;
                         } else {
-                            alert('Invalid JSON format');
-                            return;
+                            patientData = patientData.concat(importedPatients);
                         }
                         
                         displayRows();
@@ -1632,18 +1638,69 @@ const helpContent = {
                         populateColumnSelect();
                         saveToLocalStorage();
                         updateCensus();
-                    } catch (error) {
-                        alert('Error parsing JSON file: ' + error.message);
-                        console.error('Error parsing JSON:', error);
+                        alert(`Successfully imported ${importedPatients.length} patients from CSV!`);
+                    } else {
+                        alert('No valid patient data found in CSV file.');
                     }
-                };
-                reader.readAsText(file);
-            }
+                } catch (error) {
+                    alert('Error parsing CSV file: ' + error.message);
+                    console.error('Error parsing CSV:', error);
+                }
+            };
+            reader.readAsText(file);
+        } else if (fileName.endsWith('.json')) {
+            // Handle JSON file (existing logic)
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    
+                    if (jsonData.patients && Array.isArray(jsonData.patients)) {
+                        patientData = jsonData.patients;
+                    } else if (Array.isArray(jsonData)) {
+                        patientData = jsonData;
+                    } else {
+                        alert('Invalid JSON format');
+                        return;
+                    }
+                    
+                    displayRows();
+                    populateColumnSelector();
+                    populateColumnSelect();
+                    saveToLocalStorage();
+                    updateCensus();
+                } catch (error) {
+                    alert('Error parsing JSON file: ' + error.message);
+                    console.error('Error parsing JSON:', error);
+                }
+            };
+            reader.readAsText(file);
+        } else {
+            alert('Please select a JSON or CSV file.');
         }
+    }
+}
+
+
+
+		
 
         function exportData() {
-            exportJSON();
-        }
+    // Show export options modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Export Data</h2>
+            <div class="nav-buttons">
+                <button onclick="exportJSON(); this.closest('.modal').remove()">Export as JSON</button>
+                <button onclick="exportCSV(); this.closest('.modal').remove()">Export as CSV</button>
+                <button onclick="this.closest('.modal').remove()">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
 
 
 
@@ -6922,6 +6979,47 @@ function autoResizeContentEditable(element) {
     element.scrollTop = scrollTop;
 }
 
+
+
+
+		function exportCSV() {
+    if (patientData.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    // Define the fields to export (exclude internal fields)
+    const exportFields = MASTER_HEADERS.slice(0, -2); // Exclude ImportedData and LabData
+    
+    // Create CSV header
+    let csvContent = exportFields.join(',') + '\n';
+    
+    // Add data rows
+    patientData.forEach(patient => {
+        const row = exportFields.map(field => {
+            const value = patient[field] || '';
+            // Escape commas and quotes in values
+            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                return '"' + value.replace(/"/g, '""') + '"';
+            }
+            return value;
+        });
+        csvContent += row.join(',') + '\n';
+    });
+    
+    // Create filename with format: list_M.D.YY.csv
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const year = String(now.getFullYear()).slice(-2);
+    const filename = `list_${month}.${day}.${year}.csv`;
+    
+    downloadFile(csvContent, filename, 'text/csv');
+}
+
+
+
+		
 		
     </script>
 </body>
