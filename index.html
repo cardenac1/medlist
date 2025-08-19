@@ -2280,71 +2280,78 @@ if (header === 'VIOLIN') {
     input.value = patient[header] || '';
 }
 
-input.addEventListener('input', function() {
+
+
+
+
+
+		input.addEventListener('input', function() {
     if (header === 'VIOLIN') {
-        // Preserve line breaks by using innerText which maintains them
-        const plainText = this.innerText || '';
+        // Get the plain text content
+        const plainText = this.innerText || this.textContent || '';
         patient[header] = plainText;
         
-        // Split by line breaks to preserve them
+        // Apply red formatting for asterisks
         const lines = plainText.split('\n');
         const redLines = lines.map(line => 
             line.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>')
         );
         const redContent = redLines.join('<br>');
         
-        // Only update HTML if it's different to avoid cursor jumping
+        // Only update HTML if different to avoid cursor issues
         if (this.innerHTML !== redContent) {
+            // Save cursor position
             const selection = window.getSelection();
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            let cursorPos = 0;
             
-            // Save cursor position more accurately
-            let cursorOffset = 0;
             if (range && range.startContainer) {
-                const preCaretRange = document.createRange();
-                preCaretRange.selectNodeContents(this);
-                preCaretRange.setEnd(range.startContainer, range.startOffset);
-                cursorOffset = preCaretRange.toString().length;
+                const preRange = document.createRange();
+                preRange.selectNodeContents(this);
+                preRange.setEnd(range.startContainer, range.startOffset);
+                cursorPos = preRange.toString().length;
             }
             
+            // Update content
             this.innerHTML = redContent;
             
-            // Restore cursor position
-            try {
-                const newRange = document.createRange();
-                const sel = window.getSelection();
-                let charIndex = 0;
-                let nodeStack = [this];
-                let foundStart = false;
-                
-                while (nodeStack.length > 0 && !foundStart) {
-                    const node = nodeStack.pop();
+            // Restore cursor
+            if (cursorPos > 0) {
+                try {
+                    const textNodes = [];
+                    const walker = document.createTreeWalker(
+                        this,
+                        NodeFilter.SHOW_TEXT,
+                        null,
+                        false
+                    );
                     
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        const nextCharIndex = charIndex + node.textContent.length;
-                        if (cursorOffset <= nextCharIndex) {
-                            newRange.setStart(node, cursorOffset - charIndex);
+                    let node;
+                    while (node = walker.nextNode()) {
+                        textNodes.push(node);
+                    }
+                    
+                    let charCount = 0;
+                    for (const textNode of textNodes) {
+                        const nodeLength = textNode.textContent.length;
+                        if (charCount + nodeLength >= cursorPos) {
+                            const newRange = document.createRange();
+                            newRange.setStart(textNode, cursorPos - charCount);
                             newRange.collapse(true);
-                            foundStart = true;
+                            selection.removeAllRanges();
+                            selection.addRange(newRange);
                             break;
                         }
-                        charIndex = nextCharIndex;
-                    } else {
-                        let i = node.childNodes.length;
-                        while (i--) {
-                            nodeStack.push(node.childNodes[i]);
-                        }
+                        charCount += nodeLength;
                     }
+                } catch (e) {
+                    // Ignore cursor errors
                 }
-                
-                if (foundStart) {
-                    sel.removeAllRanges();
-                    sel.addRange(newRange);
-                }
-            } catch (e) {
-                // Ignore cursor positioning errors
             }
         }
+        
+        // Auto-resize after content change
+        autoResizeContentEditable(this);
     } else {
         patient[header] = this.value;
     }
@@ -2353,15 +2360,37 @@ input.addEventListener('input', function() {
         const nameValue = header === 'VIOLIN' ? (this.textContent || this.innerText) : this.value;
         document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
     }
-      saveToLocalStorage();
-if (input.tagName === 'TEXTAREA') {
-    autoResizeTextarea(this);
-} else if (this.contentEditable === 'true') {
-    autoResizeContentEditable(this);
+    
+    saveToLocalStorage();
+    
+    if (input.tagName === 'TEXTAREA') {
+        autoResizeTextarea(this);
+    }
+});
+
+// Add keydown listener for better enter key handling
+if (header === 'VIOLIN') {
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            // Don't prevent default - let the enter key work normally
+            setTimeout(() => autoResizeContentEditable(this), 0);
+        }
+    });
+    
+    // Also resize on paste
+    input.addEventListener('paste', function() {
+        setTimeout(() => autoResizeContentEditable(this), 10);
+    });
 }
 
-	
-});        
+
+
+
+
+
+
+
+		
         leftPanel.appendChild(label);
         
         // Add full orders display above ORDERS field
@@ -2374,11 +2403,34 @@ if (input.tagName === 'TEXTAREA') {
         
         leftPanel.appendChild(input);
         
-      if (input.tagName === 'TEXTAREA') {
+ 
+
+
+
+
+
+
+		if (input.tagName === 'TEXTAREA') {
     setTimeout(() => autoResizeTextarea(input), 0);
-} else if (input.contentEditable === 'true' && header === 'VIOLIN') {
-    setTimeout(() => autoResizeContentEditable(input), 0);
+} else if (input.contentEditable === 'true') {
+    // Initial resize and setup
+    setTimeout(() => {
+        autoResizeContentEditable(input);
+        // Ensure it resizes on focus as well
+        input.addEventListener('focus', function() {
+            autoResizeContentEditable(this);
+        });
+    }, 10);
 }
+
+
+
+
+
+
+
+
+		
 		
     });
     
@@ -2581,69 +2633,71 @@ if (header === 'VIOLIN') {
 
 input.addEventListener('input', function() {
     if (header === 'VIOLIN') {
-        // Preserve line breaks by using innerText which maintains them
-        const plainText = this.innerText || '';
+        // Get the plain text content
+        const plainText = this.innerText || this.textContent || '';
         patient[header] = plainText;
         
-        // Split by line breaks to preserve them
+        // Apply red formatting for asterisks
         const lines = plainText.split('\n');
         const redLines = lines.map(line => 
             line.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>')
         );
         const redContent = redLines.join('<br>');
         
-        // Only update HTML if it's different to avoid cursor jumping
+        // Only update HTML if different to avoid cursor issues
         if (this.innerHTML !== redContent) {
+            // Save cursor position
             const selection = window.getSelection();
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            let cursorPos = 0;
             
-            // Save cursor position more accurately
-            let cursorOffset = 0;
             if (range && range.startContainer) {
-                const preCaretRange = document.createRange();
-                preCaretRange.selectNodeContents(this);
-                preCaretRange.setEnd(range.startContainer, range.startOffset);
-                cursorOffset = preCaretRange.toString().length;
+                const preRange = document.createRange();
+                preRange.selectNodeContents(this);
+                preRange.setEnd(range.startContainer, range.startOffset);
+                cursorPos = preRange.toString().length;
             }
             
+            // Update content
             this.innerHTML = redContent;
             
-            // Restore cursor position
-            try {
-                const newRange = document.createRange();
-                const sel = window.getSelection();
-                let charIndex = 0;
-                let nodeStack = [this];
-                let foundStart = false;
-                
-                while (nodeStack.length > 0 && !foundStart) {
-                    const node = nodeStack.pop();
+            // Restore cursor
+            if (cursorPos > 0) {
+                try {
+                    const textNodes = [];
+                    const walker = document.createTreeWalker(
+                        this,
+                        NodeFilter.SHOW_TEXT,
+                        null,
+                        false
+                    );
                     
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        const nextCharIndex = charIndex + node.textContent.length;
-                        if (cursorOffset <= nextCharIndex) {
-                            newRange.setStart(node, cursorOffset - charIndex);
+                    let node;
+                    while (node = walker.nextNode()) {
+                        textNodes.push(node);
+                    }
+                    
+                    let charCount = 0;
+                    for (const textNode of textNodes) {
+                        const nodeLength = textNode.textContent.length;
+                        if (charCount + nodeLength >= cursorPos) {
+                            const newRange = document.createRange();
+                            newRange.setStart(textNode, cursorPos - charCount);
                             newRange.collapse(true);
-                            foundStart = true;
+                            selection.removeAllRanges();
+                            selection.addRange(newRange);
                             break;
                         }
-                        charIndex = nextCharIndex;
-                    } else {
-                        let i = node.childNodes.length;
-                        while (i--) {
-                            nodeStack.push(node.childNodes[i]);
-                        }
+                        charCount += nodeLength;
                     }
+                } catch (e) {
+                    // Ignore cursor errors
                 }
-                
-                if (foundStart) {
-                    sel.removeAllRanges();
-                    sel.addRange(newRange);
-                }
-            } catch (e) {
-                // Ignore cursor positioning errors
             }
         }
+        
+        // Auto-resize after content change
+        autoResizeContentEditable(this);
     } else {
         patient[header] = this.value;
     }
@@ -2652,15 +2706,28 @@ input.addEventListener('input', function() {
         const nameValue = header === 'VIOLIN' ? (this.textContent || this.innerText) : this.value;
         document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
     }
+    
     saveToLocalStorage();
- if (input.tagName === 'TEXTAREA') {
-    autoResizeTextarea(this);
-} else if (this.contentEditable === 'true') {
-    autoResizeContentEditable(this);
-}
-	
+    
+    if (input.tagName === 'TEXTAREA') {
+        autoResizeTextarea(this);
+    }
 });
 
+// Add keydown listener for better enter key handling
+if (header === 'VIOLIN') {
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            // Don't prevent default - let the enter key work normally
+            setTimeout(() => autoResizeContentEditable(this), 0);
+        }
+    });
+    
+    // Also resize on paste
+    input.addEventListener('paste', function() {
+        setTimeout(() => autoResizeContentEditable(this), 10);
+    });
+}
 
 
 
@@ -6955,32 +7022,28 @@ function setupViolinField(violinField) {
 }
 
 
-function autoResizeContentEditable(element) {
+
+		function autoResizeContentEditable(element) {
     if (!element) return;
     
-    // Store scroll position
-    const scrollTop = element.scrollTop;
+    // Reset to minimum height first to get accurate scrollHeight
+    element.style.height = '40px';
     
-    // Reset height to auto to get the natural height
-    element.style.height = 'auto';
-    
-    // Get the scroll height (content height) with some padding
+    // Get the actual content height
     const contentHeight = element.scrollHeight;
     
     // Set minimum height based on whether it's mobile
     const isMobile = window.innerWidth <= 768;
     const minHeight = isMobile ? 44 : 40;
     
-    // Calculate new height with padding for better UX
-    const newHeight = Math.max(contentHeight + 8, minHeight);
-    
-    // Apply the new height
+    // Apply the new height (add some padding for comfort)
+    const newHeight = Math.max(contentHeight + 2, minHeight);
     element.style.height = newHeight + 'px';
     
-    // Restore scroll position
-    element.scrollTop = scrollTop;
+    // Ensure overflow is hidden
+    element.style.overflowY = 'hidden';
 }
-
+		
 
 
 
