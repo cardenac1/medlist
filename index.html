@@ -2315,40 +2315,7 @@ if (header === 'VIOLIN') {
             // Update content
             this.innerHTML = redContent;
             
-            // Restore cursor
-            if (cursorPos > 0) {
-                try {
-                    const textNodes = [];
-                    const walker = document.createTreeWalker(
-                        this,
-                        NodeFilter.SHOW_TEXT,
-                        null,
-                        false
-                    );
-                    
-                    let node;
-                    while (node = walker.nextNode()) {
-                        textNodes.push(node);
-                    }
-                    
-                    let charCount = 0;
-                    for (const textNode of textNodes) {
-                        const nodeLength = textNode.textContent.length;
-                        if (charCount + nodeLength >= cursorPos) {
-                            const newRange = document.createRange();
-                            newRange.setStart(textNode, cursorPos - charCount);
-                            newRange.collapse(true);
-                            selection.removeAllRanges();
-                            selection.addRange(newRange);
-                            break;
-                        }
-                        charCount += nodeLength;
-                    }
-                } catch (e) {
-                    // Ignore cursor errors
-                }
-            }
-        }
+           
         
         // Auto-resize after content change
         autoResizeContentEditable(this);
