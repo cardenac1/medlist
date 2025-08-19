@@ -2240,12 +2240,15 @@ if (helpContent[header]) {
             label.appendChild(btnContainer);
         }
         
-let input;
+
+
+
+		let input;
 if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
     input = document.createElement('input');
     input.type = 'text';
 } else if (header === 'VIOLIN') {
-    // Use contentEditable div for VIOLIN to support red text  
+    // Simple contentEditable div for VIOLIN - no automatic formatting
     input = document.createElement('div');
     input.contentEditable = true;
     input.className = 'violin-field';
@@ -2255,77 +2258,22 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
     input.style.background = 'var(--card-bg)';
     input.style.color = 'var(--text-primary)';
     input.style.whiteSpace = 'pre-wrap';
-    input.style.overflowY = 'hidden';
-}
-else {
+    input.style.overflowY = 'auto';
+    input.style.minHeight = '40px';
+    input.style.outline = 'none';
+} else {
     input = document.createElement('textarea');
 }
-            
-        if (input.tagName === 'INPUT') {
-            input.type = 'text';
-        }
 
+input.id = `field_${header.replace(/\s+/g, '_')}`;
 
-        input.id = `field_${header.replace(/\s+/g, '_')}`;
-if (header === 'VIOLIN') {
-    input.className = 'violin-field';
-}
+input.value = patient[header] || '';
 
-      // Set initial content
-if (header === 'VIOLIN') {
-    const content = patient[header] || '';
-    const redContent = content.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>');
-    input.innerHTML = redContent;
-} else {
-    input.value = patient[header] || '';
-}
-
-
-
-
-
-
-		input.addEventListener('input', function() {
-    if (header === 'VIOLIN') {
-        // Get the plain text content
-        const plainText = this.innerText || this.textContent || '';
-        patient[header] = plainText;
-        
-        // Apply red formatting for asterisks
-        const lines = plainText.split('\n');
-        const redLines = lines.map(line => 
-            line.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>')
-        );
-        const redContent = redLines.join('<br>');
-        
-        // Only update HTML if different to avoid cursor issues
-        if (this.innerHTML !== redContent) {
-            // Save cursor position
-            const selection = window.getSelection();
-            const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            let cursorPos = 0;
-            
-            if (range && range.startContainer) {
-                const preRange = document.createRange();
-                preRange.selectNodeContents(this);
-                preRange.setEnd(range.startContainer, range.startOffset);
-                cursorPos = preRange.toString().length;
-            }
-            
-            // Update content
-            this.innerHTML = redContent;
-            
-           
-        
-        // Auto-resize after content change
-        autoResizeContentEditable(this);
-    } else {
-        patient[header] = this.value;
-    }
+input.addEventListener('input', function() {
+    patient[header] = this.value;
     
     if (header === 'Name') {
-        const nameValue = header === 'VIOLIN' ? (this.textContent || this.innerText) : this.value;
-        document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
+        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
     }
     
     saveToLocalStorage();
@@ -2334,27 +2282,6 @@ if (header === 'VIOLIN') {
         autoResizeTextarea(this);
     }
 });
-
-// Add keydown listener for better enter key handling
-if (header === 'VIOLIN') {
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            // Don't prevent default - let the enter key work normally
-            setTimeout(() => autoResizeContentEditable(this), 0);
-        }
-    });
-    
-    // Also resize on paste
-    input.addEventListener('paste', function() {
-        setTimeout(() => autoResizeContentEditable(this), 10);
-    });
-}
-
-
-
-
-
-
 
 
 		
@@ -2563,17 +2490,7 @@ let input;
 if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
     input = document.createElement('input');
 } else if (header === 'VIOLIN') {
-    // Use contentEditable div for VIOLIN to support red text
-    input = document.createElement('div');
-    input.contentEditable = true;
-    input.className = 'violin-field';
-    input.style.border = '1px solid var(--border)';
-    input.style.padding = '0.75rem';
-    input.style.borderRadius = '0.25rem';
-    input.style.background = 'var(--card-bg)';
-    input.style.color = 'var(--text-primary)';
-    input.style.whiteSpace = 'pre-wrap';
-    input.style.overflowY = 'hidden';
+    input = document.createElement('textarea');
 }
 else {
     input = document.createElement('textarea');
@@ -2589,112 +2506,6 @@ else {
                 input.id = `field_${header.replace(/\s+/g, '_')}`;
 
 
-// Set initial content
-if (header === 'VIOLIN') {
-    const content = patient[header] || '';
-    const redContent = content.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>');
-    input.innerHTML = redContent;
-} else {
-    input.value = patient[header] || '';
-}
-
-input.addEventListener('input', function() {
-    if (header === 'VIOLIN') {
-        // Get the plain text content
-        const plainText = this.innerText || this.textContent || '';
-        patient[header] = plainText;
-        
-        // Apply red formatting for asterisks
-        const lines = plainText.split('\n');
-        const redLines = lines.map(line => 
-            line.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>')
-        );
-        const redContent = redLines.join('<br>');
-        
-        // Only update HTML if different to avoid cursor issues
-        if (this.innerHTML !== redContent) {
-            // Save cursor position
-            const selection = window.getSelection();
-            const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            let cursorPos = 0;
-            
-            if (range && range.startContainer) {
-                const preRange = document.createRange();
-                preRange.selectNodeContents(this);
-                preRange.setEnd(range.startContainer, range.startOffset);
-                cursorPos = preRange.toString().length;
-            }
-            
-            // Update content
-            this.innerHTML = redContent;
-            
-            // Restore cursor
-            if (cursorPos > 0) {
-                try {
-                    const textNodes = [];
-                    const walker = document.createTreeWalker(
-                        this,
-                        NodeFilter.SHOW_TEXT,
-                        null,
-                        false
-                    );
-                    
-                    let node;
-                    while (node = walker.nextNode()) {
-                        textNodes.push(node);
-                    }
-                    
-                    let charCount = 0;
-                    for (const textNode of textNodes) {
-                        const nodeLength = textNode.textContent.length;
-                        if (charCount + nodeLength >= cursorPos) {
-                            const newRange = document.createRange();
-                            newRange.setStart(textNode, cursorPos - charCount);
-                            newRange.collapse(true);
-                            selection.removeAllRanges();
-                            selection.addRange(newRange);
-                            break;
-                        }
-                        charCount += nodeLength;
-                    }
-                } catch (e) {
-                    // Ignore cursor errors
-                }
-            }
-        }
-        
-        // Auto-resize after content change
-        autoResizeContentEditable(this);
-    } else {
-        patient[header] = this.value;
-    }
-    
-    if (header === 'Name') {
-        const nameValue = header === 'VIOLIN' ? (this.textContent || this.innerText) : this.value;
-        document.getElementById('stickyTextContainer').textContent = nameValue || 'Unnamed Patient';
-    }
-    
-    saveToLocalStorage();
-    
-    if (input.tagName === 'TEXTAREA') {
-        autoResizeTextarea(this);
-    }
-});
-
-// Add keydown listener for better enter key handling
-if (header === 'VIOLIN') {
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            // Don't prevent default - let the enter key work normally
-            setTimeout(() => autoResizeContentEditable(this), 0);
-        }
-    });
-    
-    // Also resize on paste
-    input.addEventListener('paste', function() {
-        setTimeout(() => autoResizeContentEditable(this), 10);
-    });
-}
 
 
 
@@ -6988,29 +6799,6 @@ function setupViolinField(violinField) {
     applyRedStyling(violinField);
 }
 
-
-
-		function autoResizeContentEditable(element) {
-    if (!element) return;
-    
-    // Reset to minimum height first to get accurate scrollHeight
-    element.style.height = '40px';
-    
-    // Get the actual content height
-    const contentHeight = element.scrollHeight;
-    
-    // Set minimum height based on whether it's mobile
-    const isMobile = window.innerWidth <= 768;
-    const minHeight = isMobile ? 44 : 40;
-    
-    // Apply the new height (add some padding for comfort)
-    const newHeight = Math.max(contentHeight + 2, minHeight);
-    element.style.height = newHeight + 'px';
-    
-    // Ensure overflow is hidden
-    element.style.overflowY = 'hidden';
-}
-		
 
 
 
