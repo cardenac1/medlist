@@ -2267,22 +2267,32 @@ if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att'
 
 input.id = `field_${header.replace(/\s+/g, '_')}`;
 
-input.value = patient[header] || '';
+// Fix: Handle contentEditable vs input elements differently
+if (input.contentEditable === 'true') {
+    input.textContent = patient[header] || '';
+} else {
+    input.value = patient[header] || '';
+}
 
 input.addEventListener('input', function() {
-    patient[header] = this.value;
+    // Fix: Use appropriate property based on element type
+    const currentValue = this.contentEditable === 'true' ? 
+        (this.textContent || this.innerText) : this.value;
+    
+    patient[header] = currentValue;
     
     if (header === 'Name') {
-        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+        document.getElementById('stickyTextContainer').textContent = currentValue || 'Unnamed Patient';
     }
     
     saveToLocalStorage();
     
-    if (input.tagName === 'TEXTAREA') {
+    if (this.tagName === 'TEXTAREA') {
         autoResizeTextarea(this);
+    } else if (this.contentEditable === 'true') {
+        autoResizeContentEditable(this);
     }
 });
-
 
 		
         leftPanel.appendChild(label);
@@ -2298,31 +2308,6 @@ input.addEventListener('input', function() {
         leftPanel.appendChild(input);
         
  
-
-
-
-
-
-
-		if (input.tagName === 'TEXTAREA') {
-    setTimeout(() => autoResizeTextarea(input), 0);
-} else if (input.contentEditable === 'true') {
-    // Initial resize and setup
-    setTimeout(() => {
-        autoResizeContentEditable(input);
-        // Ensure it resizes on focus as well
-        input.addEventListener('focus', function() {
-            autoResizeContentEditable(this);
-        });
-    }, 10);
-}
-
-
-
-
-
-
-
 
 		
 		
