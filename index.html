@@ -3827,8 +3827,7 @@ const CONSULT_MODE_LABELS = {
 
 
 
-
-		// ============ STEP 1: ADD THESE FUNCTIONS BEFORE exportToRTF (around line 1847) ============
+// ============ PHYSICAL EXAM PROCESSING FUNCTIONS ============
 
 // Abbreviation codes for abnormal findings
 const PE_ABNORMAL_CODES = {
@@ -4022,6 +4021,23 @@ const PE_BODY_REGIONS = {
     'skin': 'Gen',
     'wound': 'Wound',
     'incision': 'Wound'
+};
+
+// Anatomical modifiers for parsing
+const ANATOMICAL_MODIFIERS = {
+    'right': 'right',
+    'left': 'left',
+    'bilateral': 'bilateral',
+    'r': 'right',
+    'l': 'left',
+    'anterior': 'anterior',
+    'posterior': 'posterior',
+    'medial': 'medial',
+    'lateral': 'lateral',
+    'superior': 'superior',
+    'inferior': 'inferior',
+    'proximal': 'proximal',
+    'distal': 'distal'
 };
 
 // Physical exam templates
@@ -4314,31 +4330,6 @@ function parseTokens(tokens, examType) {
     return { abnormalFindings, unrecognizedTerms };
 }
 
-// Infer body region from context
-function inferBodyRegion(findingToken, tokens, currentIndex) {
-    // Look for anatomical clues in nearby tokens
-    const contextTokens = [];
-    for (let i = Math.max(0, currentIndex-3); i <= Math.min(tokens.length-1, currentIndex+3); i++) {
-        if (i !== currentIndex) {
-            contextTokens.push(tokens[i]);
-        }
-    }
-    
-    const contextStr = contextTokens.join(' ');
-    
-    // Inference rules
-    if (/head|forehead|occiput|scalp/.test(contextStr)) return 'Head';
-    if (/face|jaw|nose|eye|mouth/.test(contextStr)) return 'Face';
-    if (/chest|rib|lung|breath/.test(contextStr)) return 'Chest';
-    if (/heart|cardiac/.test(contextStr)) return 'CVS';
-    if (/abdomen|belly|stomach|quad/.test(contextStr)) return 'Abdomen';
-    if (/arm|shoulder|hand|wrist|elbow/.test(contextStr)) return 'Upper Extremities';
-    if (/leg|thigh|knee|ankle|foot/.test(contextStr)) return 'Lower Extremities';
-    if (/spine|back|neck/.test(contextStr)) return 'Spine';
-    
-    return null;
-}
-
 // Generate formatted PE with abnormal findings, removing contradictory normal language
 function generateFormattedPE(examType, abnormalFindings, unrecognizedTerms) {
     const template = PE_TEMPLATES[examType];
@@ -4380,11 +4371,7 @@ function generateFormattedPE(examType, abnormalFindings, unrecognizedTerms) {
     return formattedPE;
 }
 
-
-
-
-
-		function removeContradictoryText(normalText, abnormalFindings) {
+function removeContradictoryText(normalText, abnormalFindings) {
     let modifiedText = normalText;
     
     // Create a combined string of all abnormal findings for easier checking
@@ -4470,84 +4457,33 @@ function generateFormattedPE(examType, abnormalFindings, unrecognizedTerms) {
     return modifiedText;
 }
 
-		
-
-
-
-
-
-
-
-																	
-function generateFormattedPE(examType, abnormalFindings, unrecognizedTerms) {
-    const template = PE_TEMPLATES[examType];
-    let formattedPE = '';
-    
-    Object.keys(template).forEach(region => {
-        let regionText = template[region];
-        
-        // Insert abnormal findings if present
-        if (abnormalFindings[region] && abnormalFindings[region].length > 0) {
-            const abnormalText = abnormalFindings[region].join(', ');
-            
-            if (region === 'Neuro' && abnormalFindings[region].some(f => f.startsWith('GCS'))) {
-                // Replace GCS 15 with actual GCS
-                const gcsFind = abnormalFindings[region].find(f => f.startsWith('GCS'));
-                regionText = regionText.replace('GCS 15', gcsFind);
-                // Add other neuro findings
-                const otherFindings = abnormalFindings[region].filter(f => !f.startsWith('GCS'));
-                if (otherFindings.length > 0) {
-                    regionText = otherFindings.join(', ') + '. ' + regionText;
-                }
-            } else {
-                regionText = abnormalText + '. ' + regionText;
-            }
-        }
-        
-        formattedPE += `\\b ${region}: \\b0 ${regionText}\\par`;
-    });
-    
-    // Add unrecognized terms at the end
-    if (unrecognizedTerms.length > 0) {
-        formattedPE += `\\b Additional findings: \\b0 ${unrecognizedTerms.join(', ')}\\par`;
-    }
-    
-    return formattedPE;
-}')}\\b`, 'gi');
-                modifiedText = modifiedText.replace(regex, '');
-            });
-        }
-    });
-    
-    // Clean up extra spaces, commas, and periods
-    modifiedText = modifiedText
-        .replace(/\s*,\s*,/g, ',') // Remove double commas
-        .replace(/\s*,\s*\./g, '.') // Remove comma before period
-        .replace(/\.\s*\./g, '.') // Remove double periods
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .replace(/^\s*,\s*/, '') // Remove leading comma
-        .replace(/\s*,\s*$/, '') // Remove trailing comma
-        .trim();
-    
-    // If we removed too much and left an empty or nearly empty string, provide minimal normal text
-    if (!modifiedText || modifiedText.length < 10) {
-        modifiedText = 'examined';
-    }
-    
-    return modifiedText;
-}
-
 // Generate normal PE
 function generateNormalPE(examType) {
     return generateFormattedPE(examType, {}, []);
 }
 
-// ============ STEP 2: MODIFY YOUR EXISTING exportToRTF FUNCTION ============
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 
 
 
