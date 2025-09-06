@@ -9812,7 +9812,6 @@ function refreshViolinDisplay() {
     if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
         fishboneContainer.innerHTML = '';
         fishboneContainer.style.background = '#000000';
-        fishboneContainer.style.color = '#00ff00';
         
         // Removed the header creation - no more title!
         
@@ -9837,7 +9836,7 @@ function refreshViolinDisplay() {
                 missingDiv.style.padding = '0.75rem';
                 missingDiv.style.background = 'rgba(100, 100, 100, 0.2)';
                 missingDiv.style.borderRadius = '0.25rem';
-                missingDiv.style.fontSize = '0.85rem';
+                missingDiv.style.fontSize = '0.5rem';
                 missingDiv.innerHTML = `<strong style="color: var(--secondary);">Missing Values:</strong><br><span style="font-style: italic; color: #888888;">${missingValues}</span>`;
                 fishboneContainer.appendChild(missingDiv);
             }
@@ -9850,7 +9849,6 @@ function refreshViolinDisplay() {
             </div>
         `;
         fishboneContainer.style.background = '#000000';
-        fishboneContainer.style.color = '#00ff00';
     }
 }		
 		
