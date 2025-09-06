@@ -9617,69 +9617,177 @@ function renderChartCheckTab(tabs) {
     contentElement.appendChild(fieldsContainer);
 }
 
-function renderViolinTab(contentElement, patient) {
+
+
+
+
+
+
+
+
+function renderViolinTabContent(contentElement, patient) {
+    // Create main container for VIOLIN tab
     const violinContainer = document.createElement('div');
-    violinContainer.className = 'violin-tab-content';
+    violinContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        gap: 1rem;
+    `;
     
     // Create controls
     const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'violin-controls';
+    controlsDiv.style.cssText = `
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    `;
     
-    const importBtn = document.createElement('button');
-    importBtn.textContent = '⬇️ Import';
-    importBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        showImportModal();
-    };
+    const buttons = [
+        { text: '⬇️ Import', action: () => showImportModal() },
+        { text: '📊 Labs', action: () => showTableView() },
+        { text: '📊 Vitals', action: () => showVitalsTable() },
+        { text: '🔄 Refresh', action: () => refreshViolinDisplay() }
+    ];
     
-    const tableBtn = document.createElement('button');
-    tableBtn.textContent = '📊 Labs';
-    tableBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        showTableView();
-    };
+    buttons.forEach(({ text, action }) => {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.style.cssText = `
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        `;
+        btn.onclick = function(e) {
+            e.preventDefault();
+            action();
+        };
+        controlsDiv.appendChild(btn);
+    });
     
-    const vitalsBtn = document.createElement('button');
-    vitalsBtn.textContent = '📊 Vitals';
-    vitalsBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        showVitalsTable();
-    };
-    
-    const refreshBtn = document.createElement('button');
-    refreshBtn.textContent = '🔄 Refresh';
-    refreshBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        refreshViolinDisplay();
-    };
-    
-    controlsDiv.appendChild(importBtn);
-    controlsDiv.appendChild(tableBtn);
-    controlsDiv.appendChild(vitalsBtn);
-    controlsDiv.appendChild(refreshBtn);
-    
-    // Create fishbone display container
+    // Create fishbone display (larger and takes up most space)
     const fishboneContainer = document.createElement('div');
-    fishboneContainer.className = 'violin-fishbone-container';
     fishboneContainer.id = 'violinFishboneDisplay';
+    fishboneContainer.style.cssText = `
+        flex: 1;
+        background: var(--card-bg);
+        border: 2px solid var(--secondary);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        font-family: monospace;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        color: var(--text-primary);
+        overflow-y: auto;
+        min-height: 400px;
+    `;
     
-    // Add warning messages container (hidden by default)
+    // Add warning messages container at the bottom
     const warningDiv = document.createElement('div');
     warningDiv.id = 'warningMessages';
-    warningDiv.className = 'warning-messages hidden';
+    warningDiv.style.cssText = `
+        background: var(--card-bg);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: auto;
+        border: 2px solid var(--danger);
+        display: none;
+    `;
     
+    // Assemble the layout: controls -> fishbone -> warnings
     violinContainer.appendChild(controlsDiv);
-    violinContainer.appendChild(warningDiv);
     violinContainer.appendChild(fishboneContainer);
+    violinContainer.appendChild(warningDiv);
+    
     contentElement.appendChild(violinContainer);
     
-    // Load and display current fishbone data
+    // Load fishbone data
     refreshViolinDisplay();
 }
+
+function refreshViolinDisplay() {
+    const fishboneContainer = document.getElementById('violinFishboneDisplay');
+    const warningDiv = document.getElementById('warningMessages');
+    const patient = patientData[currentPatientIndex];
+    
+    if (!fishboneContainer) return;
+    
+    if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
+        fishboneContainer.innerHTML = '';
+        
+        const header = document.createElement('h4');
+        header.textContent = 'VIOLIN Fishbone Diagram';
+        header.style.cssText = `
+            color: var(--secondary);
+            margin: 0 0 1rem 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+        `;
+        fishboneContainer.appendChild(header);
+        
+        const preElement = document.createElement('pre');
+        preElement.style.cssText = `
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        `;
+        
+        // Apply red styling to abnormal values with larger text
+        preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold; font-size: 1.05em;">*$1*</span>');
+        fishboneContainer.appendChild(preElement);
+        
+        // Show warnings at the bottom
+        if (warningDiv && labData && Object.keys(labData).length > 0) {
+            const warnings = generateWarnings(labData);
+            if (warnings.length > 0) {
+                warningDiv.innerHTML = `
+                    <div style="color: var(--danger); font-weight: bold; font-size: 1.1em; margin-bottom: 0.5rem;">⚠️ Warnings & Alerts</div>
+                    ${warnings.map(w => `<div class="warning-message" style="margin-bottom: 0.3rem; font-size: 1rem;">${w}</div>`).join('')}
+                `;
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.innerHTML = `
+                    <div style="color: var(--success); font-weight: bold; font-size: 1.1em; margin-bottom: 0.5rem;">✅ Status</div>
+                    <div style="color: var(--success); font-size: 1rem;">All values within normal limits</div>
+                `;
+                warningDiv.style.display = 'block';
+                warningDiv.style.borderColor = 'var(--success)';
+            }
+        }
+        
+    } else {
+        fishboneContainer.innerHTML = `
+            <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem; font-size: 1.1rem;">
+                <h4 style="font-size: 1.4rem; margin-bottom: 1rem;">No VIOLIN Data Available</h4>
+                <p>Import lab data using the Import button above to generate the fishbone diagram.</p>
+            </div>
+        `;
+        
+        // Hide warnings when no data
+        if (warningDiv) {
+            warningDiv.style.display = 'none';
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+		
 
 function refreshViolinDisplay() {
     const fishboneContainer = document.getElementById('violinFishboneDisplay');
