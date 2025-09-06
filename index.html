@@ -1650,32 +1650,20 @@ select,
 
 
 
-
-		/* Pitch black background for VIOLIN fishbone */
+/* Updated VIOLIN fishbone display with smaller text */
 #violinFishboneDisplay {
-    background: #000000 !important;
-    color: #00ff00 !important; /* Matrix green text */
-    border: 2px solid var(--secondary) !important;
-}
-
-#violinFishboneDisplay h4 {
-    color: var(--secondary) !important;
-}
-
-/* Keep red abnormal values but make them more visible on black */
-#violinFishboneDisplay .warning-message {
-    color: #ff4444 !important;
-}
-
-/* Style the fishbone content on black background */
-.fishbone-display {
+    flex: 1;
     background: #000000 !important;
     color: #00ff00 !important;
-    border: 2px solid var(--secondary) !important;
-}
-
-.fishbone-display h4 {
-    color: var(--secondary) !important;
+    border: 2px solid var(--secondary);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    font-family: monospace;
+    font-size: 0.85rem; /* Changed from 1.1rem to 0.85rem */
+    line-height: 1.6; /* Also reduced line height slightly */
+    white-space: pre-wrap;
+    overflow-y: auto;
+    min-height: 400px;
 }
 
 
@@ -9807,85 +9795,15 @@ function renderViolinTabContent(contentElement, patient) {
     refreshViolinDisplay();
 }
 
-function refreshViolinDisplay() {
-    const fishboneContainer = document.getElementById('violinFishboneDisplay');
-    const warningDiv = document.getElementById('warningMessages');
-    const patient = patientData[currentPatientIndex];
-    
-    if (!fishboneContainer) return;
-    
-    if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
-        fishboneContainer.innerHTML = '';
-        
-        const header = document.createElement('h4');
-        header.textContent = 'VIOLIN Fishbone Diagram';
-        header.style.cssText = `
-            color: var(--secondary);
-            margin: 0 0 1rem 0;
-            font-size: 1.3rem;
-            font-weight: bold;
-        `;
-        fishboneContainer.appendChild(header);
-        
-        const preElement = document.createElement('pre');
-        preElement.style.cssText = `
-            margin: 0;
-            font-family: inherit;
-            font-size: inherit;
-            line-height: inherit;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        `;
-        
-        // Apply red styling to abnormal values with larger text
-        preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold; font-size: 1.05em;">*$1*</span>');
-        fishboneContainer.appendChild(preElement);
-        
-        // Show warnings at the bottom
-        if (warningDiv && labData && Object.keys(labData).length > 0) {
-            const warnings = generateWarnings(labData);
-            if (warnings.length > 0) {
-                warningDiv.innerHTML = `
-                    <div style="color: var(--danger); font-weight: bold; font-size: 1.1em; margin-bottom: 0.5rem;">⚠️ Warnings & Alerts</div>
-                    ${warnings.map(w => `<div class="warning-message" style="margin-bottom: 0.3rem; font-size: 1rem;">${w}</div>`).join('')}
-                `;
-                warningDiv.style.display = 'block';
-            } else {
-                warningDiv.innerHTML = `
-                    <div style="color: var(--success); font-weight: bold; font-size: 1.1em; margin-bottom: 0.5rem;">✅ Status</div>
-                    <div style="color: var(--success); font-size: 1rem;">All values within normal limits</div>
-                `;
-                warningDiv.style.display = 'block';
-                warningDiv.style.borderColor = 'var(--success)';
-            }
-        }
-        
-    } else {
-        fishboneContainer.innerHTML = `
-            <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem; font-size: 1.1rem;">
-                <h4 style="font-size: 1.4rem; margin-bottom: 1rem;">No VIOLIN Data Available</h4>
-                <p>Import lab data using the Import button above to generate the fishbone diagram.</p>
-            </div>
-        `;
-        
-        // Hide warnings when no data
-        if (warningDiv) {
-            warningDiv.style.display = 'none';
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
 
 		
-
+		
+		
+		
+		
+		
+		
+		
 function refreshViolinDisplay() {
     const fishboneContainer = document.getElementById('violinFishboneDisplay');
     const patient = patientData[currentPatientIndex];
@@ -9894,10 +9812,10 @@ function refreshViolinDisplay() {
     
     if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
         fishboneContainer.innerHTML = '';
+        fishboneContainer.style.background = '#000000';
+        fishboneContainer.style.color = '#00ff00';
         
-        const header = document.createElement('h4');
-        header.textContent = 'VIOLIN Fishbone Diagram';
-        fishboneContainer.appendChild(header);
+        // Removed the header creation - no more title!
         
         const preElement = document.createElement('pre');
         preElement.style.margin = '0';
@@ -9918,36 +9836,39 @@ function refreshViolinDisplay() {
                 const missingDiv = document.createElement('div');
                 missingDiv.style.marginTop = '1rem';
                 missingDiv.style.padding = '0.75rem';
-                missingDiv.style.background = 'rgba(100, 100, 100, 0.1)';
+                missingDiv.style.background = 'rgba(100, 100, 100, 0.2)';
                 missingDiv.style.borderRadius = '0.25rem';
                 missingDiv.style.fontSize = '0.85rem';
-                missingDiv.innerHTML = `<strong style="color: var(--text-secondary);">Missing Values:</strong><br><span style="font-style: italic; color: var(--text-secondary);">${missingValues}</span>`;
+                missingDiv.innerHTML = `<strong style="color: var(--secondary);">Missing Values:</strong><br><span style="font-style: italic; color: #888888;">${missingValues}</span>`;
                 fishboneContainer.appendChild(missingDiv);
-            }
-        }
-        
-        // Show warnings if they exist
-        const warningDiv = document.getElementById('warningMessages');
-        if (warningDiv && labData && Object.keys(labData).length > 0) {
-            const warnings = generateWarnings(labData);
-            if (warnings.length > 0) {
-                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-                warningDiv.classList.remove('hidden');
-            } else {
-                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-                warningDiv.classList.remove('hidden');
             }
         }
         
     } else {
         fishboneContainer.innerHTML = `
-            <div class="violin-no-data">
-                <h4>No VIOLIN Data Available</h4>
+            <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem; font-size: 1.1rem;">
                 <p>Import lab data using the Import button above to generate the fishbone diagram.</p>
             </div>
         `;
+        fishboneContainer.style.background = '#000000';
+        fishboneContainer.style.color = '#00ff00';
     }
-}
+}		
+		
+		
+
+
+
+
+
+
+
+
+
+
+		
+
+
 		
 		
 		
