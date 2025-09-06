@@ -4101,14 +4101,14 @@ function processImportedData() {
     const fishbone = generateFishbone(labData);
     const warnings = generateWarnings(labData);
     
-    // Update VIOLIN field with plain text (asterisks preserved)
+    // ALWAYS update the patient's VIOLIN data regardless of current tab
+    patient.VIOLIN = fishbone;
+    
+    // Update VIOLIN field if it exists in current view
     const violinField = document.getElementById('field_VIOLIN');
     if (violinField) {
         violinField.value = fishbone;
         autoResizeTextarea(violinField);
-        
-        // Save the plain text with asterisks
-        patient.VIOLIN = fishbone;
     }
     
     // Update warnings - handle both regular chart check and VIOLIN tab
@@ -4135,19 +4135,29 @@ function processImportedData() {
     closeImportModal();
     document.getElementById('importData').value = '';
     
-    // Refresh displays based on current view mode
+    // FIXED: Properly refresh displays based on current view
     setTimeout(() => {
         if (currentViewMode === 'chartcheck') {
-            // Check if we're in VIOLIN tab
+            // Check if we're in the VIOLIN tab specifically
             const violinFishboneDisplay = document.getElementById('violinFishboneDisplay');
             if (violinFishboneDisplay) {
-                // We're in VIOLIN tab - refresh it
+                // We're in the VIOLIN tab - refresh it immediately
+                console.log('Refreshing VIOLIN tab display');
                 refreshViolinDisplay();
             } else {
-                // Regular chart check - show fishbone inline
-                showFishboneInline();
+                // We're in chart check but not VIOLIN tab - the data is saved and will show when user goes to VIOLIN tab
+                console.log('Data processed and saved - will display when switching to VIOLIN tab');
+                
+                // If there's a regular VIOLIN field visible, make sure it's updated
+                const currentViolinField = document.getElementById('field_VIOLIN');
+                if (currentViolinField && currentViolinField.value !== fishbone) {
+                    currentViolinField.value = fishbone;
+                    autoResizeTextarea(currentViolinField);
+                }
             }
         }
+        // Also trigger any inline fishbone displays
+        showFishboneInline();
     }, 100);
 }
 
@@ -8653,20 +8663,38 @@ function showFishboneInline() {
     // Add a delay to ensure DOM elements are ready
     setTimeout(() => {
         if (currentViewMode === 'chartcheck') {
-            // Check if we're in the VIOLIN tab
+            // FIXED: Better detection of chart check tab system
+            
+            // First, check if we're in the VIOLIN tab specifically
             const violinFishboneDisplay = document.getElementById('violinFishboneDisplay');
             if (violinFishboneDisplay) {
                 // We're in the VIOLIN tab - refresh it
+                console.log('Refreshing VIOLIN tab fishbone display');
                 refreshViolinDisplay();
                 return;
             }
             
-            // Otherwise, try the regular fishbone display
+            // If we're in chart check but not VIOLIN tab, check if VIOLIN field exists and update it
+            const violinField = document.getElementById('field_VIOLIN');
+            if (violinField && patientData[currentPatientIndex]) {
+                const patient = patientData[currentPatientIndex];
+                if (patient.VIOLIN && violinField.value !== patient.VIOLIN) {
+                    violinField.value = patient.VIOLIN;
+                    autoResizeTextarea(violinField);
+                    console.log('Updated VIOLIN field in current tab');
+                }
+            }
+            
+            // Try to find and update any other fishbone displays
             const fishboneDisplay = document.getElementById('fishboneDisplay');
             if (fishboneDisplay) {
                 // Auto-show the fishbone after processing
                 if (fishboneDisplay.classList.contains('hidden')) {
-                    toggleFishboneDisplay(); // This will populate and show it
+                    toggleFishboneDisplay();
+                } else {
+                    // Already visible, just refresh it
+                    toggleFishboneDisplay();
+                    toggleFishboneDisplay(); // Toggle twice to refresh
                 }
             }
         }
@@ -9830,8 +9858,13 @@ warningDiv.style.cssText = `
     
     contentElement.appendChild(violinContainer);
     
-    // Load fishbone data
+// With this to ensure proper timing:
+setTimeout(() => {
     refreshViolinDisplay();
+}, 50);
+
+
+	
 }
 
 
