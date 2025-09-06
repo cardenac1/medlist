@@ -1600,6 +1600,88 @@ select,
 		
 
 
+
+		/* Tab-specific colorful borders */
+.chart-check-tab-basic input[type="text"],
+.chart-check-tab-basic textarea {
+    border-color: var(--accent-1) !important;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.3) !important;
+}
+
+.chart-check-tab-clinical input[type="text"],
+.chart-check-tab-clinical textarea {
+    border-color: var(--accent-2) !important;
+    box-shadow: 0 0 0 1px rgba(242, 99, 99, 0.3) !important;
+}
+
+.chart-check-tab-violin input[type="text"],
+.chart-check-tab-violin textarea {
+    border-color: var(--accent-3) !important;
+    box-shadow: 0 0 0 1px rgba(121, 232, 159, 0.3) !important;
+}
+
+.chart-check-tab-orders input[type="text"],
+.chart-check-tab-orders textarea {
+    border-color: var(--accent-5) !important;
+    box-shadow: 0 0 0 1px rgba(255, 128, 0, 0.3) !important;
+}
+
+/* Focus states for tabs */
+.chart-check-tab-basic input[type="text"]:focus,
+.chart-check-tab-basic textarea:focus {
+    box-shadow: 0 0 0 2px var(--accent-1) !important;
+}
+
+.chart-check-tab-clinical input[type="text"]:focus,
+.chart-check-tab-clinical textarea:focus {
+    box-shadow: 0 0 0 2px var(--accent-2) !important;
+}
+
+.chart-check-tab-violin input[type="text"]:focus,
+.chart-check-tab-violin textarea:focus {
+    box-shadow: 0 0 0 2px var(--accent-3) !important;
+}
+
+.chart-check-tab-orders input[type="text"]:focus,
+.chart-check-tab-orders textarea:focus {
+    box-shadow: 0 0 0 2px var(--accent-5) !important;
+}
+
+
+
+
+
+		/* Pitch black background for VIOLIN fishbone */
+#violinFishboneDisplay {
+    background: #000000 !important;
+    color: #00ff00 !important; /* Matrix green text */
+    border: 2px solid var(--secondary) !important;
+}
+
+#violinFishboneDisplay h4 {
+    color: var(--secondary) !important;
+}
+
+/* Keep red abnormal values but make them more visible on black */
+#violinFishboneDisplay .warning-message {
+    color: #ff4444 !important;
+}
+
+/* Style the fishbone content on black background */
+.fishbone-display {
+    background: #000000 !important;
+    color: #00ff00 !important;
+    border: 2px solid var(--secondary) !important;
+}
+
+.fishbone-display h4 {
+    color: var(--secondary) !important;
+}
+
+
+		
+		
+
     </style>
 </head>
 
@@ -9464,7 +9546,17 @@ function goToChartCheckTab(tabIndex) {
     }
 }
 
-function renderChartCheckTab(tabs) {
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function renderChartCheckTab(tabs) {
     const currentTab = window.chartCheckCurrentTab;
     const tab = tabs[currentTab];
     const patient = patientData[currentPatientIndex];
@@ -9499,14 +9591,19 @@ function renderChartCheckTab(tabs) {
         }
     });
     
-    // Clear previous content
+    // Clear previous content and classes
     contentElement.innerHTML = '';
+    contentElement.className = 'chart-check-tab-content';
     
-  // Special handling for VIOLIN tab
-if (tab.title === 'VIOLIN') {
-    renderViolinTabContent(contentElement, patient);  // ← Fixed function name
-    return;
-}
+    // Add tab-specific class for styling
+    const tabClassNames = ['basic', 'clinical', 'violin', 'orders'];
+    contentElement.classList.add(`chart-check-tab-${tabClassNames[currentTab]}`);
+    
+    // Special handling for VIOLIN tab
+    if (tab.title === 'VIOLIN') {
+        renderViolinTabContent(contentElement, patient);
+        return;
+    }
     
     // Render regular fields
     const fieldsContainer = document.createElement('div');
