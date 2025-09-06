@@ -8629,18 +8629,26 @@ preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="colo
 function showFishboneInline() {
     // Add a delay to ensure DOM elements are ready
     setTimeout(() => {
-        const fishboneDisplay = document.getElementById('fishboneDisplay');
-        if (fishboneDisplay && currentViewMode === 'chartcheck') {
-            // Auto-show the fishbone after processing
-            if (fishboneDisplay.classList.contains('hidden')) {
-                toggleFishboneDisplay(); // This will populate and show it
+        if (currentViewMode === 'chartcheck') {
+            // Check if we're in the VIOLIN tab
+            const violinFishboneDisplay = document.getElementById('violinFishboneDisplay');
+            if (violinFishboneDisplay) {
+                // We're in the VIOLIN tab - refresh it
+                refreshViolinDisplay();
+                return;
+            }
+            
+            // Otherwise, try the regular fishbone display
+            const fishboneDisplay = document.getElementById('fishboneDisplay');
+            if (fishboneDisplay) {
+                // Auto-show the fishbone after processing
+                if (fishboneDisplay.classList.contains('hidden')) {
+                    toggleFishboneDisplay(); // This will populate and show it
+                }
             }
         }
     }, 200);
 }
-
-
-
 
 
 
