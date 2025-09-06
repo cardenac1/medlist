@@ -9502,11 +9502,11 @@ function renderChartCheckTab(tabs) {
     // Clear previous content
     contentElement.innerHTML = '';
     
-    // Special handling for VIOLIN tab
-    if (tab.title === 'VIOLIN') {
-        renderViolinTab(contentElement, patient);
-        return;
-    }
+  // Special handling for VIOLIN tab
+if (tab.title === 'VIOLIN') {
+    renderViolinTabContent(contentElement, patient);  // ← Fixed function name
+    return;
+}
     
     // Render regular fields
     const fieldsContainer = document.createElement('div');
