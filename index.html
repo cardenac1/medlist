@@ -4380,8 +4380,11 @@ function generateFormattedPE(examType, abnormalFindings, unrecognizedTerms) {
     return formattedPE;
 }
 
-// Remove contradictory normal language when abnormal findings are present
-function removeContradictoryText(normalText, abnormalFindings) {
+
+
+
+
+		function removeContradictoryText(normalText, abnormalFindings) {
     let modifiedText = normalText;
     
     // Create a combined string of all abnormal findings for easier checking
@@ -4443,7 +4446,39 @@ function removeContradictoryText(normalText, abnormalFindings) {
             // Remove contradictory normal language
             rule.normal.forEach(normalPhrase => {
                 // Use word boundaries to avoid partial matches
-                const regex = new RegExp(`\\b${normalPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\// Generate formatted PE with abnormal findings
+                const regex = new RegExp(`\\b${normalPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+                modifiedText = modifiedText.replace(regex, '');
+            });
+        }
+    });
+    
+    // Clean up extra spaces, commas, and periods
+    modifiedText = modifiedText
+        .replace(/\s*,\s*,/g, ',') // Remove double commas
+        .replace(/\s*,\s*\./g, '.') // Remove comma before period
+        .replace(/\.\s*\./g, '.') // Remove double periods
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .replace(/^\s*,\s*/, '') // Remove leading comma
+        .replace(/\s*,\s*$/, '') // Remove trailing comma
+        .trim();
+    
+    // If we removed too much and left an empty or nearly empty string, provide minimal normal text
+    if (!modifiedText || modifiedText.length < 10) {
+        modifiedText = 'examined';
+    }
+    
+    return modifiedText;
+}
+
+		
+
+
+
+
+
+
+
+																	
 function generateFormattedPE(examType, abnormalFindings, unrecognizedTerms) {
     const template = PE_TEMPLATES[examType];
     let formattedPE = '';
