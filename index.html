@@ -14,7 +14,9 @@
         IS_EXTENSION = false;
     }
     </script>
-    
+
+
+	
     <style>
         * {
             margin: 0;
@@ -286,6 +288,22 @@
 }
 
 
+		#helpModal input[type="checkbox"] {
+    cursor: pointer;
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+#helpModal input[type="checkbox"]:hover {
+    transform: scale(1.2);
+}
+
+#helpModal label:hover {
+    transform: translateX(2px);
+}
+
+		
+
 
         @keyframes slideIn {
             from {
@@ -300,6 +318,21 @@
 
 
 
+		#cropInterface {
+    text-align: center;
+}
+
+#cropCanvas {
+    display: block;
+    margin: 0 auto;
+}
+
+.crop-instructions {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+}
+		
 
         /* Details View */
         .details-view {
@@ -613,41 +646,7 @@ textarea, input[type="text"] {
 }
 
 
-	    /* Clipboard Button */
-.clipboard-btn {
-    position: absolute;
-    right: 2px;  /* Small gap from edge */
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--card-bg);
-    border: 1px solid var(--border);  /* Thinner border */
-    border-radius: 0.25rem;
-    padding: 0.25rem;  /* Reduced padding */
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1rem;  /* Slightly smaller icon */
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 30px;  /* Smaller minimum width */
-    min-height: 30px;  /* Smaller minimum height */
-}
-	    
 
-.clipboard-btn:hover {
-    background: var(--primary);
-    border-color: var(--primary);
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-}
-
-.clipboard-btn.copied {
-    background: var(--success);
-    border-color: var(--success);
-}
-
-	  
 
 
 
@@ -842,28 +841,6 @@ textarea, input[type="text"] {
 
 
 
-/* Red text highlighting for abnormal values */
-.violin-field {
-    background: var(--card-bg);
-    color: var(--text-primary);
-    font-family: monospace;
-}
-
-.violin-field::selection {
-    background: var(--danger);
-    color: white;
-}
-
-/* Style for triple asterisks to appear red */
-.violin-field {
-    background: var(--card-bg);
-    color: var(--text-primary);
-    font-family: monospace;
-    /* Custom styling to make *** text appear red */
-    background-image: 
-        linear-gradient(transparent, transparent),
-        linear-gradient(transparent, transparent);
-}
 
 
 
@@ -1045,6 +1022,22 @@ textarea, input[type="text"] {
 .row-item {
     padding-right: 1rem; /* Increased padding to prevent text overlap */
 }
+	.violin-button-container {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.25rem !important;
+    margin: 0.5rem 0 !important;
+    width: 100% !important;
+  }
+  
+  .violin-button-container button {
+    padding: 0.4rem 0.2rem !important;
+    font-size: 0.7rem !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
 	
 
 
@@ -1174,7 +1167,10 @@ select,
         overflow-y: hidden;  /* ← CHANGED FROM auto TO hidden */
     }
 
-
+.violin-field {
+    font-size: 16px !important;
+  }
+  
 	
 
   label {
@@ -1268,23 +1264,410 @@ select,
 
 
 
-.clipboard-btn {
-    min-width: 28px;  /* Smaller on mobile */
-    min-height: 28px;
-    padding: 0.2rem;  /* Less padding */
-    font-size: 0.9rem;  /* Slightly smaller icon */
-    right: 2px;  /* Small gap from edge */
-}
-/* Adjust row item padding to make room for clipboard button */
-.row-item {
-        padding-right: 1rem; /* Less padding needed with smaller button */
 
+		
+
+
+		/* Fishbone display container */
+.fishbone-display {
+    background: var(--card-bg);
+    border: 2px solid var(--secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--text-primary);
 }
 
+.fishbone-display.hidden {
+    display: none;
+}
+
+.fishbone-display h4 {
+    color: var(--secondary);
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .fishbone-display {
+        /* Remove this line too: */
+        /* max-height: 300px; */
+        font-size: 0.85rem;
+        padding: 0.75rem;
+    }
+
+	
+}
+
+
+		/* Mobile touch improvements */
+#cropCanvas {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Improve button sizing for mobile */
+@media (max-width: 768px) {
+    #cameraEntrySection button {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    #cropInterface button {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        margin: 0.25rem;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Replace the existing .status-dot CSS (around line 2818 in your HTML) with this: */
+
+.status-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    border: 2px solid currentColor;
+    position: relative;
+    cursor: pointer;
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* Force clean status dots - add this at the very end of your CSS */
+.status-dot {
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+}
+
+		
+
+
+
+/* First three rows button styling */
+.first-three-btn {
+    transition: all 0.2s ease;
+    font-size: inherit !important; /* Match parent font size */
+    font-family: inherit !important; /* Match parent font family */
+    line-height: inherit !important; /* Match parent line height */
+}
+
+.first-three-btn span {
+    font-size: inherit !important; /* Ensure spans inherit the size */
+    font-family: inherit !important;
+    line-height: inherit !important;
+}
+
+.first-three-btn:hover {
+    background: var(--card-hover) !important;
+    border-color: var(--primary) !important;
+}
+
+.first-three-btn.copied {
+    background: var(--success) !important;
+    border-color: var(--success) !important;
+}
+
+
+
+@media (max-width: 768px) {
+    /* ... existing mobile styles ... */
+    
+    /* Compact first three button spans - keep separate lines but reduce height */
+    .first-three-btn {
+        white-space: normal !important;
+        text-align: left !important;
+        line-height: 1.1 !important;
+        height: auto !important;
+        min-height: 44px !important;  /* Reduced from 60px */
+        padding: 0.3rem 0.4rem !important;  /* Much less padding */
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .first-three-btn span {
+        display: block !important;
+        width: 100% !important;
+        line-height: 1.1 !important;  /* Tighter line height */
+        margin-bottom: 1px !important;  /* Minimal spacing between lines */
+        white-space: normal !important;
+        word-wrap: break-word !important;
+    }
+    
+    /* Also reduce row-item padding on mobile */
+    .row-item {
+        padding: 0.5rem !important;  /* Reduced from default */
+    }
+}
+
+
+
+
+
+
+
+
+		/* Chart Check Tabbed Interface */
+.chart-check-tabs {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chart-check-tab-nav {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 0.5rem;
+    border-bottom: 2px solid var(--border);
+    gap: 0.5rem;
+}
+
+.chart-check-tab-arrow {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.chart-check-tab-arrow:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.chart-check-tab-arrow:disabled {
+    background: var(--border);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.chart-check-tab-title {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 1.1rem;
+    padding: 0.5rem;
+}
+
+.chart-check-tab-counter {
+    background: var(--secondary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.chart-check-tab-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background: var(--dark-bg);
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.chart-check-tab-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.chart-check-field-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-check-field-group label {
+    margin-bottom: 0.5rem;
+}
+
+.chart-check-field-group input,
+.chart-check-field-group textarea {
+    margin-bottom: 0;
+}
+
+/* VIOLIN tab specific styles */
+.violin-tab-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.violin-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.violin-fishbone-container {
+    flex: 1;
+    background: var(--card-bg);
+    border: 2px solid var(--secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+    overflow-y: auto;
+    min-height: 300px;
+}
+
+.violin-fishbone-container h4 {
+    color: var(--secondary);
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.violin-no-data {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+/* Mobile adjustments for tabs */
+@media (max-width: 768px) {
+    .chart-check-tab-nav {
+        padding: 0.25rem;
+        gap: 0.25rem;
+    }
+    
+    .chart-check-tab-arrow {
+        width: 28px;
+        height: 28px;
+        font-size: 0.9rem;
+    }
+    
+    .chart-check-tab-title {
+        font-size: 0.95rem;
+        padding: 0.25rem;
+    }
+    
+    .chart-check-tab-counter {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .chart-check-tab-content {
+        padding: 0.75rem;
+    }
+    
+    .violin-controls {
+        gap: 0.25rem;
+    }
+    
+    .violin-controls button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .violin-fishbone-container {
+        font-size: 0.85rem;
+        padding: 0.75rem;
+        min-height: 250px;
+    }
+}
+		
 
 
     </style>
 </head>
+
+
+
+
+
+
+	<!-- Replace the existing Tesseract script tag with this updated one -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+	
+<script>
+// Simple function to check if Tesseract is available
+function isTesseractAvailable() {
+    return typeof Tesseract !== 'undefined';
+}
+
+// Test function for OCR availability
+async function testOCRAvailability() {
+    if (!isTesseractAvailable()) {
+        throw new Error('Tesseract.js not loaded');
+    }
+    
+    try {
+        // Create a simple test canvas with text
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 200, 50);
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText('TEST', 50, 30);
+        
+        const imageData = canvas.toDataURL();
+        const { data: { text } } = await Tesseract.recognize(imageData, 'eng');
+        
+        return text.toLowerCase().includes('test');
+    } catch (error) {
+        console.error('OCR test failed:', error);
+        return false;
+    }
+}
+</script>
+
+
+
+
+	
 <body>
     <!-- Header with Census -->
     <div class="header">
@@ -1339,10 +1722,11 @@ select,
         <h2>Add New Entry</h2>
         
         <div id="entryTypeSelection" class="nav-buttons">
-            <button type="button" onclick="showManualEntry()">✏️ Manual Entry</button>
-            <button type="button" onclick="showPasteEntry()">📋 Paste Entry</button>
+            <button type="button" onclick="showManualEntry()">Manual Entry</button>
+            <button type="button" onclick="showPasteEntry()">Paste Entry</button>
             <button type="button" onclick="showUpdatePatientsSection()">🔄 Update Patients</button>
             <button type="button" onclick="closeAddEntryModal()">Cancel</button>
+			<button type="button" onclick="showCameraEntry()">📸 Scan Label</button>
         </div>
 
         <form id="addEntryForm" onsubmit="addEntry(event)" style="display: none;">
@@ -1372,12 +1756,123 @@ select,
                 <button type="button" onclick="backToEntrySelection()">← Back</button>
             </div>
         </div>
+
+
+		
+
+
+
+
+
+
+
+
+
+		<div id="cameraEntrySection" style="display: none;">
+    <h3 style="color: var(--accent-4); margin-bottom: 10px;">Scan Patient Label</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 15px;">Upload a photo of the patient label sticker:</p>
+    
+    <!-- Test OCR System Button -->
+    <div style="margin-bottom: 1rem; text-align: center;">
+        <button type="button" onclick="testOCRSystem()" style="background: linear-gradient(135deg, var(--secondary), #0891b2); margin-bottom: 0.5rem;">
+            🔧 Test OCR System
+        </button>
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">Click to verify OCR is working before scanning</div>
+    </div>
+    
+    <!-- File upload section -->
+    <div style="margin: 1rem 0;">
+        <div class="file-input-wrapper" style="margin-bottom: 1rem;">
+            <input type="file" id="labelImageInput" accept="image/*" onchange="handleImageUpload(event)">
+            <label for="labelImageInput" class="file-input-label" style="text-align: center; padding: 1rem; border: 2px dashed var(--primary);">
+                📁 Upload or Take Photo
+            </label>
+        </div>
+    </div>
+    
+    <!-- Image preview -->
+    <div style="text-align: center;">
+        <div id="capturedImage" style="display: none; margin: 1rem 0;">
+            <img id="previewImage" style="max-width: 100%; max-height: 400px; border: 2px solid var(--border); border-radius: 0.5rem;">
+        </div>
+        
+        <!-- Simple rotation controls -->
+        <div id="rotationControls" style="display: none; margin: 1rem 0;">
+            <button type="button" onclick="rotateImage(-90)" style="margin: 0 0.5rem;">↺ Rotate Left</button>
+            <button type="button" onclick="rotateImage(90)" style="margin: 0 0.5rem;">↻ Rotate Right</button>
+        </div>
+    </div>
+    
+    <!-- Processing progress -->
+    <div id="ocrProgress" style="display: none; text-align: center; color: var(--primary); margin: 1rem 0; padding: 1rem; background: var(--card-bg); border-radius: 0.5rem;">
+        <div style="margin-bottom: 0.5rem;">Processing image...</div>
+        <div style="background: var(--dark-bg); border-radius: 1rem; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+            <div id="ocrProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <span id="ocrProgressPercent">0%</span>
+    </div>
+    
+    <!-- Extracted information display -->
+    <div id="extractedInfo" style="display: none; background: var(--card-bg); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; border: 1px solid var(--success);">
+        <h4 style="color: var(--success); margin-bottom: 0.5rem;">📋 Extracted Information:</h4>
+        <div style="margin-bottom: 0.5rem;"><strong>Name:</strong> <span id="extractedName">-</span></div>
+        <div><strong>MRN:</strong> <span id="extractedMRN">-</span></div>
+    </div>
+    
+    <!-- Debug info -->
+    <div id="debugInfo" style="display: none; background: var(--dark-bg); padding: 0.75rem; border-radius: 0.25rem; margin: 1rem 0; font-family: monospace; font-size: 0.8rem; max-height: 200px; overflow-y: auto;">
+        <div style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>Raw OCR Text:</strong></div>
+        <div id="debugText" style="color: var(--text-primary);"></div>
+    </div>
+    
+    <!-- Action buttons -->
+    <div class="nav-buttons">
+        <button id="processBtn" type="button" onclick="processCurrentImage()" style="display: none;">🔍 Process Image</button>
+        <button id="addExtractedBtn" type="button" onclick="addExtractedPatient()" style="display: none; background: linear-gradient(135deg, var(--success), #059669);">➕ Add Patient</button>
+        <button type="button" onclick="toggleDebugInfo()">🐛 Toggle Debug</button>
+        <button type="button" onclick="backToEntrySelection()">← Back</button>
+    </div>
+</div>
+		
+
+		
+
+
+
+
+
+
+
+		
+
+		
     </div>
 </div>
 
+		
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 
 
 
@@ -1418,16 +1913,25 @@ select,
         </div>
     </div>
 
-    <!-- Import Data Modal -->
-    <div id="importModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeImportModal()" style="float: right; font-size: 30px; cursor: pointer; color: var(--danger);">&times;</span>
-            <h2>Import Lab Data</h2>
-            <textarea id="importData" class="import-textarea" placeholder="Paste your vitals, labs, and meds data here..."></textarea>
-            <button class="button" onclick="processImportedData()">Process Data</button>
-        </div>
-    </div>
 
+
+	<!-- Import Data Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeImportModal()" style="float: right; font-size: 30px; cursor: pointer; color: var(--danger);">&times;</span>
+        <h2>Import Lab Data</h2>
+        <div class="nav-buttons" style="margin-bottom: 1rem;">
+            <button onclick="pasteFromClipboard()">📋⚡ Paste & Process</button>
+            <button onclick="processImportedData()">Process Data</button>
+        </div>
+        <textarea id="importData" class="import-textarea" placeholder="Paste your vitals, labs, and meds data here..."></textarea>
+    </div>
+</div>
+
+	
+
+
+	
     <!-- Table View Modal -->
     <div id="tableModal" class="modal">
         <div class="modal-content">
@@ -1498,7 +2002,10 @@ select,
         let fullOrdersText = '';
         let showFullOrders = false;
         let currentChart = null;
-	let currentSortColumn = ''; // Track current sort column
+		let currentSortColumn = ''; // Track current sort column
+		let violinRedStylingApplied = false; // Add this flag
+		let tempChecklistStates = {}; // Temporary checklist states
+
 
         // Master headers structure
         const MASTER_HEADERS = [
@@ -1541,17 +2048,17 @@ select,
 const helpContent = {
     'Problems': '<b>A/G</b><br><br>• DX<br> HPI <br> PMH:<br>',
     'ICS': '<ul><li><strong>Diagnostic imaging</strong></li><li><strong>Pathology + Microbiology</strong></li>  <li><strong>Overnight events</strong></li><li><strong>Latest consult notes</strong></li><li><strong>Procedures/Interventions</strong></li><li><strong>Non Primary: plan of care</strong></li></ul>',
-    'VIOLIN': '<ul><li><strong>Vitals (HR, SBP, DBP, MAP, Temp, RR, SPO2, O2 therapy, Vent: Mode, RR, Vt, PEEP, FIO2, PIP, ETCO2, Cardiac: CVP, PASP/PADP, PAMAP, CO, CI, SvO2, SV, SVI, SVR) </strong></li> <li><strong> Intake (Blood products, oral, IVF, meds, tube feeds) and Outputs (BM, ostomy, urostomy, drains/tubes, UOP, emesis, blood loss, dialysis), Fluid balance </strong></li> <li><strong> CBC and left shift, BMP, Ca, Mg, P, Tbil, Dbili, ALK, GGT, AST/ALT, PT, PTT, INR, pH, PO2, PCO2, Bicarb, Base excess, Lactate, Trops, Misc: albumin, prealbumin, Procal, UA, Urine studies</strong></li><li><strong>Replete electrolytes: electrolytes</strong></li></ul>',
+    'VIOLIN': '<ul><li><strong>Vitals (HR, SBP, DBP, MAP, Temp, RR, SPO2, O2 therapy, Vent: Mode, RR, Vt, PEEP, FIO2, PIP, ETCO2, Cardiac: CVP, PASP/PADP, PAMAP, CO, CI, SvO2, SV, SVI, SVR) </strong></li> <li><strong> Intake (Blood products, oral, IVF, meds, tube feeds) and Outputs (BM, ostomy, urostomy, drains/tubes, UOP, emesis, blood loss, dialysis), Fluid balance </strong></li> <li><strong> CBC and left shift, BMP, Ca, Mg, P, Tbil, Dbili, ALK, GGT, AST/ALT, PT, PTT, INR, pH, PO2, PCO2, Bicarb, Base excess, Lactate, Trops, Misc: albumin, prealbumin, Procal, UA, Urine studies</strong></li><li><strong>Replete electrolytes: electrolytes</strong></li></ul> <strong><li> Primary review of imaging: https://docs.google.com/document/d/12lbPO5K7jMPhruuoedT-piCaQSr9dja2OObAeMD2NWk/edit?tab=t.0 </li> </strong>',
 'ORDERS': '<ul><li><strong>Renew orders</strong></li><li><strong>Nutrition/fluids:</strong><ul><li><strong>Diet order/IVFs/tube feeds/TPN</strong></li></ul></li><li><strong>Pain medications:</strong></li><li><strong>LTD:</strong><ul><li><strong>Orders for any lines (central line, PICC, peripheral IVs, arterial line, chest tubes, drains, ports, NG tubes, respiratory support NC or facemask, ETT)</strong></li><li><strong>Inc. Types of trach and size ex. #8 cuffed subglottic tracheostomy, date placed</strong></li><li><strong>Record accurate outputs, suction/maintenance settings ex. CT -20 mmHg suction, quality of output</strong></li></ul></li><li><strong>Antibiotics/special medications/home meds:</strong><ul><li><strong>Note any IV or oral antibiotics or special therapies and the duration required.</strong></li><li><strong>Record doses of all pressors and sedation</strong></li></ul></li><li><strong>Anticoagulation/DVT prophylaxis:</strong><ul></ul></li><li><strong>Disposition</strong></li></ul>',   
 	'Priority': '',
     'CC': '<b>Chief Complaint/Level</b><br><br>• Primary reason for consultation<br>• Trauma level if applicable<br>• Brief description of problem',
-    'HPI': '<ul><li><strong>STORY-> FOCUS ON WHAT IS RELEVANT TO THE SURGICAL CONSULTATION. Do not take notes</strong><ul><li><strong>Onset</strong><ul><li><strong>Sequence of events and why presenting today, Preceding Events</strong></li><li><strong>Where coming from</strong></li><li><strong>What did they do there? Interventions, medications, studies, consultations</strong></li><li><strong>If they have tubes, drains or devices are they functioning? What has the outputs been?</strong></li></ul></li><li><strong>Palliating, provoking</strong></li><li><strong>Quality, radiation, severity</strong></li><li><strong>Prior episodes, evolution over time</strong></li></ul></li>',
-    'ROS': '<ul><li><strong>ROS</strong></li><li><strong>Constitutional: fever, chills, night sweats, weight loss, anorexia (last MEAL), travel, sick contacts, diet changes (traveling guy, sun overhead, get tired, vacation)</strong></li><li><strong>Neurologic: headache, dizziness, numbness, tingling, weakness, presyncope/syncope, tremors, convulsions/ seizures, unsteady gait (head)</strong></li><li><strong>Skin: Jaundice, rash, lesions, petechiae, itching (sunburnt)</strong></li><li><strong>ENMT: vision changes, hearing changes, ear or eye pain, sore throat, congestion, runny nose, hoarseness, dysphagia (eyes/ears)</strong></li><li><strong>Respiratory: shortness of breath, cough, wheezing (chest)</strong></li><li><strong>Cardiovascular: chest pain, palpitations (chest)</strong></li><li><strong>Gastrointestinal: nausea, vomiting, last BM and gas: change in bowel habits, abdominal pain, (stomach, colon)</strong></li><li><strong>Genitourinary: dysuria, urine retention (last void: ), hematuria, discharge (groin)</strong></li><li><strong>Musculoskeletal: pain, joint swelling, stiffness, myalgias, trauma</strong></li><li><strong>Psychiatric: anxiety, depression, restlessness, suicidal ideation</strong></li><li><strong>Heme/Lymph: bleeding tendency, bruising tendency, petechiae, swollen nodes</strong></li><li><strong>Menstrual: LMP, menopausal</strong></li></ul>',
+'HPI': '<ul><li><strong>Trauma</strong><ul><li><strong>Time of injury</strong></li><li><strong>Mechanism:</strong> MVC/MCC: Speed, Location of force transfer</li><li><strong>Seatbelt / helmet / airbags / protective devices</strong></li><li><strong>Post-injury course</strong></li><li><strong>Identified injuries</strong></li><li><strong>Therapies/interventions</strong></li></ul></li><li><strong>STORY → !!FOCUS ON WHAT IS RELEVANT TO THE SURGICAL CONSULTATION!! → WHAT IS THE DDX before seeing, and what possible surgical interventions or assistance may actually be required?</strong><ul><li><strong>Onset</strong><ul><li><strong>Sequence of events and why presenting today, Preceding Events</strong></li><li><strong>Where coming from</strong></li><li><strong>What did they do there? Interventions, medications, studies, consultations</strong></li><li><strong>If they have tubes, drains or devices are they functioning? What has the outputs been?</strong></li></ul></li><li><strong>Palliating, provoking</strong></li><li><strong>Quality, radiation, severity</strong></li><li><strong>Prior episodes, evolution over time</strong></li></ul></li></ul>',
+	'ROS': '<ul><li><strong>ROS</strong></li><li><strong>Constitutional: fever, chills, night sweats, weight loss, anorexia (last MEAL), travel, sick contacts, diet changes (traveling guy, sun overhead, get tired, vacation)</strong></li><li><strong>Neurologic: headache, dizziness, numbness, tingling, weakness, presyncope/syncope, tremors, convulsions/ seizures, unsteady gait (head)</strong></li><li><strong>Skin: Jaundice, rash, lesions, petechiae, itching (sunburnt)</strong></li><li><strong>ENMT: vision changes, hearing changes, ear or eye pain, sore throat, congestion, runny nose, hoarseness, dysphagia (eyes/ears)</strong></li><li><strong>Respiratory: shortness of breath, cough, wheezing (chest)</strong></li><li><strong>Cardiovascular: chest pain, palpitations (chest)</strong></li><li><strong>Gastrointestinal: nausea, vomiting, last BM and gas: change in bowel habits, abdominal pain, (stomach, colon)</strong></li><li><strong>Genitourinary: dysuria, urine retention (last void: ), hematuria, discharge (groin)</strong></li><li><strong>Musculoskeletal: pain, joint swelling, stiffness, myalgias, trauma</strong></li><li><strong>Psychiatric: anxiety, depression, restlessness, suicidal ideation</strong></li><li><strong>Heme/Lymph: bleeding tendency, bruising tendency, petechiae, swollen nodes</strong></li><li><strong>Menstrual: LMP, menopausal</strong></li></ul>',
     'PMH': '<b>Past Medical History</b><br><br>• Previous diagnoses<br>• Chronic conditions<br>• Previous surgeries',
     'Meds': '<b>Current Medications</b><br><br>• Home medications<br>• Current hospital medications<br>• Allergies',
     'All': '<b>Allergies</b><br><br>• Drug allergies<br>• Environmental allergies<br>• Type of reaction',
 	'PE': '<strong>Clinical Examination:</strong></div><ul><li><strong>Gen: Well appearing in no acute distress. Alert and oriented x3.</strong></li><li><strong>Neuro: strength and sensation intact BUE+BLE, CN II-XII grossly intact, EOMI</strong></li><li><strong>Resp: Non-labored breathing. No use of accessory muscles, no retractions.</strong></li><li><strong>CV: Hemodynamically stable</strong></li><li><strong>Pulse: palpable b/l DP/PT pulses, radial/ulnar pulses</strong></li><li><strong>Abd: soft, non tender, non distended, no voluntary or involuntary guarding, no rebound or jolt tenderness</strong></li><li><strong>Wound: Incisions clean, dry, intact.</strong></li><li><strong>LTD:</strong></li></ul><div><strong>Trauma Examination:</strong></div><ul><li><strong>Head: Normocephalic, atraumatic, no deformities, abrasions, tenderness, oropharynx clear, no blood in nares or ears, hearing intact</strong></li><li><strong>Neuro: GCS 15, Pupils equal and reactive to light bilaterally, extraocular muscles intact. gross motor and sensory intact in all 4 extremities.</strong></li><li><strong>Face: Atraumatic, no deformities, abrasions, tenderness</strong></li><li><strong>Chest: clear to auscultation bilaterally, non-tender, atraumatic, Pulling _ On incentive spirometer</strong></li><li><strong>CVS: RRR, hemodynamically stable</strong></li><li><strong>Abdomen: soft, non-tender, non-distended, no voluntary or involuntary guarding, no jolt or rebound tenderness</strong></li><li><strong>Pelvis: Stable</strong></li><li><strong>Upper Extremities: Atraumatic, no deformities, abrasions, tenderness, Bilateral radial pulses palpable, brisk capillary refill</strong></li><li><strong>Lower Extremities: Atraumatic, no deformities, abrasions, tenderness, brisk capillary refill, Bilateral femoral, DP, PT pulses palpable.</strong></li><li><strong>Spine: No obvious cervical, lumbar, or thoracic spine deformities, no step offs, no tenderness, trachea midline</strong></li><li><strong>Perineum: No gross blood in the perineum, rectal exam deferred, anal wink reflex intact</strong></li>',
-    'To do': '<ul><li><strong>Staff with attending or senior</strong><ul><li><strong>For trauma tell fellow on call</strong></li></ul></li><li><strong>Orders/notify consulting service:</strong><ul><li><strong>Diet</strong></li><li><strong>PSO- call bed board</strong></li><li><strong>home meds</strong></li><li><strong>DVT prophylaxis</strong></li><li><strong>Fluids</strong></li><li><strong>Floor orders</strong><ul><li><strong>Vital signs</strong></li><li><strong>Continuous pulse ox</strong></li><li><strong>Telemetry</strong></li></ul></li><li><strong>nursing orders:</strong><ul><li><strong>Peripheral IVs</strong></li><li><strong>Intake and output</strong></li><li><strong>Incentive spirometry</strong></li><li><strong>Ambulation/activity</strong></li><li><strong>Notify provider of abnormal vital signs: Systolic BP greater than 180 mmHg, Systolic BP less than 100 mmHg, Mean MAP less than 65 mmHg, HR greater than 110 beats/min, HR less than 50 beats/min, RR greater than 30 breaths/min, RR less than 10 breaths/min, Change in Oxygen Delivery Method</strong></li><li><strong>+ neuro checks, neurovascular checks</strong></li><li><strong>Foley</strong></li></ul></li><li><strong>Pain meds</strong></li><li><strong>Primary review of Imaging</strong></li><li><strong>+Consultations</strong></li><li><strong>Review STAT labs and 2 AM labs or 6 am for txp</strong></li><li><strong>+ OR</strong><ul><li><strong>NPO at midnight +/- IVF </strong></li><li><strong>Book+Call OR</strong></li><li><strong>Consent</strong></li><li><strong>Document H&P</strong></li><li><strong> Active type and screen within last three days +historical, 2U PRBCs on hold </strong></li><li><strong>Urine +- HCG, EKG, CXR, Coags</strong></li><li><strong>Comments for specific booking needs/instruments</strong></li></ul></li></ul></li><li><strong>Note - add final addendum if need be</strong></li><li><strong>Add to list</strong></li><li><strong>Sign out: with specific plans for dispo/care</strong></li><li><strong>Traumas: plan by injury, scan ex. CTH, CT CTL Spine, CT chest, abdomen, pelvis</strong></li></ul>',
+'To do': 'INTERACTIVE_CHECKLIST', 
 'Plan': '<h3>Nutrition/Fluids</h3><ul><li><strong>NPO considerations</strong><ul><li><strong>if NPO may need fluids</strong></li><li><strong>Speech and swallow consult for concern for dysphagia or older patients with cervical spine injury</strong></li></ul></li><li><strong>TPN/PPN</strong><ul><li><strong>Used when there are contraindications to EN</strong></li><li><strong>Critically Ill: Within 36 to 48 hours</strong></li><li><strong>Noncritically ill postoperative patients: After at least five days, usually at 14 days</strong></li><li><strong>Chronic malnutrition and anticipated prolonged bowel rest: Can be earlier than five to seven days</strong></li><li><strong>Daily order needs to be cosigned</strong></li><li><strong>Ensure fat emulsion is ordered</strong></li><li><strong>Need central access for TPN</strong></li><li><strong>Note rate</strong></li></ul></li><li><strong>TF</strong><ul><li><strong>Indications</strong></li><li><strong>Severe dysphagia (may need postpyloric access to reduce aspiration risk)</strong></li><li><strong>Persisted for at least two weeks and expected to persist for at least four weeks</strong></li><li><strong>Requirement of mechanical ventilation for 4 weeks or more (NG tube 4 weeks or more)</strong></li><li><strong>Note feeding rate versus goal rate</strong></li><li><strong>If via cortrack consider PEG</strong></li></ul></li><li><strong>Maintenance fluid rate: <a href="https://www.mdcalc.com/calc/72/maintenance-fluids-calculations" target="_blank">https://www.mdcalc.com/calc/72/maintenance-fluids-calculations</a></strong></li></ul><h3>Pain Management</h3><ul><li><strong>Convert all IV pain meds to oral when possible</strong></li><li><strong>Check MAR for frequency of requests for pain meds</strong></li><li><strong>Order standing non opioid pain meds for all patients on PRN opioids.</strong></li></ul><h3>LTD</h3><ul><li><strong>Make plan to remove drains/tubes.</strong></li><li><strong>Tracheostomy indicated for prolonged mechanical ventilation (&gt;10 days) unlikely to wean (max duration 3 weeks on ETT)</strong></li></ul><h3>Antibiotics/Special Meds</h3><ul><li><strong>Order Vancomycin/medication trough levels</strong></li><li><strong>Find out end date of antibiotics, wean off pressors and sedation. Otherwise set up long term antibiotic IV access if needed</strong></li><li><strong>Ensure all home meds are restarted if appropriate</strong></li></ul><h3>Anticoagulation</h3><ul><li><strong>Check/start dvt prophylaxis or home AC ex. aspirin/plavix when appropriate</strong></li><li><strong>.dvt_url for trauma patients</strong></li></ul><h3>Discharge</h3><ul><li><strong>PT/OT consult for all elderly debilitated patients postoperatively</strong></li><li><strong>Text SW/IDT daily with update for all primary patients</strong></li><li><strong>Special orders</strong><ul><li><strong>VNS: help with dressing changes, wound vacs, home medication review, vital signs monitoring</strong></li><li><strong>Home wound vac services</strong></li><li><strong>Home PT/OT</strong></li><li><strong>Home infusion services</strong></li><li><strong>Transportation/Medical</strong></li></ul></li></ul><h3>Adjuncts</h3><ul><li><strong>Urine retention-&gt; Foley, bladder scan, flomax</strong></li><li><strong>Constipation-&gt; senna, colace, miralax, suppository, enema</strong></li><li><strong>Nausea/vomiting-&gt; zofran, reglan, compazine, NGT</strong></li><li><strong>CXRs/KUBs</strong></li></ul>', 
 	
 };
@@ -1592,23 +2099,43 @@ const helpContent = {
             }
         }
 
-        function loadFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem('ultimatePatientList');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (parsed.patients && Array.isArray(parsed.patients)) {
-                        patientData = parsed.patients;
-                        displayRows();
-                        populateColumnSelector();
-                        populateColumnSelect();
-                        updateCensus();
-                    }
-                }
-            } catch (e) {
-                console.error('Error loading from localStorage:', e);
+
+
+
+
+
+
+
+
+
+		function loadFromLocalStorage() {
+    try {
+        const saved = localStorage.getItem('ultimatePatientList');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.patients && Array.isArray(parsed.patients)) {
+                patientData = parsed.patients;
+                displayRows();
+                populateColumnSelector();
+                populateColumnSelect();
+                updateCensus();
             }
         }
+        
+        // LOAD CHECKLIST STATES
+        const savedChecklists = localStorage.getItem('checklistStates');
+        if (savedChecklists) {
+            tempChecklistStates = JSON.parse(savedChecklists);
+        }
+    } catch (e) {
+        console.error('Error loading from localStorage:', e);
+    }
+}
+
+
+
+
+		
 
 
 
@@ -1784,7 +2311,225 @@ function exportJSON() {
 
 
 
-      function displayRows() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// Function to calculate checklist completion status
+function getChecklistStatus(patient, patientIndex) {
+    const patientKey = `${patientIndex}_${patient.Name || 'unnamed'}`;
+    const isTrauma = patient.Type !== 'Consult';
+    
+    // Define item counts for each checklist type
+    const traumaItemCount = 17; // Based on your traumaItems array
+    const consultItemCount = 11; // Based on your consultItems array
+    const totalItems = isTrauma ? traumaItemCount : consultItemCount;
+    
+    // Check if patient has any checklist state
+    if (!tempChecklistStates[patientKey]) {
+        return { completed: 0, total: totalItems, percentage: 0 };
+    }
+    
+    const states = tempChecklistStates[patientKey];
+    const completed = Object.values(states).filter(Boolean).length;
+    const percentage = Math.round((completed / totalItems) * 100);
+    
+    return { completed, total: totalItems, percentage };
+}
+
+
+
+
+
+
+
+
+
+
+
+		function getPriorityStatus(patient) {
+    const priority = patient.Priority || '';
+    
+    if (!priority.trim()) {
+        return { color: 'var(--card-bg)', title: 'No priority set' }; // Gray
+    }
+    
+    const priorityNum = parseInt(priority);
+    if (!isNaN(priorityNum)) {
+        if (priorityNum === 0) {
+            return { color: '#10b981', title: `Priority ${priorityNum} - Complete` }; // Green
+        } else if (priorityNum === 1) {
+            return { color: '#ef4444', title: `Priority ${priorityNum} - Urgent` }; // Red
+        } else if (priorityNum === 2) {
+            return { color: '#f97316', title: `Priority ${priorityNum} - High` }; // Orange
+        } else if (priorityNum === 3) {
+            return { color: '#f59e0b', title: `Priority ${priorityNum} - Medium-High` }; // Amber
+        } else if (priorityNum === 4) {
+            return { color: '#eab308', title: `Priority ${priorityNum} - Medium` }; // Yellow
+        } else if (priorityNum === 5) {
+            return { color: '#84cc16', title: `Priority ${priorityNum} - Medium-Low` }; // Lime
+        } else if (priorityNum === 6) {
+            return { color: '#22c55e', title: `Priority ${priorityNum} - Low-Medium` }; // Light Green
+        } else if (priorityNum === 7) {
+            return { color: '#06b6d4', title: `Priority ${priorityNum} - Low` }; // Cyan
+        } else if (priorityNum === 8) {
+            return { color: '#3b82f6', title: `Priority ${priorityNum} - Very Low` }; // Blue
+        } else if (priorityNum === 9) {
+            return { color: '#8b5cf6', title: `Priority ${priorityNum} - Minimal` }; // Purple
+        } else if (priorityNum === 10) {
+            return { color: '#a855f7', title: `Priority ${priorityNum} - Lowest` }; // Violet
+        } else if (priorityNum > 10) {
+            return { color: 'var(--card-bg)', title: `Priority ${priorityNum} - Out of range` }; // Gray
+        }
+    }
+    
+    // Text-based priority fallback
+    const priorityLower = priority.toLowerCase();
+    if (priorityLower.includes('done') || priorityLower.includes('complete')) {
+        return { color: '#10b981', title: `${priority} - Complete` }; // Green
+    } else if (priorityLower.includes('urgent') || priorityLower.includes('stat')) {
+        return { color: '#ef4444', title: `${priority} - Urgent` }; // Red
+    } else if (priorityLower.includes('high')) {
+        return { color: '#f97316', title: `${priority} - High` }; // Orange
+    } else if (priorityLower.includes('medium')) {
+        return { color: '#f59e0b', title: `${priority} - Medium` }; // Amber
+    } else if (priorityLower.includes('low')) {
+        return { color: '#22c55e', title: `${priority} - Low` }; // Light Green
+    }
+    
+    return { color: 'var(--card-bg)', title: `${priority}` }; // Default gray
+}
+
+
+
+
+
+
+
+
+
+
+
+function generateStatusIndicator(patient, index) {
+    // Check if this should be grey (not a consult and no priority)
+    const consultFields = ['CC', 'HPI', 'ROS', 'PMH', 'Meds', 'All', 'Surg hx', 'FSH', 'PE'];
+    const hasConsultData = consultFields.some(field => patient[field] && patient[field].trim());
+    const hasPriority = patient.Priority && patient.Priority.trim();
+    
+    // If no consult data and no priority, show grey
+    if (!hasConsultData && !hasPriority) {
+        return `
+            <div class="status-dot" 
+                 style="background: var(--card-bg); border: none;" 
+                 title="No consult data or priority assigned">
+            </div>`;
+    }
+    
+    // STATUS IS NOW BASED PURELY ON PRIORITY NUMBER
+    const priority = patient.Priority || '';
+    const priorityNum = parseInt(priority);
+    
+    let color = 'var(--card-bg)'; // Default grey
+    let title = 'No priority set';
+    
+   if (!isNaN(priorityNum)) {
+    if (priorityNum === 0) {
+        color = '#00ff41'; // Bright neon green - Complete
+        title = `Priority ${priorityNum} - Complete`;
+    } else if (priorityNum === 1) {
+        color = '#ff0040'; // Bright neon red - Urgent  
+        title = `Priority ${priorityNum} - Urgent`;
+    } else if (priorityNum === 2) {
+        color = '#ff6600'; // Bright neon orange - High
+        title = `Priority ${priorityNum} - High`;
+    } else if (priorityNum === 3) {
+        color = '#ffaa00'; // Bright neon amber - Medium-High
+        title = `Priority ${priorityNum} - Medium-High`;
+    } else if (priorityNum === 4) {
+        color = '#ffff00'; // Bright neon yellow - Medium
+        title = `Priority ${priorityNum} - Medium`;
+    } else if (priorityNum === 5) {
+        color = '#ccff00'; // Bright neon lime - Medium-Low
+        title = `Priority ${priorityNum} - Medium-Low`;
+    } else if (priorityNum === 6) {
+        color = '#66ff00'; // Bright neon chartreuse - Low-Medium
+        title = `Priority ${priorityNum} - Low-Medium`;
+    } else if (priorityNum === 7) {
+        color = '#00ffff'; // Bright neon cyan - Low
+        title = `Priority ${priorityNum} - Low`;
+    } else if (priorityNum === 8) {
+        color = '#0080ff'; // Bright neon blue - Very Low
+        title = `Priority ${priorityNum} - Very Low`;
+    } else if (priorityNum === 9) {
+        color = '#8000ff'; // Bright neon purple - Minimal
+        title = `Priority ${priorityNum} - Minimal`;
+    } else if (priorityNum === 10) {
+        color = '#ff00ff'; // Bright neon magenta - Lowest
+        title = `Priority ${priorityNum} - Lowest`;
+    } else {
+        color = 'var(--card-bg)'; // Dark grey for out of range
+        title = `Priority ${priorityNum} - Out of range`;
+    }
+} else if (priority.trim()) {
+    // Text-based priority fallback with neon colors
+    const priorityLower = priority.toLowerCase();
+    if (priorityLower.includes('done') || priorityLower.includes('complete')) {
+        color = '#00ff41'; // Bright neon green
+        title = `${priority} - Complete`;
+    } else if (priorityLower.includes('urgent') || priorityLower.includes('stat')) {
+        color = '#ff0040'; // Bright neon red
+        title = `${priority} - Urgent`;
+    } else if (priorityLower.includes('high')) {
+        color = '#ff6600'; // Bright neon orange
+        title = `${priority} - High`;
+    } else if (priorityLower.includes('medium')) {
+        color = '#ffaa00'; // Bright neon amber
+        title = `${priority} - Medium`;
+    } else if (priorityLower.includes('low')) {
+        color = '#00ffff'; // Bright neon cyan
+        title = `${priority} - Low`;
+    } else {
+        color = 'var(--card-bg)'; // Medium grey for unrecognized text
+        title = `${priority}`;
+    }
+}
+    
+    return `
+        <div class="status-dot" 
+             style="background: ${color};" 
+             title="${title}">
+        </div>`;
+}
+		
+		
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+
+ function displayRows() {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
     
@@ -1796,51 +2541,95 @@ function exportJSON() {
         const contentContainer = document.createElement('div');
         contentContainer.style.width = '100%';
         contentContainer.style.display = 'flex';
-        contentContainer.style.alignItems = 'center';
+        contentContainer.style.flexDirection = 'column';
         contentContainer.style.position = 'relative';
-	contentContainer.style.paddingRight = '3rem'; // Reserve space for button
-
+        contentContainer.style.paddingRight = '2.5rem'; // Space for status dot
         
-        // Display the selected columns vertically
-        const columnsDiv = document.createElement('div');
-        columnsDiv.style.flex = '1';
+		  // Create button containing first 3 rows
+		const firstThreeButton = document.createElement('button');
+		firstThreeButton.className = 'first-three-btn';
+		firstThreeButton.style.width = 'fit-content';
+		firstThreeButton.style.textAlign = 'left';
+		firstThreeButton.style.background = 'transparent';
+		firstThreeButton.style.border = '1px solid transparent';
+		firstThreeButton.style.borderRadius = '0.25rem';
+		firstThreeButton.style.padding = '0.25rem 0.5rem';
+		firstThreeButton.style.cursor = 'pointer';
+		firstThreeButton.style.color = 'inherit';
+		firstThreeButton.style.alignSelf = 'flex-start';
+		firstThreeButton.style.display = 'flex';           // ← Add this
+		firstThreeButton.style.flexDirection = 'column';   // ← Add this
+		firstThreeButton.style.whiteSpace = 'normal';      // ← Add this
         
-        selectedColumns.forEach((colIndex, idx) => {
+        // Store the column data on the button element for the reset function
+        firstThreeButton.patientData = patient;
+        firstThreeButton.columnIndexes = selectedColumns.slice(0, 3);
+        firstThreeButton.colorClasses = colors;
+        
+        firstThreeButton.onclick = (e) => {
+            e.stopPropagation();
+            copyPatientInfoImproved(firstThreeButton);
+        };
+        
+        // Add first 3 selected columns to the button (displayed as rows)
+        const firstThreeColumns = selectedColumns.slice(0, 3);
+        firstThreeColumns.forEach((colIndex, idx) => {
             const header = MASTER_HEADERS[colIndex];
             const value = patient[header] || '';
             if (value) {
                 const span = document.createElement('span');
                 span.className = colors[idx % colors.length];
                 span.textContent = value;
-                span.style.display = 'block';
-                columnsDiv.appendChild(span);
+                span.style.display = 'block'; // Each on its own row
+                firstThreeButton.appendChild(span);
             }
         });
         
-        contentContainer.appendChild(columnsDiv);
+        contentContainer.appendChild(firstThreeButton);
         
-        // Add clipboard button
-        const clipboardBtn = document.createElement('button');
-        clipboardBtn.className = 'clipboard-btn';
-        clipboardBtn.innerHTML = '📋';
-        clipboardBtn.title = 'Copy patient info';
-        clipboardBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent row click
-            copyPatientInfo(patient, clipboardBtn);
+        // Add remaining columns as regular text rows (not in button)
+        if (selectedColumns.length > 3) {
+            const remainingColumns = selectedColumns.slice(3);
+            remainingColumns.forEach((colIndex, idx) => {
+                const header = MASTER_HEADERS[colIndex];
+                const value = patient[header] || '';
+                if (value) {
+                    const span = document.createElement('span');
+                    span.className = colors[(idx + 3) % colors.length];
+                    span.textContent = value;
+                    span.style.display = 'block'; // Each on its own row
+                    span.style.marginLeft = '0.5rem'; // Slight indent to show they're separate
+                    contentContainer.appendChild(span);
+                }
+            });
+        }
+        
+        // Add status dot on the RIGHT side
+        const statusDot = document.createElement('div');
+        statusDot.innerHTML = generateStatusIndicator(patient, index);
+        statusDot.style.position = 'absolute';
+        statusDot.style.right = '0.50rem';
+        statusDot.style.top = '50%';
+		statusDot.style.transform = 'translateY(-50%)';
+        statusDot.style.cursor = 'pointer';
+        statusDot.style.zIndex = '10';
+        statusDot.title = 'Click to change status';
+        statusDot.onclick = (e) => {
+            e.stopPropagation();
+            showStatusSelector(patient, index, statusDot);
         };
+        contentContainer.appendChild(statusDot);
         
-        contentContainer.appendChild(clipboardBtn);
         listItem.appendChild(contentContainer);
         
-        // Make the row clickable (but not the button)
-        columnsDiv.onclick = () => showDetails(index);
+        // Make the entire row clickable for details
+        listItem.onclick = () => showDetails(index);
         
         rowList.appendChild(listItem);
     });
     
     updateCensus();
 }
-
 
 
 
@@ -2106,235 +2895,106 @@ function exportJSON() {
 
                     
 case 'chartcheck':
-    // Show chart check fields in split layout
+    // Initialize chart check tab state if not exists
+    if (typeof window.chartCheckCurrentTab === 'undefined') {
+        window.chartCheckCurrentTab = 0;
+    }
+    
+    // Tab configuration
+    const chartCheckTabs = [
+        { title: 'Basic Info', fields: ['Name', 'RM', 'MRN', 'Att'] },
+        { title: 'Clinical', fields: ['Problems', 'ICS'] },
+        { title: 'VIOLIN', fields: ['VIOLIN'] },
+        { title: 'Orders', fields: ['ORDERS', 'Priority'] }
+    ];
+    
+    // Create main container
     const chartCheckContainer = document.createElement('div');
     chartCheckContainer.className = 'chart-check-layout';
     
+    // Create left panel with tabs
     const leftPanel = document.createElement('div');
     leftPanel.className = 'chart-check-left';
     
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'chart-check-tabs';
+    
+    // Create tab navigation
+    const tabNav = document.createElement('div');
+    tabNav.className = 'chart-check-tab-nav';
+    
+    const prevButton = document.createElement('button');
+    prevButton.className = 'chart-check-tab-arrow';
+    prevButton.innerHTML = '&lt;';
+    prevButton.onclick = () => navigateChartCheckTab(-1);
+    
+    const nextButton = document.createElement('button');
+    nextButton.className = 'chart-check-tab-arrow';
+    nextButton.innerHTML = '&gt;';
+    nextButton.onclick = () => navigateChartCheckTab(1);
+    
+    const tabTitle = document.createElement('div');
+    tabTitle.className = 'chart-check-tab-title';
+    tabTitle.id = 'chartCheckTabTitle';
+    
+    const tabCounter = document.createElement('div');
+    tabCounter.className = 'chart-check-tab-counter';
+    tabCounter.id = 'chartCheckTabCounter';
+    
+    tabNav.appendChild(prevButton);
+    tabNav.appendChild(tabTitle);
+    tabNav.appendChild(tabCounter);
+    tabNav.appendChild(nextButton);
+    
+    // Create tab content area
+    const tabContent = document.createElement('div');
+    tabContent.className = 'chart-check-tab-content';
+    tabContent.id = 'chartCheckTabContent';
+    
+    tabsContainer.appendChild(tabNav);
+    tabsContainer.appendChild(tabContent);
+    leftPanel.appendChild(tabsContainer);
+    
+    // Create right panel (Plan)
     const rightPanel = document.createElement('div');
     rightPanel.className = 'chart-check-right';
     rightPanel.innerHTML = `
-    <h3>Plan<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('Plan')">?</button></h3>
-    <textarea id="field_To_do" placeholder="Enter patient plan...">${patient['To do'] || ''}</textarea>
-`;
-    
-    fieldsToShow = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
-    
-    // Create fields for left panel
-    fieldsToShow.forEach(header => {
-        // Skip 'To do' as it's in the right panel
-        if (header === 'To do') return;
-        
-
-
-
-const label = document.createElement('label');
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
-if (helpContent[header]) {
-    label.innerHTML = `${header}<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('${header}')">?</button>`;
-} else {
-    label.textContent = header;
-}
-
-
-
-
-        
-        // Add buttons for specific fields
-        if (header === 'Problems') {
-            const podBtn = document.createElement('button');
-            podBtn.textContent = 'Update POD';
-            podBtn.style.marginLeft = '10px';
-            podBtn.style.padding = '0.3rem 0.6rem';
-            podBtn.style.fontSize = '0.8rem';
-            podBtn.onclick = function(e) {
-                e.preventDefault();
-                updatePOD();
-            };
-            label.appendChild(podBtn);
-        } else if (header === 'VIOLIN') {
-            // Add warning messages before VIOLIN field
-            const warningDiv = document.createElement('div');
-            warningDiv.id = 'warningMessages';
-            warningDiv.className = 'warning-messages hidden';
-            leftPanel.appendChild(warningDiv);
-            
-            const btnContainer = document.createElement('span');
-            btnContainer.style.marginLeft = '10px';
-            
-            const importBtn = document.createElement('button');
-            importBtn.textContent = 'Import Data';
-            importBtn.style.margin = '0 2px';
-            importBtn.style.padding = '0.3rem 0.6rem';
-            importBtn.style.fontSize = '0.8rem';
-            importBtn.onclick = function(e) {
-                e.preventDefault();
-                showImportModal();
-            };
-            
-            const tableBtn = document.createElement('button');
-            tableBtn.textContent = 'Show Table';
-            tableBtn.style.margin = '0 2px';
-            tableBtn.style.padding = '0.3rem 0.6rem';
-            tableBtn.style.fontSize = '0.8rem';
-            tableBtn.onclick = function(e) {
-                e.preventDefault();
-                showTableView();
-            };
-            
-            const graphBtn = document.createElement('button');
-            graphBtn.textContent = 'Show Vitals Table';
-            graphBtn.style.margin = '0 2px';
-            graphBtn.style.padding = '0.3rem 0.6rem';
-            graphBtn.style.fontSize = '0.8rem';
-            graphBtn.onclick = function(e) {
-                e.preventDefault();
-                showVitalsTable();
-            };
-            
-            btnContainer.appendChild(importBtn);
-            btnContainer.appendChild(tableBtn);
-            btnContainer.appendChild(graphBtn);
-            label.appendChild(btnContainer);
-        } else if (header === 'ORDERS') {
-            const btnContainer = document.createElement('span');
-            btnContainer.style.marginLeft = '10px';
-            
-            const abbrevBtn = document.createElement('button');
-            abbrevBtn.textContent = 'Abbrev Orders';
-            abbrevBtn.style.margin = '0 2px';
-            abbrevBtn.style.padding = '0.3rem 0.6rem';
-            abbrevBtn.style.fontSize = '0.8rem';
-            abbrevBtn.onclick = function(e) {
-                e.preventDefault();
-                updateOrders();
-            };
-            
-            const fullBtn = document.createElement('button');
-            fullBtn.textContent = 'Full Orders';
-            fullBtn.style.margin = '0 2px';
-            fullBtn.style.padding = '0.3rem 0.6rem';
-            fullBtn.style.fontSize = '0.8rem';
-            fullBtn.onclick = function(e) {
-                e.preventDefault();
-                toggleOrdersView();
-            };
-            
-            btnContainer.appendChild(abbrevBtn);
-            btnContainer.appendChild(fullBtn);
-            label.appendChild(btnContainer);
-        }
-        
-
-
-
-		let input;
-if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
-    input = document.createElement('input');
-    input.type = 'text';
-} else if (header === 'VIOLIN') {
-    // Simple contentEditable div for VIOLIN - no automatic formatting
-    input = document.createElement('div');
-    input.contentEditable = true;
-    input.className = 'violin-field';
-    input.style.border = '1px solid var(--border)';
-    input.style.padding = '0.75rem';
-    input.style.borderRadius = '0.25rem';
-    input.style.background = 'var(--card-bg)';
-    input.style.color = 'var(--text-primary)';
-    input.style.whiteSpace = 'pre-wrap';
-    input.style.overflowY = 'auto';
-    input.style.minHeight = '40px';
-    input.style.outline = 'none';
-} else {
-    input = document.createElement('textarea');
-}
-
-input.id = `field_${header.replace(/\s+/g, '_')}`;
-
-// Fix: Handle contentEditable vs input elements differently
-if (input.contentEditable === 'true') {
-    input.textContent = patient[header] || '';
-} else {
-    input.value = patient[header] || '';
-}
-
-input.addEventListener('input', function() {
-    // Fix: Use appropriate property based on element type
-    const currentValue = this.contentEditable === 'true' ? 
-        (this.textContent || this.innerText) : this.value;
-    
-    patient[header] = currentValue;
-    
-    if (header === 'Name') {
-        document.getElementById('stickyTextContainer').textContent = currentValue || 'Unnamed Patient';
-    }
-    
-    saveToLocalStorage();
-    
-
-});
-
-		
-        leftPanel.appendChild(label);
-        
-        // Add full orders display above ORDERS field
-        if (header === 'ORDERS') {
-            const fullOrdersDiv = document.createElement('div');
-            fullOrdersDiv.id = 'fullOrdersDisplay';
-            fullOrdersDiv.className = 'orders-section hidden';
-            leftPanel.appendChild(fullOrdersDiv);
-        }
-        
-        leftPanel.appendChild(input);
-        
- 
-
-		
-		
-    });
+        <h3>Plan<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('Plan')">?</button></h3>
+        <textarea id="field_To_do" placeholder="Enter patient plan...">${patient['To do'] || ''}</textarea>
+    `;
     
     // Set up To Do textarea event listener
-    const todoTextarea = rightPanel.querySelector('#field_To_do');
-    todoTextarea.addEventListener('input', function() {
-        patient['To do'] = this.value;
-        saveToLocalStorage();
-    });
+    setTimeout(() => {
+        const todoTextarea = rightPanel.querySelector('#field_To_do');
+        if (todoTextarea) {
+            todoTextarea.addEventListener('input', function() {
+                patient['To do'] = this.value;
+                saveToLocalStorage();
+            });
+        }
+    }, 0);
     
-   
-
-
-  chartCheckContainer.appendChild(leftPanel);
-                    chartCheckContainer.appendChild(rightPanel);
-                    form.appendChild(chartCheckContainer);
-                    
-                    // Load lab data if stored
-                    if (patient.ImportedData) {
-                        lastImportedData = patient.ImportedData;
-                    }
-                    if (patient.LabData) {
-                        try {
-                            labData = JSON.parse(patient.LabData);
-                        } catch (e) {
-                            labData = {};
-                        }
-                    }
-                    return; // Exit early to prevent duplicate field creation
+    // Assemble layout
+    chartCheckContainer.appendChild(leftPanel);
+    chartCheckContainer.appendChild(rightPanel);
+    form.appendChild(chartCheckContainer);
+    
+    // Load lab data if stored
+    if (patient.ImportedData) {
+        lastImportedData = patient.ImportedData;
+    }
+    if (patient.LabData) {
+        try {
+            labData = JSON.parse(patient.LabData);
+        } catch (e) {
+            labData = {};
+        }
+    }
+    
+    // Initialize the current tab
+    renderChartCheckTab(chartCheckTabs);
+    
+    return; // Exit early to prevent duplicate field creation
 
 
 
@@ -2391,53 +3051,49 @@ if (currentViewMode === 'consult' && CONSULT_MODE_LABELS[header]) {
                             updatePOD();
                         };
                         label.appendChild(podBtn);
-                    } else if (header === 'VIOLIN') {
-                        // Add warning messages before VIOLIN field
-                        const warningDiv = document.createElement('div');
-                        warningDiv.id = 'warningMessages';
-                        warningDiv.className = 'warning-messages hidden';
-                        form.appendChild(warningDiv);
-                        
-                        const btnContainer = document.createElement('span');
-                        btnContainer.style.marginLeft = '10px';
-                        
-                        const importBtn = document.createElement('button');
-                        importBtn.textContent = 'Import Data';
-                        importBtn.style.margin = '0 2px';
-                        importBtn.style.padding = '0.3rem 0.6rem';
-                        importBtn.style.fontSize = '0.8rem';
-                        importBtn.onclick = function(e) {
-                            e.preventDefault();
-                            showImportModal();
-                        };
-                        
-                        const tableBtn = document.createElement('button');
-                        tableBtn.textContent = 'Show Table';
-                        tableBtn.style.margin = '0 2px';
-                        tableBtn.style.padding = '0.3rem 0.6rem';
-                        tableBtn.style.fontSize = '0.8rem';
-                        tableBtn.onclick = function(e) {
-                            e.preventDefault();
-                            showTableView();
-                        };
-                        
-                           const graphBtn = document.createElement('button');
-                        graphBtn.textContent = 'Show Vitals Table';
-                        graphBtn.style.margin = '0 2px';
-                        graphBtn.style.padding = '0.3rem 0.6rem';
-                        graphBtn.style.fontSize = '0.8rem';
-                        graphBtn.onclick = function(e) {
-                            e.preventDefault();
-                            showVitalsTable();
-                        };
-
-
-                        
-                        btnContainer.appendChild(importBtn);
-                        btnContainer.appendChild(tableBtn);
-                        btnContainer.appendChild(graphBtn);
-                        label.appendChild(btnContainer);
-                    } else if (header === 'ORDERS') {
+                    
+						
+					
+					} else if (header === 'VIOLIN') {
+    // Add warning messages before VIOLIN field
+    const warningDiv = document.createElement('div');
+    warningDiv.id = 'warningMessages';
+    warningDiv.className = 'warning-messages hidden';
+    leftPanel.appendChild(warningDiv);
+    
+    // Create button container with special class for mobile styling
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'violin-button-container';
+    btnContainer.style.marginLeft = '10px';
+    
+    const importBtn = document.createElement('button');
+    importBtn.textContent = '⬇️ Import';
+    importBtn.onclick = function(e) {
+        e.preventDefault();
+        showImportModal();
+    };
+    
+    const tableBtn = document.createElement('button');
+    tableBtn.textContent = '📊 Labs';
+    tableBtn.onclick = function(e) {
+        e.preventDefault();
+        showTableView();
+    };
+    
+    const graphBtn = document.createElement('button');
+    graphBtn.textContent = '📊 Vitals';
+    graphBtn.onclick = function(e) {
+        e.preventDefault();
+        showVitalsTable();
+    };
+    
+    btnContainer.appendChild(importBtn);
+    btnContainer.appendChild(tableBtn);
+    btnContainer.appendChild(graphBtn);
+    label.appendChild(btnContainer);
+}
+					
+					else if (header === 'ORDERS') {
                         const btnContainer = document.createElement('span');
                         btnContainer.style.marginLeft = '10px';
                         
@@ -2470,8 +3126,10 @@ if (currentViewMode === 'consult' && CONSULT_MODE_LABELS[header]) {
 let input;
 if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
     input = document.createElement('input');
-} else if (header === 'VIOLIN') {
+}
+else if (header === 'VIOLIN') {
     input = document.createElement('textarea');
+    // Remove contentEditable and inline styles - let CSS handle it
 }
 else {
     input = document.createElement('textarea');
@@ -2486,6 +3144,36 @@ else {
                 
                 input.id = `field_${header.replace(/\s+/g, '_')}`;
 
+
+// Set initial content
+if (header === 'VIOLIN') {
+    const content = patient[header] || '';
+    // If content has HTML spans, use innerHTML to preserve red formatting
+    if (content.includes('<span')) {
+        input.innerHTML = content;
+    } else {
+        input.textContent = content;
+    }
+} else {
+    input.value = patient[header] || '';
+}
+
+
+
+				
+
+input.addEventListener('input', function() {
+    patient[header] = this.value;
+    
+    if (header === 'Name') {
+        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+    }
+    saveToLocalStorage();
+    
+    if (input.tagName === 'TEXTAREA') {
+        autoResizeTextarea(this);
+    }
+});
 
 
 
@@ -2569,15 +3257,18 @@ else {
             document.getElementById('pasteTextArea').focus();
         }
 
-        function backToEntrySelection() {
+  function backToEntrySelection() {
     document.getElementById('entryTypeSelection').style.display = 'block';
     document.getElementById('addEntryForm').style.display = 'none';
     document.getElementById('pasteEntrySection').style.display = 'none';
     document.getElementById('updatePatientsSection').style.display = 'none';
+    document.getElementById('cameraEntrySection').style.display = 'none';
     document.getElementById('pasteTextArea').value = '';
     document.getElementById('updateListDataModal').value = '';
+    
+    // Reset camera UI
+    resetCameraUI();
 }
-
 
 
 
@@ -2633,8 +3324,8 @@ else {
     typeInput.setAttribute('data-type', 'true');
     newEntryFields.appendChild(typeInput);
 
-    // Define the fields you want to show
-    const fieldsToShow = ['RM', 'Name', 'MRN', 'Problems', 'To do'];
+   // Define the fields you want to show - UPDATED ORDER
+	const fieldsToShow = ['Name', 'RM', 'MRN', 'A/G', 'CC', 'HPI', 'To do', 'Priority'];
     
     fieldsToShow.forEach(header => {
         const label = document.createElement('label');
@@ -2986,31 +3677,47 @@ const CONSULT_MODE_LABELS = {
             }
         }
 
-        function convertEntryType() {
-            const patient = patientData[currentPatientIndex];
-            
-            if (patient.Type === 'Consult') {
-                if (confirm('Convert this consult to a regular patient?')) {
-                    patient.Type = 'Patient';
-                    if (!patient.Problems && patient.HPI) {
-                        patient.Problems = patient.HPI;
-                    }
-                    saveToLocalStorage();
-                    switchView('consult');
-                    displayRows();
-                }
-            } else {
-                if (confirm('Convert this patient to a consult?')) {
-                    patient.Type = 'Consult';
-                    if (!patient.HPI && patient.Problems) {
-                        patient.HPI = patient.Problems;
-                    }
-                    saveToLocalStorage();
-                    switchView('consult');
-                    displayRows();
-                }
+
+
+
+
+
+
+
+		function convertEntryType() {
+    const patient = patientData[currentPatientIndex];
+    
+    if (patient.Type === 'Consult') {
+        if (confirm('Convert this consult to a regular patient?')) {
+            patient.Type = 'Patient';
+            if (!patient.Problems && patient.HPI) {
+                patient.Problems = patient.HPI;
             }
+            saveToLocalStorage();
+            switchView('consult');
+            displayRows();
         }
+    } else {
+        if (confirm('Convert this patient to a consult?')) {
+            patient.Type = 'Consult';
+            if (!patient.HPI && patient.Problems) {
+                patient.HPI = patient.Problems;
+            }
+            
+            // AUTO-ASSIGN PRIORITY 1 WHEN CONVERTING TO CONSULT
+            const consultFields = ['CC', 'HPI', 'ROS', 'PMH', 'Meds', 'All', 'Surg hx', 'FSH', 'PE'];
+            const hasConsultData = consultFields.some(field => patient[field] && patient[field].trim());
+            if (hasConsultData && (!patient.Priority || patient.Priority.trim() === '')) {
+                patient.Priority = '1'; // Set to urgent/red when converting to consult with data
+            }
+            
+            saveToLocalStorage();
+            switchView('consult');
+            displayRows();
+        }
+    }
+}
+		
 
         function exportToRTF(type) {
             if (currentPatientIndex === -1) return;
@@ -3237,12 +3944,14 @@ function updatePOD() {
 
 
 
-
 function showImportModal() {
     document.getElementById('importModal').style.display = 'block';
     
     // Always clear the textarea - don't load any existing data
     document.getElementById('importData').value = '';
+    
+    // Reset the paste button to its original state
+    resetPasteButton();
     
     // Also clear any existing warnings when opening the import modal
     const warningDiv = document.getElementById('warningMessages');
@@ -3251,7 +3960,6 @@ function showImportModal() {
         warningDiv.classList.add('hidden');
     }
 }
-
 
 
         function closeImportModal() {
@@ -3276,7 +3984,7 @@ function showImportModal() {
 
 
 
- // Replace the existing processImportedData function (around line 3450) with this:
+// 1. REPLACE the existing processImportedData function (around line 3450) with this:
 
 function processImportedData() {
     const importText = document.getElementById('importData').value;
@@ -3292,18 +4000,15 @@ function processImportedData() {
     const fishbone = generateFishbone(labData);
     const warnings = generateWarnings(labData);
     
-    // Update VIOLIN field
-const violinField = document.getElementById('field_VIOLIN');
-if (violinField) {
-    if (violinField.contentEditable === 'true') {
-        const redContent = fishbone.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">*$1*</span>');
-        violinField.innerHTML = redContent;
-    } else {
+    // Update VIOLIN field with plain text (asterisks preserved)
+    const violinField = document.getElementById('field_VIOLIN');
+    if (violinField) {
         violinField.value = fishbone;
         autoResizeTextarea(violinField);
+        
+        // Save the plain text with asterisks
+        patient.VIOLIN = fishbone;
     }
-    patient.VIOLIN = fishbone;
-}
     
     // Update warnings
     const warningDiv = document.getElementById('warningMessages');
@@ -3318,8 +4023,10 @@ if (violinField) {
     saveToLocalStorage();
     closeImportModal();
     document.getElementById('importData').value = '';
+    
+    // Show fishbone inline instead of popup
+    setTimeout(() => showFishboneInline(), 100);
 }
-
 
 
 
@@ -4644,31 +5351,98 @@ if (data.ventModeRaw && !data.o2therapyCode) {
                 data.age = parseInt(ageMatch[1], 10);
             }
 
-            // Extract vitals
-            const tempMatches = text.match(/Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+)/gi);
-            if (tempMatches) {
-                data.vitals.temp = tempMatches.map(match => parseFloat(match.match(/[\d.]+/)[0]));
+
+
+
+	// Extract vitals (only from last 24 hours)
+            // Helper function to check if entry is within 24 hours
+            const now = new Date();
+            const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+            
+            function isWithin24Hours(dateTimeStr) {
+                const parts = dateTimeStr.match(/(\d{2})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+                if (!parts) return false;
+                const dt = new Date(`20${parts[3]}-${parts[1]}-${parts[2]} ${parts[4]}:${parts[5]}:${parts[6]}`);
+                return dt >= twentyFourHoursAgo && dt <= now;
+            }
+            
+            // Extract temperature with timestamps
+            const tempRegex = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}:\d{2})\)/gi;
+            const tempValues = [];
+            let tempMatch;
+            while ((tempMatch = tempRegex.exec(text)) !== null) {
+                const timeKey = `${tempMatch[2]} ${tempMatch[3]}`;
+                if (isWithin24Hours(timeKey)) {
+                    tempValues.push(parseFloat(tempMatch[1]));
+                }
+            }
+            if (tempValues.length > 0) {
+                data.vitals.temp = tempValues;
+            }
+            
+            // Extract heart rate with timestamps
+            const hrRegex = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}:\d{2})\)/gi;
+            const hrValues = [];
+            let hrMatch;
+            while ((hrMatch = hrRegex.exec(text)) !== null) {
+                const timeKey = `${hrMatch[2]} ${hrMatch[3]}`;
+                if (isWithin24Hours(timeKey)) {
+                    hrValues.push(parseInt(hrMatch[1]));
+                }
+            }
+            if (hrValues.length > 0) {
+                data.vitals.hr = hrValues;
+            }
+            
+            // Extract systolic BP with timestamps
+            const sbpRegex = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High))?\s*\((\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}:\d{2})\)/gi;
+            const sbpValues = [];
+            let sbpMatch;
+            while ((sbpMatch = sbpRegex.exec(text)) !== null) {
+                const timeKey = `${sbpMatch[2]} ${sbpMatch[3]}`;
+                if (isWithin24Hours(timeKey)) {
+                    sbpValues.push(parseInt(sbpMatch[1]));
+                }
+            }
+            if (sbpValues.length > 0) {
+                data.vitals.sbp = sbpValues;
+            }
+            
+            // Extract diastolic BP with timestamps
+            const dbpRegex = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High))?\s*\((\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}:\d{2})\)/gi;
+            const dbpValues = [];
+            let dbpMatch;
+            while ((dbpMatch = dbpRegex.exec(text)) !== null) {
+                const timeKey = `${dbpMatch[2]} ${dbpMatch[3]}`;
+                if (isWithin24Hours(timeKey)) {
+                    dbpValues.push(parseInt(dbpMatch[1]));
+                }
+            }
+            if (dbpValues.length > 0) {
+                data.vitals.dbp = dbpValues;
+            }
+            
+            // Extract O2 saturation with timestamps
+            const o2SatRegex = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}:\d{2})\)/gi;
+            const o2Values = [];
+            let o2Match;
+            while ((o2Match = o2SatRegex.exec(text)) !== null) {
+                const timeKey = `${o2Match[2]} ${o2Match[3]}`;
+                if (isWithin24Hours(timeKey)) {
+                    o2Values.push(parseInt(o2Match[1]));
+                }
+            }
+            if (o2Values.length > 0) {
+                data.vitals.o2 = o2Values;
             }
 
-            const hrMatches = text.match(/(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+)/gi);
-            if (hrMatches) {
-                data.vitals.hr = hrMatches.map(match => parseInt(match.match(/\d+$/)[0]));
-            }
 
-            const sbpMatches = text.match(/Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)/gi);
-            if (sbpMatches) {
-                data.vitals.sbp = sbpMatches.map(match => parseInt(match.match(/\d+$/)[0]));
-            }
 
-            const dbpMatches = text.match(/Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)/gi);
-            if (dbpMatches) {
-                data.vitals.dbp = dbpMatches.map(match => parseInt(match.match(/\d+$/)[0]));
-            }
 
-            const o2Matches = text.match(/O2 Saturation.*?:\s*(\d+)/gi);
-            if (o2Matches) {
-                data.vitals.o2 = o2Matches.map(match => parseInt(match.match(/\d+$/)[0]));
-            }
+
+
+
+			
 
             // Extract lab values with dates
             const extractLabValue = (pattern, name) => {
@@ -5456,7 +6230,7 @@ if (outputSummaryMatch) {
         }
         
         if (!hasIntakes) {
-            fishbone += `None found (fluids, infusions, blood products, oral) in last ${elapsedHoursDisplay}hr\n`;
+            fishbone += ``;
         }
         
         // OUTPUTS  
@@ -6477,8 +7251,8 @@ function extractDoseInfo(line) {
     const cc = patient.CC || 'No chief complaint';
     const ageGender = patient['A/G'] || 'Unknown age/gender';
     const pmh = patient.PMH || '';
-    const hpi = patient.HPI || 'No HPI documented';
-    const ros = patient.ROS || 'No ROS documented';
+    const hpi = patient.HPI || '';
+    const ros = patient.ROS || '';
     const violin = patient.VIOLIN || 'No labs/vitals documented';
     const pe = patient.PE || 'No physical exam documented';
     const todo = patient['To do'] || 'No plan documented';
@@ -6618,7 +7392,8 @@ function copyStaffPresentation() {
 
 	    
 	
-function copyPatientInfo(patient, button) {
+function copyPatientInfoImproved(button) {
+    const patient = button.patientData;
     const name = patient.Name || 'Unknown';
     const rm = patient.RM || 'Unknown';
     const mrn = patient.MRN || 'Unknown';
@@ -6626,38 +7401,37 @@ function copyPatientInfo(patient, button) {
     // Format the text to copy
     const textToCopy = `${name}\n${rm}\n${mrn}`;
     
+    // Store data needed for rebuild
+    const columnIndexes = button.columnIndexes;
+    const colorClasses = button.colorClasses;
+    
+    const rebuildOriginalContent = () => {
+        button.innerHTML = '';
+        
+        columnIndexes.forEach((colIndex, idx) => {
+            const header = MASTER_HEADERS[colIndex];
+            const value = patient[header] || '';
+            if (value) {
+                const span = document.createElement('span');
+                span.className = colorClasses[idx % colorClasses.length];
+                span.textContent = value;
+                span.style.display = 'block';
+                button.appendChild(span);
+            }
+        });
+    };
+    
     // Copy to clipboard
     navigator.clipboard.writeText(textToCopy).then(() => {
-        // Success feedback
-        button.innerHTML = '✅';
+        button.innerHTML = '<span style="color: var(--success); font-weight: bold;">COPIED!</span>';
         button.classList.add('copied');
         
-        // Show tooltip
-        const tooltip = document.createElement('div');
-        tooltip.style.position = 'absolute';
-        tooltip.style.bottom = '100%';
-        tooltip.style.right = '0';
-        tooltip.style.marginBottom = '5px';
-        tooltip.style.background = 'var(--success)';
-        tooltip.style.color = 'white';
-        tooltip.style.padding = '0.5rem';
-        tooltip.style.borderRadius = '0.25rem';
-        tooltip.style.fontSize = '0.8rem';
-        tooltip.style.whiteSpace = 'nowrap';
-        tooltip.style.zIndex = '1000';
-        tooltip.textContent = 'Copied!';
-        button.appendChild(tooltip);
-        
-        // Reset after 2 seconds
         setTimeout(() => {
-            button.innerHTML = '📋';
+            rebuildOriginalContent();
             button.classList.remove('copied');
-            if (tooltip.parentNode) {
-                tooltip.remove();
-            }
-        }, 2000);
+        }, 200);
     }).catch(err => {
-        // Fallback for older browsers
+        // Fallback
         const textArea = document.createElement('textarea');
         textArea.value = textToCopy;
         textArea.style.position = 'fixed';
@@ -6667,13 +7441,13 @@ function copyPatientInfo(patient, button) {
         
         try {
             document.execCommand('copy');
-            button.innerHTML = '✅';
+            button.innerHTML = '<span style="color: var(--success); font-weight: bold;">COPIED!</span>';
             button.classList.add('copied');
             
             setTimeout(() => {
-                button.innerHTML = '📋';
+                rebuildOriginalContent();
                 button.classList.remove('copied');
-            }, 2000);
+            }, 200);
         } catch (err) {
             alert('Failed to copy. Please copy manually: ' + textToCopy);
         }
@@ -6682,7 +7456,6 @@ function copyPatientInfo(patient, button) {
     });
 }
 
-
     
 
 
@@ -6697,18 +7470,245 @@ function copyPatientInfo(patient, button) {
 
 
 
-		// Help Modal Functions
-function showHelpModal(fieldName) {
+
+
+
+function generateFullChecklistHTML() {
+    const patient = patientData[currentPatientIndex];
+    const patientKey = `${currentPatientIndex}_${patient.Name || 'unnamed'}`;
+    const isTrauma = patient.Type !== 'Consult';
+    
+    // Initialize patient's checklist if not exists
+    if (!tempChecklistStates[patientKey]) {
+        tempChecklistStates[patientKey] = {};
+    }
+    
+    const states = tempChecklistStates[patientKey];
+    
+    // Define all checklist items with colors and sections
+    const traumaItems = [
+        // ADD TO LIST
+        { section: 'ADD TO LIST', color: '#dc2626', text: 'Add to list' },
+        
+        // STAFF  
+        { section: 'STAFF', color: '#d97706', text: 'Staff' },
+        { section: 'STAFF', color: '#d97706', text: 'Order Scans' },
+        
+        // NOTE
+        { section: 'NOTE (include HCP)', color: '#16a34a', text: 'Advanced Directives/Goals of Care/HCP' },   
+        
+        // F/U SCANS AND LABS
+        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Primary review of imaging' },
+        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Plan by injury: CTH, CT C/T/L Spine, CT chest/abdomen/pelvis, + additional scans. https://docs.google.com/document/d/12lbPO5K7jMPhruuoedT-piCaQSr9dja2OObAeMD2NWk/edit?tab=t.0' },
+        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'TERTIARY survey' },
+        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Review labs' },
+        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'If going to OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
+
+        // ORDERS/CONSULTS
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Extra Scans/Consults' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'PSO if admitting - call bed board' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Diet order vs. NPO/IVF' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Home medications' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'DVT prophylaxis' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Pain meds' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Floor Orders: Vital signs, Continuous pulse oximetry, Telemetry monitoring' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Nursing Orders: Peripheral IVs, Intake and output, Incentive spirometry, Ambulation/activity orders, weight bearing status' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Neuro vs. neurovascular checks, Foley, OGT, chest tube, central line, arterial line (AND procedure notes)' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Order daily 2 AM labs' },
+        
+        // DISPO/ADDENDUM
+        { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Sign out to ICU/Floor/ED' },
+        { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Update family' },
+        { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Tertiary Survey' }
+    ];
+    
+    const consultItems = [
+        // ADD TO LIST
+        { section: 'ADD TO LIST', color: '#2563eb', text: 'Add to list' },
+        
+        // STAFF
+ 		{ section: 'STAFF', color: '#2563eb', text: 'HX/Vitals/IOs/Labs/Imaging' },
+		{ section: 'STAFF', color: '#16a34a', text: 'Staff' },
+        
+        // ORDERS
+        { section: 'ORDERS', color: '#d97706', text: 'PSO if admitting - call bed board' },
+        { section: 'ORDERS', color: '#d97706', text: 'Diet order vs. NPO/IVF' },
+        { section: 'ORDERS', color: '#d97706', text: 'Home medications' },
+        { section: 'ORDERS', color: '#d97706', text: 'DVT prophylaxis' },
+        { section: 'ORDERS', color: '#d97706', text: 'Pain meds' },
+        { section: 'ORDERS', color: '#d97706', text: 'Floor Orders: Vital signs, Continuous pulse oximetry, Telemetry monitoring' },
+        { section: 'ORDERS', color: '#d97706', text: 'Nursing Orders: Peripheral IVs, Intake and output, Incentive spirometry, Ambulation/activity orders, weight bearing status, Notify provider of abnormal vital signs, Neuro vs. neurovascular checks, Foley, OGT, chest tube, central line, arterial line (AND procedure notes)' },
+        { section: 'ORDERS', color: '#d97706', text: 'Order daily 2 AM labs' },
+        { section: 'ORDERS', color: '#d97706', text: 'Consultations/Imaging/Interventions' },
+        
+        // NOTE
+        { section: 'NOTE', color: '#9333ea', text: 'Complete consultation note' }
+    ];
+    
+    const items = isTrauma ? traumaItems : consultItems;
+    const completed = items.filter((_, i) => states[`item_${i}`]).length;
+    const progress = Math.round((completed / items.length) * 100);
+    
+    // Generate HTML with toggle button
+    let html = `
+        <div style="margin-bottom: 1.5rem; text-align: center;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <strong style="color: ${isTrauma ? '#ef4444' : '#3b82f6'}; font-size: 1.3em;">
+                    ${isTrauma ? 'TRAUMA' : 'CONSULT PATIENT'} CHECKLIST
+                </strong>
+                <button onclick="toggleChecklistType()" 
+                        style="background: linear-gradient(135deg, ${isTrauma ? '#3b82f6' : '#ef4444'}, ${isTrauma ? '#2563eb' : '#dc2626'}); 
+                               color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 0.375rem; 
+                               font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease;
+                               box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                        onmouseover="this.style.transform='scale(1.05)'"
+                        onmouseout="this.style.transform='scale(1)'">
+                    Switch to ${isTrauma ? 'Consult' : 'Trauma'}
+                </button>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 0.5rem; padding: 0.2rem; background: var(--card-bg); border-radius: 0.5rem; border: 2px solid var(--primary);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <strong style="color: var(--primary);">Progress</strong>
+                <span id="progressText" style="color: var(--text-primary);">${completed}/${items.length} (${progress}%)</span>
+            </div>
+            <div style="background: var(--dark-bg); border-radius: 1rem; height: 10px; overflow: hidden;">
+                <div id="progressBar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
+            </div>
+        </div>`;
+    
+    // Group items by section
+    const sections = {};
+    items.forEach((item, index) => {
+        if (!sections[item.section]) {
+            sections[item.section] = [];
+        }
+        sections[item.section].push({...item, index});
+    });
+    
+
+// Generate HTML for each section
+Object.entries(sections).forEach(([sectionName, sectionItems]) => {
+    const sectionColor = sectionItems[0].color;
+    
+    html += `
+        <div style="margin-bottom: 0.75rem;">
+            <h4 style="color: ${sectionColor}; margin-bottom: 0.25rem; font-size: 1.1em; font-weight: bold;">
+                ${sectionName}
+            </h4>
+            <div style="margin-left: 1rem; display: grid; gap: 0.15rem;">`;
+        
+        sectionItems.forEach(item => {
+            const isChecked = states[`item_${item.index}`] || false;
+            html += `
+    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.25rem; transition: background 0.2s; border: 1px solid transparent;"
+                       onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';" 
+                       onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} 
+                           onchange="updateFullChecklist('${patientKey}', ${item.index}, this.checked, ${items.length})"
+                           style="width: 18px; height: 18px; min-width: 18px; margin-top: 2px; accent-color: ${sectionColor}; cursor: pointer;">
+                    <span style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.4;">
+                        ${item.text}
+                    </span>
+                </label>`;
+        });
+        
+        html += `</div></div>`;
+    });
+    
+    return html;
+}
+
+
+
+
+
+		
+
+
+
+
+		
+
+function updateFullChecklist(patientKey, index, checked, totalItems) {
+    // Update temporary state
+    if (!tempChecklistStates[patientKey]) {
+        tempChecklistStates[patientKey] = {};
+    }
+    tempChecklistStates[patientKey][`item_${index}`] = checked;
+    
+    // SAVE TO LOCALSTORAGE FOR PERSISTENCE
+    try {
+        localStorage.setItem('checklistStates', JSON.stringify(tempChecklistStates));
+    } catch (e) {
+        console.error('Failed to save checklist states:', e);
+    }
+    
+    // Update progress display
+    const states = tempChecklistStates[patientKey];
+    const completed = Object.values(states).filter(Boolean).length;
+    const progress = Math.round((completed / totalItems) * 100);
+    
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (progressText) progressText.textContent = `${completed}/${totalItems} (${progress}%)`;
+}
+
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		function showHelpModal(fieldName) {
     const modal = document.getElementById('helpModal') || createHelpModal();
     const title = document.getElementById('helpModalTitle');
     const body = document.getElementById('helpModalBody');
     
     title.textContent = `${fieldName} - Help & Instructions`;
-    body.innerHTML = helpContent[fieldName] || 'No help content available.';
+    
+    // Special handling for interactive 'To do' checklist
+    if (fieldName === 'To do' && currentPatientIndex !== -1) {
+        body.innerHTML = generateFullChecklistHTML();
+    } else {
+        body.innerHTML = helpContent[fieldName] || 'No help content available.';
+    }
     
     modal.style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    document.body.style.overflow = 'hidden';
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 
 function closeHelpModal() {
     const modal = document.getElementById('helpModal');
@@ -6746,39 +7746,6 @@ function createHelpModal() {
 
 
 
-
-
-// Function to apply red styling to asterisked text
-function applyRedStyling(element) {
-    if (!element) return;
-    
-    const content = element.innerHTML || element.textContent;
-    if (!content) return;
-    
-    // Replace *text* with red span
-    const redContent = content.replace(/\*([^*]+)\*/g, '<span style="color: var(--danger); font-weight: bold;">$1</span>');
-    
-    if (element.contentEditable) {
-        element.innerHTML = redContent;
-    }
-}
-
-// Modify the event listener for VIOLIN field
-function setupViolinField(violinField) {
-    if (!violinField) return;
-    
-    violinField.addEventListener('input', function() {
-        const patient = patientData[currentPatientIndex];
-        if (patient) {
-            patient.VIOLIN = this.textContent || this.innerText;
-            saveToLocalStorage();
-        }
-        applyRedStyling(this);
-    });
-    
-    // Apply styling on load
-    applyRedStyling(violinField);
-}
 
 
 
@@ -7043,6 +8010,1650 @@ function parseCSVLine(line) {
 }
 
 
+
+
+
+function pasteFromClipboard() {
+    const textarea = document.getElementById('importData');
+    const button = event.target;
+    const originalText = button.textContent;
+    const originalBackground = button.style.background;
+    const originalColor = button.style.color;
+    
+    // Clear any existing content first
+    textarea.value = '';
+    
+    button.textContent = 'Reading clipboard...';
+    button.disabled = true;
+    
+    // Check if clipboard API is available
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+        // Fallback for browsers without clipboard API
+        button.textContent = 'Manual paste required';
+        button.style.background = 'linear-gradient(135deg, var(--secondary), #0891b2)';
+        button.style.color = 'white';
+        button.disabled = false;
+        
+        setTimeout(() => {
+            alert('Automatic clipboard reading not supported.\n\nPlease:\n1. Click in the text area below\n2. Press Ctrl+V (or Cmd+V on Mac) to paste\n3. Click "Process Data" button');
+            button.textContent = originalText;
+            button.style.background = originalBackground;
+            button.style.color = originalColor;
+            textarea.focus();
+        }, 500);
+        return;
+    }
+    
+    // Try to read from clipboard
+    navigator.clipboard.readText()
+        .then(text => {
+            console.log('Clipboard read successful, text length:', text ? text.length : 0);
+            
+            if (text && text.trim()) {
+                // Paste the content
+                textarea.value = text;
+                button.textContent = 'Processing data...';
+                
+                // Add a small delay to show the pasted content
+                setTimeout(() => {
+                    try {
+                        // Process the data immediately
+                        const importText = textarea.value;
+                        if (!importText) {
+                            throw new Error('No text found in textarea after paste');
+                        }
+                        
+                        const patient = patientData[currentPatientIndex];
+                        if (!patient) {
+                            throw new Error('No current patient selected');
+                        }
+                        
+                        patient.ImportedData = importText;
+                        lastImportedData = importText;
+                        
+                        labData = extractLabValues(importText);
+                        patient.LabData = JSON.stringify(labData);
+                        
+                        const fishbone = generateFishbone(labData);
+                        const warnings = generateWarnings(labData);
+                        
+                        // Update VIOLIN field with plain text (asterisks preserved)
+                        const violinField = document.getElementById('field_VIOLIN');
+                        if (violinField) {
+                            violinField.value = fishbone;
+                            autoResizeTextarea(violinField);
+                            
+                            // Save the plain text with asterisks
+                            patient.VIOLIN = fishbone;
+                        }
+                        
+                        // Update warnings
+                        const warningDiv = document.getElementById('warningMessages');
+                        if (warningDiv) {
+                            if (warnings.length > 0) {
+                                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+                                warningDiv.classList.remove('hidden');
+                            } else {
+                                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+                                warningDiv.classList.remove('hidden');
+                            }
+                        }
+                        
+                        saveToLocalStorage();
+                        closeImportModal();
+                        
+                        // Success feedback
+                        button.textContent = 'Completed!';
+                        button.style.background = 'linear-gradient(135deg, var(--success), #059669)';
+                        button.style.color = 'white';
+                        button.disabled = false;
+                        
+                        // Show fishbone inline
+                        setTimeout(() => {
+                            showFishboneInline();
+                        }, 200);
+                        
+                        // Auto-reset button after 3 seconds
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = originalBackground;
+                            button.style.color = originalColor;
+                        }, 3000);
+                        
+                    } catch (error) {
+                        console.error('Error processing data:', error);
+                        button.textContent = 'Processing Error';
+                        button.style.background = 'linear-gradient(135deg, var(--danger), #dc2626)';
+                        button.style.color = 'white';
+                        button.disabled = false;
+                        
+                        alert('Error processing the pasted data: ' + error.message);
+                        
+                        // Reset button after error
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = originalBackground;
+                            button.style.color = originalColor;
+                        }, 3000);
+                    }
+                }, 300);
+                
+            } else {
+                // Reset button if clipboard is empty
+                button.textContent = 'Clipboard Empty';
+                button.style.background = 'linear-gradient(135deg, var(--danger), #dc2626)';
+                button.style.color = 'white';
+                button.disabled = false;
+                
+                setTimeout(() => {
+                    alert('Clipboard appears to be empty.\n\nPlease:\n1. Copy some data first\n2. Try the button again');
+                    button.textContent = originalText;
+                    button.style.background = originalBackground;
+                    button.style.color = originalColor;
+                }, 1000);
+            }
+        })
+        .catch(err => {
+            console.error('Failed to read clipboard:', err);
+            button.textContent = 'Permission Required';
+            button.style.background = 'linear-gradient(135deg, var(--secondary), #0891b2)';
+            button.style.color = 'white';
+            button.disabled = false;
+            
+            // Show helpful message
+            setTimeout(() => {
+                alert('Clipboard permission required.\n\nPlease:\n1. Allow clipboard access when prompted by your browser\n2. Make sure you have data copied to clipboard\n3. Try the button again\n\nOR paste manually with Ctrl+V in the text area below');
+                
+                button.textContent = originalText;
+                button.style.background = originalBackground;
+                button.style.color = originalColor;
+                textarea.focus(); // Focus textarea for manual paste
+            }, 500);
+        });
+}
+
+
+
+		function resetPasteButton() {
+    const button = document.querySelector('#importModal button[onclick="pasteFromClipboard()"]');
+    if (button) {
+        button.textContent = '📋⚡ Paste & Process';
+        button.style.background = '';
+        button.style.color = '';
+        button.disabled = false;
+    }
+}
+
+		
+
+
+
+		function showFormattedVIOLIN() {
+    if (currentPatientIndex === -1) return;
+    
+    const patient = patientData[currentPatientIndex];
+    const violinText = patient.VIOLIN || 'No VIOLIN data available';
+    
+    // Create formatted version with red text for abnormal values
+    const formattedContent = violinText.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">$1</span>');
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="this.closest('.modal').remove()" style="float: right; font-size: 30px; cursor: pointer; color: var(--danger);">&times;</span>
+            <h2 style="color: var(--primary); margin-bottom: 1rem;">Formatted VIOLIN Data</h2>
+            <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; color: var(--text-primary); border: 1px solid var(--border); max-height: 70vh; overflow-y: auto;">${formattedContent}</div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <button onclick="this.closest('.modal').remove()">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+
+		function showFormattedVIOLIN() {
+    if (currentPatientIndex === -1) return;
+    
+    const patient = patientData[currentPatientIndex];
+    const violinText = patient.VIOLIN || 'No VIOLIN data available';
+    
+    // Create formatted version with red text for abnormal values
+    const formattedContent = violinText.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">$1</span>');
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="this.closest('.modal').remove()" style="float: right; font-size: 30px; cursor: pointer; color: var(--danger);">&times;</span>
+            <h2 style="color: var(--primary); margin-bottom: 1rem;">Formatted VIOLIN Results</h2>
+            <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; color: var(--text-primary); border: 1px solid var(--border); max-height: 70vh; overflow-y: auto;">${formattedContent}</div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <button onclick="this.closest('.modal').remove()">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+		
+
+
+function showFishbonePopup() {
+    if (currentPatientIndex === -1) return;
+    
+    const patient = patientData[currentPatientIndex];
+    const violinText = patient.VIOLIN || 'No VIOLIN data available';
+    
+    // Generate missing values messages
+    const missingValues = generateMissingValuesMessages(labData);
+    
+    // Create formatted version with red text for abnormal values
+    const formattedContent = violinText.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">$1</span>');
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="this.closest('.modal').remove()" style="float: right; font-size: 30px; cursor: pointer; color: var(--danger);">&times;</span>
+            <h2 style="color: var(--primary); margin-bottom: 1rem;">VIOLIN Fishbone Diagram</h2>
+            <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; color: var(--text-primary); border: 1px solid var(--border); max-height: 60vh; overflow-y: auto;">${formattedContent}</div>
+            ${missingValues ? `<div style="background: var(--card-bg); margin-top: 1rem; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);"><div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;"><strong>Missing Values:</strong></div><div style="font-style: italic; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">${missingValues}</div></div>` : ''}
+            <div style="margin-top: 1rem; text-align: center;">
+                <button onclick="copyFishboneToClipboard()">📋 Copy to Clipboard</button>
+                <button onclick="this.closest('.modal').remove()">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Store fishbone content for copy function
+    window.currentFishboneContent = violinText;
+}
+		
+
+
+
+		
+
+		// 3. ADD this function to generate missing values messages:
+
+function generateMissingValuesMessages(data) {
+    const missing = [];
+    
+    // Check vitals
+    if (!data.vitals.hr || data.vitals.hr.length === 0) missing.push('No HR');
+    if (!data.vitals.sbp || data.vitals.sbp.length === 0) missing.push('No SBP');
+    if (!data.vitals.dbp || data.vitals.dbp.length === 0) missing.push('No DBP');
+    if (!data.vitals.temp || data.vitals.temp.length === 0) missing.push('No Temp');
+    if (!data.vitals.o2 || data.vitals.o2.length === 0) missing.push('No SPO2');
+    
+    // Check if MAP is missing (would need to be calculated or extracted)
+    const hasMAP = lastImportedData && /Mean\s+(?:Arterial\s+)?Pressure/i.test(lastImportedData);
+    if (!hasMAP) missing.push('No MAP');
+    
+    // Check respiratory rate
+    const hasRR = lastImportedData && /Respiratory\s+Rate/i.test(lastImportedData);
+    if (!hasRR) missing.push('No RR');
+    
+    // Check O2 therapy
+    if (!data.o2therapyCode && !data.o2therapyRaw) missing.push('No O2 therapy documented');
+    
+    // Check ventilator settings if on vent
+    if (data.o2therapyCode === 'Vent') {
+        if (!data.ventModeRaw) missing.push('No Vent Mode');
+        if (!data.ventFrequencyRaw) missing.push('No Vent RR');
+        if (!data.ventTidalRaw) missing.push('No Vt');
+        if (!data.ventPeepRaw) missing.push('No PEEP');
+        if (!data.ventFiO2Raw) missing.push('No FIO2');
+    }
+    
+    // Check intake/output data if lastImportedData exists
+    if (lastImportedData) {
+        const ioData = extractIntakeOutputData(lastImportedData);
+        
+        // Check for specific I/O types
+        if (ioData.intakes.bloodProducts.length === 0) {
+            const hasBloodProducts = /blood.*product|packed.*cell|plasma|platelet/i.test(lastImportedData);
+            if (!hasBloodProducts) missing.push('No blood products');
+        }
+        
+        if (ioData.intakes.other.length === 0) {
+            const hasOralIntake = /oral|po\s|by\s+mouth/i.test(lastImportedData);
+            if (!hasOralIntake) missing.push('No oral intake');
+        }
+        
+        const hasIVF = /lactated.*ringer|normal.*saline|dextrose.*water|d5w|lr|ns/i.test(lastImportedData);
+        if (!hasIVF) missing.push('No IVF');
+        
+        if (ioData.intakes.enteral.length === 0) {
+            const hasTubeFeeds = /tube.*feed|enteral|nasogastric.*feed/i.test(lastImportedData);
+            if (!hasTubeFeeds) missing.push('No tube feeds');
+        }
+        
+        // Check outputs
+        if (ioData.outputs.urine.length === 0) missing.push('No UOP');
+        
+        const hasOstomy = /ostomy|colostomy|ileostomy|stoma/i.test(lastImportedData);
+        if (!hasOstomy) missing.push('No ostomy output');
+        
+        const hasBM = /bowel.*movement|bm|stool/i.test(lastImportedData);
+        if (!hasBM) missing.push('No BM');
+        
+        const hasEmesis = /emesis|vomit|nausea.*vomit/i.test(lastImportedData);
+        if (!hasEmesis) missing.push('No emesis');
+        
+        const hasBloodLoss = /blood.*loss|ebl|estimated.*blood/i.test(lastImportedData);
+        if (!hasBloodLoss) missing.push('No blood loss');
+        
+        const hasDialysis = /dialysis|cvvh|crrt/i.test(lastImportedData);
+        if (!hasDialysis) missing.push('No dialysis');
+    }
+    
+    // Check labs
+    if (!data.labs.wbc || data.labs.wbc.length === 0) missing.push('No WBC');
+    if (!data.labs.hgb || data.labs.hgb.length === 0) missing.push('No Hgb');
+    if (!data.labs.hct || data.labs.hct.length === 0) missing.push('No Hct');
+    if (!data.labs.plt || data.labs.plt.length === 0) missing.push('No Plt');
+    
+    // BMP
+    if (!data.labs.na || data.labs.na.length === 0) missing.push('No Na');
+    if (!data.labs.k || data.labs.k.length === 0) missing.push('No K');
+    if (!data.labs.cl || data.labs.cl.length === 0) missing.push('No Cl');
+    if (!data.labs.co2 || data.labs.co2.length === 0) missing.push('No CO2');
+    if (!data.labs.bun || data.labs.bun.length === 0) missing.push('No BUN');
+    if (!data.labs.cr || data.labs.cr.length === 0) missing.push('No Cr');
+    if (!data.labs.glu || data.labs.glu.length === 0) missing.push('No Glucose');
+    
+    // Additional electrolytes
+    if (!data.labs.ca || data.labs.ca.length === 0) missing.push('No Ca');
+    if (!data.labs.mg || data.labs.mg.length === 0) missing.push('No Mg');
+    if (!data.labs.phos || data.labs.phos.length === 0) missing.push('No P');
+    
+    // LFTs
+    if (!data.labs.tbil || data.labs.tbil.length === 0) missing.push('No Tbil');
+    if (!data.labs.dbil || data.labs.dbil.length === 0) missing.push('No Dbili');
+    if (!data.labs.alk || data.labs.alk.length === 0) missing.push('No ALK');
+    if (!data.labs.ggt || data.labs.ggt.length === 0) missing.push('No GGT');
+    if (!data.labs.ast || data.labs.ast.length === 0) missing.push('No AST');
+    if (!data.labs.alt || data.labs.alt.length === 0) missing.push('No ALT');
+    
+    // Coags
+    if (!data.labs.pt || data.labs.pt.length === 0) missing.push('No PT');
+    if (!data.labs.ptt || data.labs.ptt.length === 0) missing.push('No PTT');
+    if (!data.labs.inr || data.labs.inr.length === 0) missing.push('No INR');
+    
+    // ABG
+    if (!data.labs.ph || data.labs.ph.length === 0) missing.push('No pH');
+    if (!data.labs.po2 || data.labs.po2.length === 0) missing.push('No PO2');
+    if (!data.labs.pco2 || data.labs.pco2.length === 0) missing.push('No PCO2');
+    if (!data.labs.bicarb || data.labs.bicarb.length === 0) missing.push('No Bicarb');
+    if (!data.labs.lactate || data.labs.lactate.length === 0) missing.push('No Lactate');
+    
+    // Other important labs
+    if (!data.labs.trop || data.labs.trop.length === 0) missing.push('No Trops');
+    
+    // Base excess check (would need to be added to extraction)
+    const hasBaseExcess = lastImportedData && /base.*excess/i.test(lastImportedData);
+    if (!hasBaseExcess) missing.push('No Base excess');
+    
+    if (missing.length === 0) {
+        return null;
+    }
+    
+    return missing.join(', ');
+}
+
+// 4. ADD this function for copying fishbone content:
+
+function copyFishboneToClipboard() {
+    if (window.currentFishboneContent) {
+        navigator.clipboard.writeText(window.currentFishboneContent).then(() => {
+            // Change button text briefly to show success
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = window.currentFishboneContent;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            } catch (err) {
+                alert('Failed to copy. Please select and copy manually.');
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+}
+
+
+
+function toggleFishboneDisplay() {
+    const fishboneDisplay = document.getElementById('fishboneDisplay');
+    const fishboneContent = document.getElementById('fishboneContent');
+    
+    if (!fishboneDisplay || !fishboneContent) {
+        console.error('Fishbone display elements not found');
+        return;
+    }
+    
+    if (fishboneDisplay.classList.contains('hidden')) {
+        // Show fishbone - generate it if needed
+        const patient = patientData[currentPatientIndex];
+
+
+		
+        if (patient && patient.VIOLIN) {
+            // Format content with red styling for abnormal values
+ fishboneContent.innerHTML = '';
+    const preElement = document.createElement('pre');
+    preElement.style.margin = '0';
+    preElement.style.fontFamily = 'inherit';
+    preElement.style.fontSize = 'inherit';
+    preElement.style.lineHeight = 'inherit';
+    preElement.style.whiteSpace = 'pre-wrap';
+    preElement.style.wordWrap = 'break-word';
+    
+    // Apply red styling while preserving exact spacing
+preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">*$1*</span>');
+			
+    fishboneContent.appendChild(preElement);
+            
+            // Add missing values if available
+            if (labData && Object.keys(labData).length > 0) {
+                const missingValues = generateMissingValuesMessages(labData);
+                if (missingValues) {
+                    const missingDiv = document.createElement('div');
+                    missingDiv.style.marginTop = '1rem';
+                    missingDiv.style.padding = '0.75rem';
+                    missingDiv.style.background = 'rgba(100, 100, 100, 0.1)';
+                    missingDiv.style.borderRadius = '0.25rem';
+                    missingDiv.style.fontSize = '0.85rem';
+                    missingDiv.innerHTML = `<strong style="color: var(--text-secondary);">Missing Values:</strong><br><span style="font-style: italic; color: var(--text-secondary);">${missingValues}</span>`;
+                    fishboneContent.appendChild(missingDiv);
+                }
+            }
+        } else {
+            fishboneContent.innerHTML = '<em style="color: var(--text-secondary);">No VIOLIN data available. Import data first.</em>';
+        }
+        
+        fishboneDisplay.classList.remove('hidden');
+        
+        // Scroll the fishbone into view
+        setTimeout(() => {
+            fishboneDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    } else {
+        // Hide fishbone
+        fishboneDisplay.classList.add('hidden');
+    }
+}
+
+		
+
+
+		
+
+function showFishboneInline() {
+    // Add a delay to ensure DOM elements are ready
+    setTimeout(() => {
+        const fishboneDisplay = document.getElementById('fishboneDisplay');
+        if (fishboneDisplay && currentViewMode === 'chartcheck') {
+            // Auto-show the fishbone after processing
+            if (fishboneDisplay.classList.contains('hidden')) {
+                toggleFishboneDisplay(); // This will populate and show it
+            }
+        }
+    }, 200);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+	function toggleChecklistType() {
+    const patient = patientData[currentPatientIndex];
+    const patientKey = `${currentPatientIndex}_${patient.Name || 'unnamed'}`;
+    
+    // Toggle patient type
+    if (patient.Type === 'Consult') {
+        patient.Type = 'Patient';
+    } else {
+        patient.Type = 'Consult';
+    }
+    
+    // Clear the checklist state since items are different
+    if (tempChecklistStates[patientKey]) {
+        tempChecklistStates[patientKey] = {};
+    }
+    
+    // Save the patient type change
+    saveToLocalStorage();
+    
+    // Regenerate the checklist HTML
+    const body = document.getElementById('helpModalBody');
+    if (body) {
+        body.innerHTML = generateFullChecklistHTML();
+    }
+    
+    // Also update the main list display
+    displayRows();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		function showChecklistStatus(index) {
+    const patient = patientData[index];
+    const status = getChecklistStatus(patient, index);
+    const isTrauma = patient.Type !== 'Consult';
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">
+                ${patient.Name || 'Unnamed'} - Checklist Status
+            </h3>
+            <div style="text-align: center; margin: 1.5rem 0;">
+                <div style="display: inline-block; width: 80px; height: 80px; border-radius: 50%; 
+                           background: ${status.percentage === 100 ? 'var(--success)' : 'var(--danger)'}; 
+                           display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <span style="color: white; font-size: 1.5rem; font-weight: bold;">
+                        ${status.percentage}%
+                    </span>
+                </div>
+                <div style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <strong>${isTrauma ? 'Trauma' : 'Consult'} Checklist Progress</strong>
+                </div>
+                <div style="color: var(--text-secondary);">
+                    ${status.completed} of ${status.total} items completed
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <button onclick="showDetails(${index}); this.closest('.modal').remove();">
+                    View Details
+                </button>
+                <button onclick="this.closest('.modal').remove();" style="margin-left: 0.5rem;">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function showPriorityStatus(index) {
+    const patient = patientData[index];
+    const priorityStatus = getPriorityStatus(patient);
+    const priority = patient.Priority || 'Not set';
+    
+    let statusColor = 'var(--card-bg)';
+    let statusText = 'No Priority';
+    
+    switch(priorityStatus) {
+        case 'high':
+            statusColor = '#ef4444';
+            statusText = 'High Priority';
+            break;
+        case 'medium':
+            statusColor = '#f59e0b';
+            statusText = 'Medium Priority';
+            break;
+        case 'low':
+            statusColor = '#10b981';
+            statusText = 'Low Priority';
+            break;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">
+                ${patient.Name || 'Unnamed'} - Priority Status
+            </h3>
+            <div style="text-align: center; margin: 1.5rem 0;">
+                <div style="display: inline-block; width: 80px; height: 80px; border-radius: 50%; 
+                           background: ${statusColor}; display: flex; align-items: center; 
+                           justify-content: center; margin-bottom: 1rem;">
+                    <span style="color: white; font-size: 2rem;">●</span>
+                </div>
+                <div style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <strong>${statusText}</strong>
+                </div>
+                <div style="color: var(--text-secondary);">
+                    Priority: ${priority}
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <button onclick="showDetails(${index}); this.closest('.modal').remove();">
+                    View Details
+                </button>
+                <button onclick="this.closest('.modal').remove();" style="margin-left: 0.5rem;">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+
+
+
+
+
+
+
+
+
+		function showStatusSelector(patient, index, statusDotElement) {
+// In the showStatusSelector function (around line 2990), 
+// replace the priorityOptions array with these neon colors:
+
+const priorityOptions = [
+    { num: '0', name: 'Priority 0 - Complete/Done', color: '#00ff41' },          // Bright neon green
+    { num: '1', name: 'Priority 1 - Urgent', color: '#ff0040' },                // Bright neon red
+    { num: '2', name: 'Priority 2 - High', color: '#ff6600' },                  // Bright neon orange
+    { num: '3', name: 'Priority 3 - Medium-High', color: '#ffaa00' },           // Bright neon amber
+    { num: '4', name: 'Priority 4 - Medium', color: '#ffff00' },                // Bright neon yellow
+    { num: '5', name: 'Priority 5 - Medium-Low', color: '#ccff00' },            // Bright neon lime
+    { num: '6', name: 'Priority 6 - Low-Medium', color: '#66ff00' },            // Bright neon chartreuse
+    { num: '7', name: 'Priority 7 - Low', color: '#00ffff' },                   // Bright neon cyan
+    { num: '8', name: 'Priority 8 - Very Low', color: '#0080ff' },              // Bright neon blue
+    { num: '9', name: 'Priority 9 - Minimal', color: '#8000ff' },               // Bright neon purple
+    { num: '10', name: 'Priority 10 - Lowest', color: '#ff00ff' },              // Bright neon magenta
+    { num: '', name: 'No Priority', color: 'var(--card-bg)' }                   // Background color
+];
+			
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">
+                Set Priority for ${patient.Name || 'Unnamed'}
+            </h3>
+            <div style="display: grid; gap: 0.5rem; margin-bottom: 1rem; max-height: 400px; overflow-y: auto;">
+                ${priorityOptions.map(option => `
+                    <button onclick="setPatientPriority('${option.num}', ${index}, this.closest('.modal'))" 
+                            style="padding: 0.75rem; text-align: left; background: var(--card-bg); 
+                                   border: 1px solid var(--border); border-radius: 0.375rem; 
+                                   color: var(--text-primary); cursor: pointer; display: flex; 
+                                   align-items: center; gap: 0.75rem;"
+                            onmouseover="this.style.background='var(--card-hover)'"
+                            onmouseout="this.style.background='var(--card-bg)'">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; 
+                                    background: ${option.color};"></div>
+                        ${option.name}
+                    </button>
+                `).join('')}
+            </div>
+            <div style="text-align: center;">
+                <button onclick="this.closest('.modal').remove()">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+
+
+		
+
+function getStatusColor(colorName) {
+    const colors = {
+        'red': '#ef4444',
+        'yellow': '#f59e0b', 
+        'green': '#10b981',
+        'blue': '#3b82f6',
+        'purple': '#8b5cf6',
+        'orange': '#f97316',
+        'grey': 'var(--card-bg)'
+    };
+    return colors[colorName] || 'var(--card-bg)';
+}
+
+
+
+
+		function setPatientPriority(priorityNum, index, modal) {
+    // Set the priority number
+    patientData[index].Priority = priorityNum;
+    
+    // Remove any saved status since we're now using priority-based system
+    delete patientData[index].SavedStatus;
+    
+    // Save to localStorage
+    saveToLocalStorage();
+    
+    // Refresh the display
+    displayRows();
+    
+    // Close the modal
+    modal.remove();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Camera and OCR Functions - Global variables
+let currentImageCanvas = null;
+let currentRotation = 0;
+let baseImageSrc = null;
+let extractedData = { name: '', mrn: '' };
+let lastOCRText = '';
+
+function showCameraEntry() {
+    document.getElementById('entryTypeSelection').style.display = 'none';
+    document.getElementById('cameraEntrySection').style.display = 'block';
+    resetCameraUI();
+}
+
+function resetCameraUI() {
+    document.getElementById('capturedImage').style.display = 'none';
+    document.getElementById('rotationControls').style.display = 'none';
+    document.getElementById('ocrProgress').style.display = 'none';
+    document.getElementById('extractedInfo').style.display = 'none';
+    document.getElementById('debugInfo').style.display = 'none';
+    document.getElementById('processBtn').style.display = 'none';
+    document.getElementById('addExtractedBtn').style.display = 'none';
+    
+    document.getElementById('labelImageInput').value = '';
+    
+    currentImageCanvas = null;
+    currentRotation = 0;
+    baseImageSrc = null;
+    extractedData = { name: '', mrn: '' };
+    lastOCRText = '';
+}
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        displayUploadedImage(e.target.result);
+    };
+    reader.onerror = function() {
+        alert('Error reading file. Please try again.');
+    };
+    reader.readAsDataURL(file);
+}
+
+function displayUploadedImage(imageSrc) {
+    const previewImg = document.getElementById('previewImage');
+    
+    previewImg.onload = function() {
+        console.log('Image loaded successfully:', previewImg.naturalWidth + 'x' + previewImg.naturalHeight);
+        
+        baseImageSrc = imageSrc;
+        currentRotation = 0;
+        
+        createCanvasFromImage(previewImg);
+        
+        document.getElementById('capturedImage').style.display = 'block';
+        document.getElementById('rotationControls').style.display = 'block';
+        document.getElementById('processBtn').style.display = 'inline-block';
+        
+        console.log('UI elements shown, ready to process');
+    };
+    
+    previewImg.onerror = function() {
+        console.error('Failed to load image');
+        alert('Failed to load the image. Please try a different image.');
+    };
+    
+    previewImg.src = imageSrc;
+}
+
+function createCanvasFromImage(imgElement) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = imgElement.naturalWidth;
+    canvas.height = imgElement.naturalHeight;
+    
+    ctx.drawImage(imgElement, 0, 0);
+    currentImageCanvas = canvas;
+    
+    console.log('Canvas created:', canvas.width + 'x' + canvas.height);
+}
+
+function rotateImage(degrees) {
+    if (!currentImageCanvas) {
+        console.error('No canvas available for rotation');
+        return;
+    }
+    
+    currentRotation = (currentRotation + degrees) % 360;
+    if (currentRotation < 0) currentRotation += 360;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const rad = (currentRotation * Math.PI) / 180;
+    const sin = Math.abs(Math.sin(rad));
+    const cos = Math.abs(Math.cos(rad));
+    
+    const origWidth = currentImageCanvas.width;
+    const origHeight = currentImageCanvas.height;
+    
+    canvas.width = Math.floor(origWidth * cos + origHeight * sin);
+    canvas.height = Math.floor(origWidth * sin + origHeight * cos);
+    
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(currentImageCanvas, -origWidth / 2, -origHeight / 2);
+    
+    const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    document.getElementById('previewImage').src = rotatedDataUrl;
+    
+    const img = new Image();
+    img.onload = function() {
+        createCanvasFromImage(img);
+        baseImageSrc = rotatedDataUrl;
+    };
+    img.src = rotatedDataUrl;
+    
+    console.log('Image rotated by', degrees, 'degrees. Total rotation:', currentRotation);
+}
+
+
+
+
+		async function processCurrentImage() {
+    console.log('=== Starting image processing ===');
+    
+    if (!currentImageCanvas) {
+        alert('No image available to process. Please upload an image first.');
+        return;
+    }
+    
+    if (!isTesseractAvailable()) {
+        alert('OCR system is not loaded. Please refresh the page and try again.');
+        return;
+    }
+    
+    const progressDiv = document.getElementById('ocrProgress');
+    const progressBar = document.getElementById('ocrProgressBar');
+    const progressPercent = document.getElementById('ocrProgressPercent');
+    
+    progressDiv.style.display = 'block';
+    progressPercent.textContent = 'Processing image...';
+    progressBar.style.width = '20%';
+    
+    try {
+        const imageData = currentImageCanvas.toDataURL('image/png', 1.0);
+        console.log('Starting OCR with image data size:', imageData.length);
+        
+        progressBar.style.width = '60%';
+        progressPercent.textContent = 'Reading text...';
+        
+        // Use direct recognition without worker management
+        const result = await Tesseract.recognize(imageData, 'eng', {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    const progress = Math.round(60 + (m.progress * 30));
+                    progressBar.style.width = progress + '%';
+                    progressPercent.textContent = `Reading text... ${Math.round(m.progress * 100)}%`;
+                }
+            }
+        });
+        
+        progressBar.style.width = '100%';
+        progressPercent.textContent = 'Complete!';
+        
+        const text = result.data.text;
+        const confidence = result.data.confidence;
+        
+        console.log('OCR completed. Confidence:', confidence);
+        console.log('Extracted text:', text);
+        
+        lastOCRText = text || '';
+        updateDebugInfo();
+        
+        if (!text || text.trim().length < 3) {
+            throw new Error('No text could be extracted from the image. Try:\n• Rotating the image\n• Taking a clearer photo\n• Ensuring good lighting');
+        }
+        
+        setTimeout(() => {
+            progressDiv.style.display = 'none';
+        }, 1500);
+        
+        extractPatientInfo(text);
+        
+    } catch (error) {
+        console.error('OCR Error:', error);
+        progressDiv.style.display = 'none';
+        alert('Error processing image: ' + error.message);
+    }
+}
+
+
+
+
+		
+
+
+
+
+
+
+
+
+		function extractPatientInfo(text) {
+    console.log('=== Extracting patient info ===');
+    console.log('Input text:', text);
+    
+    extractedData = { name: '', mrn: '' };
+    
+    if (!text || text.trim().length === 0) {
+        console.log('No text to process');
+        displayExtractedInfo();
+        return;
+    }
+    
+    const cleanText = text.replace(/[^\w\s\n,.-]/g, ' ').replace(/\s+/g, ' ');
+    const lines = cleanText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 1);
+    
+    console.log('Processed lines:', lines);
+    
+    const fullText = cleanText.replace(/\n/g, ' ');
+    
+    // Extract MRN - keeping existing logic since it works
+    const mrnPatterns = [
+        /(?:MRN|Medical\s*Record|Record\s*#?|Patient\s*ID)[:\s#]*([0-9]{5,12})/i,
+        /(?:ID|#)\s*([0-9]{6,10})/i,
+        /\b([0-9]{7,10})\b/g
+    ];
+    
+    for (const pattern of mrnPatterns) {
+        if (pattern.global) {
+            const matches = [...fullText.matchAll(pattern)];
+            for (const match of matches) {
+                const potentialMRN = match[1] || match[0];
+                if (potentialMRN && potentialMRN.length >= 6 && potentialMRN.length <= 12) {
+                    extractedData.mrn = potentialMRN.replace(/\D/g, '');
+                    console.log('Found MRN:', extractedData.mrn);
+                    break;
+                }
+            }
+        } else {
+            const match = fullText.match(pattern);
+            if (match) {
+                extractedData.mrn = match[1].replace(/\D/g, '');
+                console.log('Found MRN:', extractedData.mrn);
+                break;
+            }
+        }
+        if (extractedData.mrn) break;
+    }
+    
+    // ALL CAPS name extraction for medical labels
+    console.log('Starting ALL CAPS name extraction...');
+    
+   // Strategy 1: Look for comma-separated ALL CAPS names (LAST, FIRST) - KEEP SAME FORMAT
+const allCapsCommaPattern = /\b([A-Z]{2,20})\s*,\s*([A-Z]{2,20})\b/;
+const commaMatch = fullText.match(allCapsCommaPattern);
+if (commaMatch) {
+    const fullMatch = commaMatch[0].trim(); // Get the entire match as-is
+    
+    // Skip if it contains numbers
+    if (!/\d/.test(fullMatch)) {
+        extractedData.name = fullMatch; // Keep original format: "SAWYER, JAMES"
+        console.log('Found ALL CAPS comma-separated name:', extractedData.name);
+    }
+}
+
+			
+    
+    // Strategy 2: Look for ALL CAPS name patterns (2-3 words)
+    if (!extractedData.name) {
+        const allCapsNamePattern = /\b([A-Z]{2,20}(?:\s+[A-Z]{2,20}){1,2})\b/g;
+        const nameMatches = [...fullText.matchAll(allCapsNamePattern)];
+        
+        for (const match of nameMatches) {
+            const candidate = match[1].trim();
+            
+            // Skip if contains numbers or MRN
+            if (/\d/.test(candidate)) continue;
+            if (extractedData.mrn && candidate.includes(extractedData.mrn)) continue;
+            
+            // Skip only specific label prefixes
+            if (/^(DOB|ATT|AKA|FIN|MRN)/.test(candidate)) {
+                console.log('Skipping label field:', candidate);
+                continue;
+            }
+            
+            // Check if it looks like a name (2-3 words, reasonable length)
+            const words = candidate.split(/\s+/);
+            if (words.length >= 2 && words.length <= 3 && candidate.length >= 6 && candidate.length <= 40) {
+                extractedData.name = candidate;
+                console.log('Found ALL CAPS name:', extractedData.name);
+                break;
+            }
+        }
+    }
+    
+    // Strategy 3: Line-by-line search for ALL CAPS names
+    if (!extractedData.name) {
+        for (let i = 0; i < Math.min(lines.length, 8); i++) {
+            const line = lines[i].trim();
+            
+            // Skip obvious non-name lines
+            if (line.length < 6 || line.length > 50) continue;
+            if (/^\d/.test(line)) continue;
+            if (extractedData.mrn && line.includes(extractedData.mrn)) continue;
+            
+            // Skip lines that start with label prefixes
+            if (/^(DOB:|ATT:|AKA:|FIN:|MRN:)/i.test(line)) continue;
+            
+            // Check if line is predominantly ALL CAPS letters
+            const allCapsLetters = (line.match(/[A-Z]/g) || []).length;
+            const totalLetters = (line.match(/[A-Za-z]/g) || []).length;
+            const isAllCaps = totalLetters > 0 && (allCapsLetters / totalLetters) > 0.8;
+            
+            if (isAllCaps && !/\d/.test(line)) {
+                const words = line.split(/\s+/).filter(word => word.length > 1);
+                
+                if (words.length >= 2 && words.length <= 4) {
+                    // Clean but keep original case
+                    const cleanName = line.replace(/[^\w\s,.-]/g, '').trim();
+                    if (cleanName.length >= 6) {
+                        extractedData.name = cleanName;
+                        console.log('Found ALL CAPS name via line analysis:', extractedData.name);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Strategy 4: Broader ALL CAPS search as final fallback
+    if (!extractedData.name) {
+        const broadAllCapsPattern = /\b([A-Z]{3,15})\s+([A-Z]{3,15})\b/g;
+        const broadMatches = [...fullText.matchAll(broadAllCapsPattern)];
+        
+        for (const match of broadMatches) {
+            const word1 = match[1];
+            const word2 = match[2];
+            const candidate = `${word1} ${word2}`;
+            
+            // Skip if contains numbers or MRN
+            if (/\d/.test(candidate)) continue;
+            if (extractedData.mrn && candidate.includes(extractedData.mrn)) continue;
+            if (candidate.length < 6 || candidate.length > 30) continue;
+            
+            // Skip only specific label prefixes
+            if (/^(DOB|ATT|AKA|FIN|MRN)/.test(candidate)) continue;
+            
+            extractedData.name = candidate;
+            console.log('Found ALL CAPS name via broad search:', extractedData.name);
+            break;
+        }
+    }
+    
+    console.log('Final extracted data:', extractedData);
+    displayExtractedInfo();
+}
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+		
+
+function displayExtractedInfo() {
+    const extractedDiv = document.getElementById('extractedInfo');
+    const nameSpan = document.getElementById('extractedName');
+    const mrnSpan = document.getElementById('extractedMRN');
+    const addBtn = document.getElementById('addExtractedBtn');
+    
+    nameSpan.textContent = extractedData.name || 'Not found';
+    mrnSpan.textContent = extractedData.mrn || 'Not found';
+    
+    if (extractedData.name) {
+        nameSpan.style.color = '#10b981';
+        nameSpan.style.fontWeight = 'bold';
+        nameSpan.style.fontStyle = 'normal';
+    } else {
+        nameSpan.style.color = '#ef4444';
+        nameSpan.style.fontStyle = 'italic';
+        nameSpan.style.fontWeight = 'normal';
+    }
+    
+    if (extractedData.mrn) {
+        mrnSpan.style.color = '#10b981';
+        mrnSpan.style.fontWeight = 'bold';
+        mrnSpan.style.fontStyle = 'normal';
+    } else {
+        mrnSpan.style.color = '#ef4444';
+        mrnSpan.style.fontStyle = 'italic';
+        mrnSpan.style.fontWeight = 'normal';
+    }
+    
+    extractedDiv.style.display = 'block';
+    addBtn.style.display = 'inline-block';
+    
+    console.log('Extraction results displayed');
+}
+
+function addExtractedPatient() {
+    console.log('Adding extracted patient to list');
+    
+    const newPatient = {};
+    MASTER_HEADERS.forEach(header => {
+        newPatient[header] = '';
+    });
+    
+    newPatient.Type = 'Patient';
+    newPatient.Name = extractedData.name || 'Unknown Patient - Please Edit';
+    newPatient.MRN = extractedData.mrn || '';
+    newPatient.RM = 'TBD';
+    
+    patientData.push(newPatient);
+    displayRows();
+    saveToLocalStorage();
+    updateCensus();
+    
+    closeAddEntryModal();
+    
+    const successParts = [];
+    if (extractedData.name) successParts.push(`Name: ${extractedData.name}`);
+    if (extractedData.mrn) successParts.push(`MRN: ${extractedData.mrn}`);
+    
+    if (successParts.length > 0) {
+        alert(`Patient added successfully!\n\n${successParts.join('\n')}\n\nYou can edit any details by clicking on the patient in the list.`);
+    } else {
+        alert('Patient added with placeholder information.\n\nPlease click on the patient to edit the name and MRN.');
+        setTimeout(() => {
+            showDetails(patientData.length - 1);
+        }, 100);
+    }
+}
+
+function toggleDebugInfo() {
+    const debugDiv = document.getElementById('debugInfo');
+    if (debugDiv.style.display === 'none') {
+        updateDebugInfo();
+        debugDiv.style.display = 'block';
+    } else {
+        debugDiv.style.display = 'none';
+    }
+}
+
+function updateDebugInfo() {
+    const debugText = document.getElementById('debugText');
+    if (debugText) {
+        debugText.textContent = lastOCRText || 'No OCR text available yet';
+    }
+}
+
+async function testOCRSystem() {
+    console.log('=== Testing OCR System ===');
+    
+    const button = event.target;
+    const originalText = button.textContent;
+    const originalStyle = button.style.background;
+    
+    button.textContent = 'Testing...';
+    button.disabled = true;
+    button.style.background = 'linear-gradient(135deg, var(--secondary), #0891b2)';
+    
+    try {
+        if (!isTesseractAvailable()) {
+            throw new Error('Tesseract.js is not loaded. Check the script tag.');
+        }
+        
+        console.log('Testing OCR functionality...');
+        const success = await testOCRAvailability();
+        
+        if (success) {
+            console.log('OCR system test: SUCCESS');
+            button.textContent = 'OCR Working!';
+            button.style.background = 'linear-gradient(135deg, var(--success), #059669)';
+            alert('OCR system is working correctly!\n\nYou can now upload and process images.');
+        } else {
+            throw new Error('OCR test failed - could not recognize test text');
+        }
+        
+    } catch (error) {
+        console.error('OCR test error:', error);
+        button.textContent = 'OCR Failed';
+        button.style.background = 'linear-gradient(135deg, var(--danger), #dc2626)';
+        alert('OCR test failed: ' + error.message);
+    }
+    
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = originalStyle;
+        button.disabled = false;
+    }, 3000);
+}
+		
+
+
+
+		// ============ CHART CHECK TAB FUNCTIONS ============
+
+function navigateChartCheckTab(direction) {
+    const tabs = [
+        { title: 'Basic Info', fields: ['Name', 'RM', 'MRN', 'Att'] },
+        { title: 'Clinical', fields: ['Problems', 'ICS'] },
+        { title: 'VIOLIN', fields: ['VIOLIN'] },
+        { title: 'Orders', fields: ['ORDERS', 'Priority'] }
+    ];
+    
+    const newTab = window.chartCheckCurrentTab + direction;
+    
+    if (newTab >= 0 && newTab < tabs.length) {
+        window.chartCheckCurrentTab = newTab;
+        renderChartCheckTab(tabs);
+    }
+}
+
+function renderChartCheckTab(tabs) {
+    const currentTab = window.chartCheckCurrentTab;
+    const tab = tabs[currentTab];
+    const patient = patientData[currentPatientIndex];
+    
+    // Update navigation
+    const titleElement = document.getElementById('chartCheckTabTitle');
+    const counterElement = document.getElementById('chartCheckTabCounter');
+    const contentElement = document.getElementById('chartCheckTabContent');
+    
+    if (!titleElement || !counterElement || !contentElement) {
+        console.error('Chart check tab elements not found');
+        return;
+    }
+    
+    titleElement.textContent = tab.title;
+    counterElement.textContent = `${currentTab + 1}/${tabs.length}`;
+    
+    // Update navigation buttons
+    const prevButton = document.querySelector('.chart-check-tab-arrow');
+    const nextButton = document.querySelectorAll('.chart-check-tab-arrow')[1];
+    
+    if (prevButton) prevButton.disabled = currentTab === 0;
+    if (nextButton) nextButton.disabled = currentTab === tabs.length - 1;
+    
+    // Clear previous content
+    contentElement.innerHTML = '';
+    
+    // Special handling for VIOLIN tab
+    if (tab.title === 'VIOLIN') {
+        renderViolinTab(contentElement, patient);
+        return;
+    }
+    
+    // Render regular fields
+    const fieldsContainer = document.createElement('div');
+    fieldsContainer.className = 'chart-check-tab-fields';
+    
+    tab.fields.forEach(header => {
+        const fieldGroup = document.createElement('div');
+        fieldGroup.className = 'chart-check-field-group';
+        
+        // Create label
+        const label = document.createElement('label');
+        
+        if (helpContent[header]) {
+            label.innerHTML = `${header}<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('${header}')">?</button>`;
+        } else {
+            label.textContent = header;
+        }
+        
+        // Add special buttons for certain fields
+        if (header === 'Problems') {
+            const podBtn = document.createElement('button');
+            podBtn.textContent = 'Update POD';
+            podBtn.style.marginLeft = '10px';
+            podBtn.style.padding = '0.3rem 0.6rem';
+            podBtn.style.fontSize = '0.8rem';
+            podBtn.onclick = function(e) {
+                e.preventDefault();
+                updatePOD();
+            };
+            label.appendChild(podBtn);
+        } else if (header === 'ORDERS') {
+            const btnContainer = document.createElement('span');
+            btnContainer.style.marginLeft = '10px';
+            
+            const abbrevBtn = document.createElement('button');
+            abbrevBtn.textContent = 'Abbrev Orders';
+            abbrevBtn.style.margin = '0 2px';
+            abbrevBtn.style.padding = '0.3rem 0.6rem';
+            abbrevBtn.style.fontSize = '0.8rem';
+            abbrevBtn.onclick = function(e) {
+                e.preventDefault();
+                updateOrders();
+            };
+            
+            const fullBtn = document.createElement('button');
+            fullBtn.textContent = 'Full Orders';
+            fullBtn.style.margin = '0 2px';
+            fullBtn.style.padding = '0.3rem 0.6rem';
+            fullBtn.style.fontSize = '0.8rem';
+            fullBtn.onclick = function(e) {
+                e.preventDefault();
+                toggleOrdersView();
+            };
+            
+            btnContainer.appendChild(abbrevBtn);
+            btnContainer.appendChild(fullBtn);
+            label.appendChild(btnContainer);
+        }
+        
+        // Create input element
+        let input;
+        if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
+            input = document.createElement('input');
+            input.type = 'text';
+        } else {
+            input = document.createElement('textarea');
+        }
+        
+        input.id = `field_${header.replace(/\s+/g, '_')}`;
+        input.value = patient[header] || '';
+        
+        // Add event listener
+        input.addEventListener('input', function() {
+            patient[header] = this.value;
+            
+            if (header === 'Name') {
+                document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+            }
+            saveToLocalStorage();
+            
+            if (input.tagName === 'TEXTAREA') {
+                autoResizeTextarea(this);
+            }
+        });
+        
+        fieldGroup.appendChild(label);
+        
+        // Add full orders display above ORDERS field
+        if (header === 'ORDERS') {
+            const fullOrdersDiv = document.createElement('div');
+            fullOrdersDiv.id = 'fullOrdersDisplay';
+            fullOrdersDiv.className = 'orders-section hidden';
+            fieldGroup.appendChild(fullOrdersDiv);
+        }
+        
+        fieldGroup.appendChild(input);
+        fieldsContainer.appendChild(fieldGroup);
+        
+        // Auto-resize textareas
+        if (input.tagName === 'TEXTAREA') {
+            setTimeout(() => autoResizeTextarea(input), 0);
+        }
+    });
+    
+    contentElement.appendChild(fieldsContainer);
+}
+
+function renderViolinTab(contentElement, patient) {
+    const violinContainer = document.createElement('div');
+    violinContainer.className = 'violin-tab-content';
+    
+    // Create controls
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'violin-controls';
+    
+    const importBtn = document.createElement('button');
+    importBtn.textContent = '⬇️ Import';
+    importBtn.onclick = function(e) {
+        e.preventDefault();
+        showImportModal();
+    };
+    
+    const tableBtn = document.createElement('button');
+    tableBtn.textContent = '📊 Labs';
+    tableBtn.onclick = function(e) {
+        e.preventDefault();
+        showTableView();
+    };
+    
+    const vitalsBtn = document.createElement('button');
+    vitalsBtn.textContent = '📊 Vitals';
+    vitalsBtn.onclick = function(e) {
+        e.preventDefault();
+        showVitalsTable();
+    };
+    
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = '🔄 Refresh';
+    refreshBtn.onclick = function(e) {
+        e.preventDefault();
+        refreshViolinDisplay();
+    };
+    
+    controlsDiv.appendChild(importBtn);
+    controlsDiv.appendChild(tableBtn);
+    controlsDiv.appendChild(vitalsBtn);
+    controlsDiv.appendChild(refreshBtn);
+    
+    // Create fishbone display container
+    const fishboneContainer = document.createElement('div');
+    fishboneContainer.className = 'violin-fishbone-container';
+    fishboneContainer.id = 'violinFishboneDisplay';
+    
+    // Add warning messages container (hidden by default)
+    const warningDiv = document.createElement('div');
+    warningDiv.id = 'warningMessages';
+    warningDiv.className = 'warning-messages hidden';
+    
+    violinContainer.appendChild(controlsDiv);
+    violinContainer.appendChild(warningDiv);
+    violinContainer.appendChild(fishboneContainer);
+    contentElement.appendChild(violinContainer);
+    
+    // Load and display current fishbone data
+    refreshViolinDisplay();
+}
+
+function refreshViolinDisplay() {
+    const fishboneContainer = document.getElementById('violinFishboneDisplay');
+    const patient = patientData[currentPatientIndex];
+    
+    if (!fishboneContainer) return;
+    
+    if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
+        fishboneContainer.innerHTML = '';
+        
+        const header = document.createElement('h4');
+        header.textContent = 'VIOLIN Fishbone Diagram';
+        fishboneContainer.appendChild(header);
+        
+        const preElement = document.createElement('pre');
+        preElement.style.margin = '0';
+        preElement.style.fontFamily = 'inherit';
+        preElement.style.fontSize = 'inherit';
+        preElement.style.lineHeight = 'inherit';
+        preElement.style.whiteSpace = 'pre-wrap';
+        preElement.style.wordWrap = 'break-word';
+        
+        // Apply red styling to abnormal values while preserving spacing
+        preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">*$1*</span>');
+        fishboneContainer.appendChild(preElement);
+        
+        // Add missing values if available
+        if (labData && Object.keys(labData).length > 0) {
+            const missingValues = generateMissingValuesMessages(labData);
+            if (missingValues) {
+                const missingDiv = document.createElement('div');
+                missingDiv.style.marginTop = '1rem';
+                missingDiv.style.padding = '0.75rem';
+                missingDiv.style.background = 'rgba(100, 100, 100, 0.1)';
+                missingDiv.style.borderRadius = '0.25rem';
+                missingDiv.style.fontSize = '0.85rem';
+                missingDiv.innerHTML = `<strong style="color: var(--text-secondary);">Missing Values:</strong><br><span style="font-style: italic; color: var(--text-secondary);">${missingValues}</span>`;
+                fishboneContainer.appendChild(missingDiv);
+            }
+        }
+        
+        // Show warnings if they exist
+        const warningDiv = document.getElementById('warningMessages');
+        if (warningDiv && labData && Object.keys(labData).length > 0) {
+            const warnings = generateWarnings(labData);
+            if (warnings.length > 0) {
+                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+                warningDiv.classList.remove('hidden');
+            } else {
+                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+                warningDiv.classList.remove('hidden');
+            }
+        }
+        
+    } else {
+        fishboneContainer.innerHTML = `
+            <div class="violin-no-data">
+                <h4>No VIOLIN Data Available</h4>
+                <p>Import lab data using the Import button above to generate the fishbone diagram.</p>
+            </div>
+        `;
+    }
+}
+		
+		
 		
     </script>
 </body>
