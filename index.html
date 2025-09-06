@@ -8826,18 +8826,18 @@ function showPriorityStatus(index) {
 // replace the priorityOptions array with these neon colors:
 
 const priorityOptions = [
-    { num: '0', name: 'Priority 0 - Complete/Done', color: '#00ff41' },          // Bright neon green
-    { num: '1', name: 'Priority 1 - Urgent', color: '#ff0040' },                // Bright neon red
-    { num: '2', name: 'Priority 2 - High', color: '#ff6600' },                  // Bright neon orange
-    { num: '3', name: 'Priority 3 - Medium-High', color: '#ffaa00' },           // Bright neon amber
-    { num: '4', name: 'Priority 4 - Medium', color: '#ffff00' },                // Bright neon yellow
-    { num: '5', name: 'Priority 5 - Medium-Low', color: '#ccff00' },            // Bright neon lime
-    { num: '6', name: 'Priority 6 - Low-Medium', color: '#66ff00' },            // Bright neon chartreuse
-    { num: '7', name: 'Priority 7 - Low', color: '#00ffff' },                   // Bright neon cyan
-    { num: '8', name: 'Priority 8 - Very Low', color: '#0080ff' },              // Bright neon blue
-    { num: '9', name: 'Priority 9 - Minimal', color: '#8000ff' },               // Bright neon purple
-    { num: '10', name: 'Priority 10 - Lowest', color: '#ff00ff' },              // Bright neon magenta
-    { num: '', name: 'No Priority', color: 'var(--card-bg)' }                   // Background color
+    { num: '', name: 'No Priority', color: 'var(--card-bg)' },  // Moved to top
+    { num: '0', name: 'Priority 0 - Complete/Done', color: '#00ff41' },
+    { num: '1', name: 'Priority 1 - Urgent', color: '#ff0040' },
+    { num: '2', name: 'Priority 2 - High', color: '#ff6600' },
+    { num: '3', name: 'Priority 3 - Medium-High', color: '#ffaa00' },
+    { num: '4', name: 'Priority 4 - Medium', color: '#ffff00' },
+    { num: '5', name: 'Priority 5 - Medium-Low', color: '#ccff00' },
+    { num: '6', name: 'Priority 6 - Low-Medium', color: '#66ff00' },
+    { num: '7', name: 'Priority 7 - Low', color: '#00ffff' },
+    { num: '8', name: 'Priority 8 - Very Low', color: '#0080ff' },
+    { num: '9', name: 'Priority 9 - Minimal', color: '#8000ff' },
+    { num: '10', name: 'Priority 10 - Lowest', color: '#ff00ff' }
 ];
 			
     const modal = document.createElement('div');
