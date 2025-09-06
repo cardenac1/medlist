@@ -209,12 +209,14 @@
             position: relative;
         }
 
-        .row-item:hover {
-            background: var(--card-hover);
-            transform: translateX(5px);
-            border-left-color: var(--primary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
+      /* Fixed hover rule - removes border-left-color override */
+		.row-item:hover {
+		    background: var(--card-hover);
+		    transform: translateX(5px);
+		    /* border-left-color: var(--primary); ← REMOVED THIS LINE */
+		    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		    border-left-width: 6px; /* Keep the width increase on hover */
+		}
 
         /* Colored Text */
         .colored-text-1 { color: var(--accent-1); }
