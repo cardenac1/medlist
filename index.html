@@ -1600,6 +1600,41 @@ select,
 		
 
 
+
+
+
+
+		/* ============ PRIORITY LEFT ACCENT BORDER ============ */
+.row-item {
+    /* Keep all your existing styles, just add: */
+    position: relative;
+    border-left: 4px solid var(--priority-color, #444444);
+    transition: all 0.3s ease, border-left-width 0.3s ease;
+}
+
+.row-item:hover {
+    /* Keep your existing hover styles, add: */
+    border-left-width: 6px;
+}
+
+/* Priority Color Variables */
+.priority-0 { --priority-color: #00ff41; } /* Complete - Bright green */
+.priority-1 { --priority-color: #ff0040; } /* Urgent - Bright red */
+.priority-2 { --priority-color: #ff6600; } /* High - Bright orange */
+.priority-3 { --priority-color: #ffaa00; } /* Medium-High - Amber */
+.priority-4 { --priority-color: #ffff00; } /* Medium - Yellow */
+.priority-5 { --priority-color: #ccff00; } /* Medium-Low - Lime */
+.priority-6 { --priority-color: #66ff00; } /* Low-Medium - Chartreuse */
+.priority-7 { --priority-color: #00ffff; } /* Low - Cyan */
+.priority-8 { --priority-color: #0080ff; } /* Very Low - Blue */
+.priority-9 { --priority-color: #8000ff; } /* Minimal - Purple */
+.priority-10 { --priority-color: #ff00ff; } /* Lowest - Magenta */
+.priority-default { --priority-color: #444444; } /* No priority - Dark gray */
+
+
+
+		
+
     </style>
 </head>
 
@@ -2517,7 +2552,18 @@ function generateStatusIndicator(patient, index) {
     
     patientData.forEach((patient, index) => {
         const listItem = document.createElement('li');
-        listItem.className = 'row-item';
+        listItem.className = `row-item ${priorityClass}`;
+
+
+
+		   // ADD THESE LINES - Determine priority class for border color
+        const priority = patient.Priority || '';
+        const priorityNum = parseInt(priority);
+        let priorityClass = 'priority-default';
+        if (!isNaN(priorityNum) && priorityNum >= 0 && priorityNum <= 10) {
+            priorityClass = `priority-${priorityNum}`;
+        }
+		
         
         // Create content container
         const contentContainer = document.createElement('div');
