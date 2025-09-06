@@ -4127,7 +4127,15 @@ function processImportedData() {
     document.getElementById('importData').value = '';
     
     // Show fishbone inline instead of popup
-    setTimeout(() => showFishboneInline(), 100);
+    // Show fishbone inline instead of popup
+setTimeout(() => {
+    showFishboneInline();
+    // Also refresh VIOLIN tab if in chart check mode
+    if (currentViewMode === 'chartcheck') {
+        refreshViolinDisplay();
+    }
+}, 100);
+	
 }
 
 
