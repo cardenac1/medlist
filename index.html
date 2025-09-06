@@ -2551,19 +2551,16 @@ function generateStatusIndicator(patient, index) {
     rowList.innerHTML = '';
     
     patientData.forEach((patient, index) => {
-        const listItem = document.createElement('li');
-        listItem.className = `row-item ${priorityClass}`;
-
-
-
-		   // ADD THESE LINES - Determine priority class for border color
+        // FIXED: Determine priority class BEFORE using it
         const priority = patient.Priority || '';
         const priorityNum = parseInt(priority);
         let priorityClass = 'priority-default';
         if (!isNaN(priorityNum) && priorityNum >= 0 && priorityNum <= 10) {
             priorityClass = `priority-${priorityNum}`;
         }
-		
+        
+        const listItem = document.createElement('li');
+        listItem.className = `row-item ${priorityClass}`;
         
         // Create content container
         const contentContainer = document.createElement('div');
@@ -2573,21 +2570,21 @@ function generateStatusIndicator(patient, index) {
         contentContainer.style.position = 'relative';
         contentContainer.style.paddingRight = '2.5rem'; // Space for status dot
         
-		  // Create button containing first 3 rows
-		const firstThreeButton = document.createElement('button');
-		firstThreeButton.className = 'first-three-btn';
-		firstThreeButton.style.width = 'fit-content';
-		firstThreeButton.style.textAlign = 'left';
-		firstThreeButton.style.background = 'transparent';
-		firstThreeButton.style.border = '1px solid transparent';
-		firstThreeButton.style.borderRadius = '0.25rem';
-		firstThreeButton.style.padding = '0.25rem 0.5rem';
-		firstThreeButton.style.cursor = 'pointer';
-		firstThreeButton.style.color = 'inherit';
-		firstThreeButton.style.alignSelf = 'flex-start';
-		firstThreeButton.style.display = 'flex';           // ← Add this
-		firstThreeButton.style.flexDirection = 'column';   // ← Add this
-		firstThreeButton.style.whiteSpace = 'normal';      // ← Add this
+        // Create button containing first 3 rows
+        const firstThreeButton = document.createElement('button');
+        firstThreeButton.className = 'first-three-btn';
+        firstThreeButton.style.width = 'fit-content';
+        firstThreeButton.style.textAlign = 'left';
+        firstThreeButton.style.background = 'transparent';
+        firstThreeButton.style.border = '1px solid transparent';
+        firstThreeButton.style.borderRadius = '0.25rem';
+        firstThreeButton.style.padding = '0.25rem 0.5rem';
+        firstThreeButton.style.cursor = 'pointer';
+        firstThreeButton.style.color = 'inherit';
+        firstThreeButton.style.alignSelf = 'flex-start';
+        firstThreeButton.style.display = 'flex';
+        firstThreeButton.style.flexDirection = 'column';
+        firstThreeButton.style.whiteSpace = 'normal';
         
         // Store the column data on the button element for the reset function
         firstThreeButton.patientData = patient;
@@ -2638,7 +2635,7 @@ function generateStatusIndicator(patient, index) {
         statusDot.style.position = 'absolute';
         statusDot.style.right = '0.50rem';
         statusDot.style.top = '50%';
-		statusDot.style.transform = 'translateY(-50%)';
+        statusDot.style.transform = 'translateY(-50%)';
         statusDot.style.cursor = 'pointer';
         statusDot.style.zIndex = '10';
         statusDot.title = 'Click to change status';
@@ -2658,6 +2655,9 @@ function generateStatusIndicator(patient, index) {
     
     updateCensus();
 }
+
+
+		
 
 
 
