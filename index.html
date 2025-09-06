@@ -4085,9 +4085,6 @@ function showImportModal() {
 
 
 
-
-// 1. REPLACE the existing processImportedData function (around line 3450) with this:
-
 function processImportedData() {
     const importText = document.getElementById('importData').value;
     if (!importText) return;
@@ -4096,9 +4093,11 @@ function processImportedData() {
     patient.ImportedData = importText;
     lastImportedData = importText;
     
+    // Extract lab data
     labData = extractLabValues(importText);
     patient.LabData = JSON.stringify(labData);
     
+    // Generate fishbone and warnings
     const fishbone = generateFishbone(labData);
     const warnings = generateWarnings(labData);
     
@@ -4112,31 +4111,55 @@ function processImportedData() {
         patient.VIOLIN = fishbone;
     }
     
-    // Update warnings
-    const warningDiv = document.getElementById('warningMessages');
-    if (warnings.length > 0) {
-        warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-        warningDiv.classList.remove('hidden');
-    } else {
-        warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-        warningDiv.classList.remove('hidden');
-    }
+    // Update warnings - handle both regular chart check and VIOLIN tab
+    const updateWarningsInContainer = (containerId) => {
+        const warningDiv = document.getElementById(containerId);
+        if (warningDiv) {
+            if (warnings.length > 0) {
+                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+                warningDiv.classList.remove('hidden');
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+                warningDiv.classList.remove('hidden');
+                warningDiv.style.display = 'block';
+            }
+        }
+    };
+    
+    // Update both possible warning containers
+    updateWarningsInContainer('warningMessages');
+    updateWarningsInContainer('violinWarningMessages');
     
     saveToLocalStorage();
     closeImportModal();
     document.getElementById('importData').value = '';
     
-    // Show fishbone inline instead of popup
-    // Show fishbone inline instead of popup
-setTimeout(() => {
-    showFishboneInline();
-    // Also refresh VIOLIN tab if in chart check mode
-    if (currentViewMode === 'chartcheck') {
-        refreshViolinDisplay();
-    }
-}, 100);
-	
+    // Refresh displays based on current view mode
+    setTimeout(() => {
+        if (currentViewMode === 'chartcheck') {
+            // Check if we're in VIOLIN tab
+            const violinFishboneDisplay = document.getElementById('violinFishboneDisplay');
+            if (violinFishboneDisplay) {
+                // We're in VIOLIN tab - refresh it
+                refreshViolinDisplay();
+            } else {
+                // Regular chart check - show fishbone inline
+                showFishboneInline();
+            }
+        }
+    }, 100);
 }
+
+
+
+
+
+
+
+
+
+		
 
 
 
@@ -9787,17 +9810,18 @@ function renderViolinTabContent(contentElement, patient) {
         min-height: 400px;
     `;
     
-    // Add warning messages container at the bottom
-    const warningDiv = document.createElement('div');
-    warningDiv.id = 'warningMessages';
-    warningDiv.style.cssText = `
-        background: var(--card-bg);
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-top: auto;
-        border: 2px solid var(--danger);
-        display: none;
-    `;
+// Add warning messages container at the bottom
+const warningDiv = document.createElement('div');
+warningDiv.id = 'violinWarningMessages';  // Changed from 'warningMessages'
+warningDiv.className = 'warning-messages';
+warningDiv.style.cssText = `
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: auto;
+    border: 2px solid var(--danger);
+    display: none;
+`;
     
     // Assemble the layout: controls -> fishbone -> warnings
     violinContainer.appendChild(controlsDiv);
@@ -9825,48 +9849,98 @@ function refreshViolinDisplay() {
     
     if (!fishboneContainer) return;
     
+    // Check if we have VIOLIN data
     if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
+        // Clear and set up fishbone container
         fishboneContainer.innerHTML = '';
         fishboneContainer.style.background = '#000000';
         
-        // Removed the header creation - no more title!
-        
+        // Create pre element for fishbone display
         const preElement = document.createElement('pre');
-        preElement.style.margin = '0';
-        preElement.style.fontFamily = 'inherit';
-        preElement.style.fontSize = 'inherit';
-        preElement.style.lineHeight = 'inherit';
-        preElement.style.whiteSpace = 'pre-wrap';
-        preElement.style.wordWrap = 'break-word';
+        preElement.style.cssText = `
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        `;
         
-        // Apply red styling to abnormal values while preserving spacing
+        // Apply red styling to abnormal values while preserving exact spacing
         preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">*$1*</span>');
         fishboneContainer.appendChild(preElement);
         
-        // Add missing values if available
-        if (labData && Object.keys(labData).length > 0) {
-            const missingValues = generateMissingValuesMessages(labData);
+        // Get current lab data - try from stored data first, then regenerate if needed
+        let currentLabData = labData;
+        if ((!currentLabData || Object.keys(currentLabData).length === 0) && patient.LabData) {
+            try {
+                currentLabData = JSON.parse(patient.LabData);
+            } catch (e) {
+                console.error('Error parsing stored lab data:', e);
+                currentLabData = {};
+            }
+        }
+        
+        // If we still don't have lab data but have imported data, regenerate it
+        if ((!currentLabData || Object.keys(currentLabData).length === 0) && patient.ImportedData) {
+            console.log('Regenerating lab data from imported data');
+            currentLabData = extractLabValues(patient.ImportedData);
+            labData = currentLabData; // Update global variable
+            patient.LabData = JSON.stringify(currentLabData);
+            saveToLocalStorage();
+        }
+        
+        // Show missing values if we have lab data
+        if (currentLabData && Object.keys(currentLabData).length > 0) {
+            const missingValues = generateMissingValuesMessages(currentLabData);
             if (missingValues) {
                 const missingDiv = document.createElement('div');
-                missingDiv.style.marginTop = '1rem';
-                missingDiv.style.padding = '0.75rem';
-                missingDiv.style.background = 'rgba(100, 100, 100, 0.2)';
-                missingDiv.style.borderRadius = '0.25rem';
-                missingDiv.style.fontSize = '0.5rem';
+                missingDiv.style.cssText = `
+                    margin-top: 1rem;
+                    padding: 0.75rem;
+                    background: rgba(100, 100, 100, 0.2);
+                    border-radius: 0.25rem;
+                    font-size: 0.5rem;
+                `;
                 missingDiv.innerHTML = `<strong style="color: var(--secondary);">Missing Values:</strong><br><span style="font-style: italic; color: #888888;">${missingValues}</span>`;
                 fishboneContainer.appendChild(missingDiv);
             }
         }
         
+        // Update warnings in the VIOLIN tab
+        if (currentLabData && Object.keys(currentLabData).length > 0) {
+            const warnings = generateWarnings(currentLabData);
+            const warningDiv = document.getElementById('violinWarningMessages');
+            if (warningDiv) {
+                if (warnings.length > 0) {
+                    warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+                    warningDiv.style.display = 'block';
+                    warningDiv.classList.remove('hidden');
+                } else {
+                    warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+                    warningDiv.style.display = 'block';
+                    warningDiv.classList.remove('hidden');
+                }
+            }
+        }
+        
     } else {
+        // No VIOLIN data available
         fishboneContainer.innerHTML = `
             <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem; font-size: 1.1rem;">
                 <p>Import lab data using the Import button above to generate the fishbone diagram.</p>
             </div>
         `;
         fishboneContainer.style.background = '#000000';
+        
+        // Hide warnings if no data
+        const warningDiv = document.getElementById('violinWarningMessages');
+        if (warningDiv) {
+            warningDiv.style.display = 'none';
+            warningDiv.classList.add('hidden');
+        }
     }
-}		
+}	
 		
 		
 
