@@ -1442,20 +1442,34 @@ select,
 
 
 
-		/* Chart Check Tabbed Interface */
-.chart-check-tabs {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
 
+
+
+
+
+
+
+
+
+
+
+
+
+		/* Fixed Chart Check Tab Navigation */
 .chart-check-tab-nav {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     background: var(--card-bg);
     border-radius: 0.5rem 0.5rem 0 0;
     padding: 0.5rem;
     border-bottom: 2px solid var(--border);
+    gap: 0.5rem;
+}
+
+.chart-check-tab-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
 }
 
@@ -1472,9 +1486,10 @@ select,
     justify-content: center;
     font-weight: bold;
     transition: all 0.3s ease;
+    font-size: 1rem;
 }
 
-.chart-check-tab-arrow:hover {
+.chart-check-tab-arrow:hover:not(:disabled) {
     background: var(--primary-dark);
     transform: scale(1.05);
 }
@@ -1483,6 +1498,7 @@ select,
     background: var(--border);
     cursor: not-allowed;
     transform: none;
+    opacity: 0.5;
 }
 
 .chart-check-tab-title {
@@ -1503,80 +1519,55 @@ select,
     font-weight: bold;
 }
 
-.chart-check-tab-content {
-    flex: 1;
-    padding: 1rem;
-    overflow-y: auto;
-    background: var(--dark-bg);
-    border-radius: 0 0 0.5rem 0.5rem;
+.chart-check-tab-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.25rem;
 }
 
-.chart-check-tab-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.chart-check-field-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.chart-check-field-group label {
-    margin-bottom: 0.5rem;
-}
-
-.chart-check-field-group input,
-.chart-check-field-group textarea {
-    margin-bottom: 0;
-}
-
-/* VIOLIN tab specific styles */
-.violin-tab-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.violin-controls {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-}
-
-.violin-fishbone-container {
-    flex: 1;
-    background: var(--card-bg);
-    border: 2px solid var(--secondary);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    font-family: monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    white-space: pre-wrap;
+.chart-check-tab-button {
+    background: var(--card-hover);
     color: var(--text-primary);
-    overflow-y: auto;
-    min-height: 300px;
-}
-
-.violin-fishbone-container h4 {
-    color: var(--secondary);
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-}
-
-.violin-no-data {
-    color: var(--text-secondary);
-    font-style: italic;
+    border: 2px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+    font-weight: 500;
     text-align: center;
-    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Mobile adjustments for tabs */
+.chart-check-tab-button:hover {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.chart-check-tab-button.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Mobile adjustments */
 @media (max-width: 768px) {
     .chart-check-tab-nav {
         padding: 0.25rem;
+        gap: 0.25rem;
+    }
+    
+    .chart-check-tab-header {
         gap: 0.25rem;
     }
     
@@ -1596,23 +1587,14 @@ select,
         padding: 0.2rem 0.4rem;
     }
     
-    .chart-check-tab-content {
-        padding: 0.75rem;
+    .chart-check-tab-buttons {
+        gap: 0.2rem;
     }
     
-    .violin-controls {
-        gap: 0.25rem;
-    }
-    
-    .violin-controls button {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.8rem;
-    }
-    
-    .violin-fishbone-container {
-        font-size: 0.85rem;
-        padding: 0.75rem;
-        min-height: 250px;
+    .chart-check-tab-button {
+        padding: 0.4rem 0.2rem;
+        font-size: 0.7rem;
+        min-height: 36px;
     }
 }
 		
@@ -2894,6 +2876,7 @@ function generateStatusIndicator(patient, index) {
 
 
                     
+
 case 'chartcheck':
     // Initialize chart check tab state if not exists
     if (typeof window.chartCheckCurrentTab === 'undefined') {
@@ -2902,10 +2885,10 @@ case 'chartcheck':
     
     // Tab configuration
     const chartCheckTabs = [
-        { title: 'Basic Info', fields: ['Name', 'RM', 'MRN', 'Att'] },
-        { title: 'Clinical', fields: ['Problems', 'ICS'] },
-        { title: 'VIOLIN', fields: ['VIOLIN'] },
-        { title: 'Orders', fields: ['ORDERS', 'Priority'] }
+        { title: 'Basic Info', shortName: 'Basic', fields: ['Name', 'RM', 'MRN', 'Att'] },
+        { title: 'Clinical', shortName: 'Clinical', fields: ['Problems', 'ICS'] },
+        { title: 'VIOLIN', shortName: 'VIOLIN', fields: ['VIOLIN'] },
+        { title: 'Orders', shortName: 'Orders', fields: ['ORDERS', 'Priority'] }
     ];
     
     // Create main container
@@ -2923,15 +2906,29 @@ case 'chartcheck':
     const tabNav = document.createElement('div');
     tabNav.className = 'chart-check-tab-nav';
     
+    // Create header with arrows, title, and counter
+    const tabHeader = document.createElement('div');
+    tabHeader.className = 'chart-check-tab-header';
+    
     const prevButton = document.createElement('button');
     prevButton.className = 'chart-check-tab-arrow';
-    prevButton.innerHTML = '&lt;';
-    prevButton.onclick = () => navigateChartCheckTab(-1);
+    prevButton.innerHTML = '&#8249;'; // Left arrow HTML entity
+    prevButton.id = 'chartCheckPrevBtn';
+    prevButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigateChartCheckTab(-1);
+    });
     
     const nextButton = document.createElement('button');
     nextButton.className = 'chart-check-tab-arrow';
-    nextButton.innerHTML = '&gt;';
-    nextButton.onclick = () => navigateChartCheckTab(1);
+    nextButton.innerHTML = '&#8250;'; // Right arrow HTML entity
+    nextButton.id = 'chartCheckNextBtn';
+    nextButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigateChartCheckTab(1);
+    });
     
     const tabTitle = document.createElement('div');
     tabTitle.className = 'chart-check-tab-title';
@@ -2941,10 +2938,30 @@ case 'chartcheck':
     tabCounter.className = 'chart-check-tab-counter';
     tabCounter.id = 'chartCheckTabCounter';
     
-    tabNav.appendChild(prevButton);
-    tabNav.appendChild(tabTitle);
-    tabNav.appendChild(tabCounter);
-    tabNav.appendChild(nextButton);
+    tabHeader.appendChild(prevButton);
+    tabHeader.appendChild(tabTitle);
+    tabHeader.appendChild(tabCounter);
+    tabHeader.appendChild(nextButton);
+    
+    // Create tab buttons row
+    const tabButtons = document.createElement('div');
+    tabButtons.className = 'chart-check-tab-buttons';
+    
+    chartCheckTabs.forEach((tab, index) => {
+        const tabButton = document.createElement('button');
+        tabButton.className = 'chart-check-tab-button';
+        tabButton.textContent = tab.shortName;
+        tabButton.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            goToChartCheckTab(index);
+        };
+        tabButton.setAttribute('data-tab-index', index);
+        tabButtons.appendChild(tabButton);
+    });
+    
+    tabNav.appendChild(tabHeader);
+    tabNav.appendChild(tabButtons);
     
     // Create tab content area
     const tabContent = document.createElement('div');
@@ -2995,6 +3012,22 @@ case 'chartcheck':
     renderChartCheckTab(chartCheckTabs);
     
     return; // Exit early to prevent duplicate field creation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					
 
 
 
@@ -9372,20 +9405,61 @@ async function testOCRSystem() {
 
 
 
-		// ============ CHART CHECK TAB FUNCTIONS ============
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// ============ FIXED CHART CHECK TAB FUNCTIONS ============
 
 function navigateChartCheckTab(direction) {
     const tabs = [
-        { title: 'Basic Info', fields: ['Name', 'RM', 'MRN', 'Att'] },
-        { title: 'Clinical', fields: ['Problems', 'ICS'] },
-        { title: 'VIOLIN', fields: ['VIOLIN'] },
-        { title: 'Orders', fields: ['ORDERS', 'Priority'] }
+        { title: 'Basic Info', shortName: 'Basic', fields: ['Name', 'RM', 'MRN', 'Att'] },
+        { title: 'Clinical', shortName: 'Clinical', fields: ['Problems', 'ICS'] },
+        { title: 'VIOLIN', shortName: 'VIOLIN', fields: ['VIOLIN'] },
+        { title: 'Orders', shortName: 'Orders', fields: ['ORDERS', 'Priority'] }
     ];
     
     const newTab = window.chartCheckCurrentTab + direction;
     
     if (newTab >= 0 && newTab < tabs.length) {
         window.chartCheckCurrentTab = newTab;
+        renderChartCheckTab(tabs);
+    }
+}
+
+function goToChartCheckTab(tabIndex) {
+    const tabs = [
+        { title: 'Basic Info', shortName: 'Basic', fields: ['Name', 'RM', 'MRN', 'Att'] },
+        { title: 'Clinical', shortName: 'Clinical', fields: ['Problems', 'ICS'] },
+        { title: 'VIOLIN', shortName: 'VIOLIN', fields: ['VIOLIN'] },
+        { title: 'Orders', shortName: 'Orders', fields: ['ORDERS', 'Priority'] }
+    ];
+    
+    if (tabIndex >= 0 && tabIndex < tabs.length) {
+        window.chartCheckCurrentTab = tabIndex;
         renderChartCheckTab(tabs);
     }
 }
@@ -9409,11 +9483,21 @@ function renderChartCheckTab(tabs) {
     counterElement.textContent = `${currentTab + 1}/${tabs.length}`;
     
     // Update navigation buttons
-    const prevButton = document.querySelector('.chart-check-tab-arrow');
-    const nextButton = document.querySelectorAll('.chart-check-tab-arrow')[1];
+    const prevButton = document.getElementById('chartCheckPrevBtn');
+    const nextButton = document.getElementById('chartCheckNextBtn');
     
     if (prevButton) prevButton.disabled = currentTab === 0;
     if (nextButton) nextButton.disabled = currentTab === tabs.length - 1;
+    
+    // Update tab buttons
+    const tabButtons = document.querySelectorAll('.chart-check-tab-button');
+    tabButtons.forEach((button, index) => {
+        if (index === currentTab) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
     
     // Clear previous content
     contentElement.innerHTML = '';
@@ -9450,6 +9534,7 @@ function renderChartCheckTab(tabs) {
             podBtn.style.fontSize = '0.8rem';
             podBtn.onclick = function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 updatePOD();
             };
             label.appendChild(podBtn);
@@ -9464,6 +9549,7 @@ function renderChartCheckTab(tabs) {
             abbrevBtn.style.fontSize = '0.8rem';
             abbrevBtn.onclick = function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 updateOrders();
             };
             
@@ -9474,6 +9560,7 @@ function renderChartCheckTab(tabs) {
             fullBtn.style.fontSize = '0.8rem';
             fullBtn.onclick = function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleOrdersView();
             };
             
@@ -9542,6 +9629,7 @@ function renderViolinTab(contentElement, patient) {
     importBtn.textContent = '⬇️ Import';
     importBtn.onclick = function(e) {
         e.preventDefault();
+        e.stopPropagation();
         showImportModal();
     };
     
@@ -9549,6 +9637,7 @@ function renderViolinTab(contentElement, patient) {
     tableBtn.textContent = '📊 Labs';
     tableBtn.onclick = function(e) {
         e.preventDefault();
+        e.stopPropagation();
         showTableView();
     };
     
@@ -9556,6 +9645,7 @@ function renderViolinTab(contentElement, patient) {
     vitalsBtn.textContent = '📊 Vitals';
     vitalsBtn.onclick = function(e) {
         e.preventDefault();
+        e.stopPropagation();
         showVitalsTable();
     };
     
@@ -9563,6 +9653,7 @@ function renderViolinTab(contentElement, patient) {
     refreshBtn.textContent = '🔄 Refresh';
     refreshBtn.onclick = function(e) {
         e.preventDefault();
+        e.stopPropagation();
         refreshViolinDisplay();
     };
     
