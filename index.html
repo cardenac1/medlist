@@ -2705,23 +2705,33 @@ function generateStatusIndicator(patient, index) {
         
         mainContent.appendChild(contentContainer);
         
-        // NEW: Add priority sidebar on the RIGHT
-        const prioritySidebar = document.createElement('div');
-        prioritySidebar.className = 'priority-sidebar';
-        prioritySidebar.style.position = 'absolute';
-        prioritySidebar.style.right = '0';
-        prioritySidebar.style.top = '0';
-        prioritySidebar.style.bottom = '0';
-        prioritySidebar.style.width = '8px';
-		prioritySidebar.style.height = '100%'; // Add this line
-        prioritySidebar.style.background = `var(--priority-color, #444444)`;
-        prioritySidebar.style.borderRadius = '0 0.5rem 0.5rem 0';
-        prioritySidebar.style.cursor = 'pointer';
-        prioritySidebar.style.transition = 'all 0.3s ease';
-        prioritySidebar.style.zIndex = '10';
-		mainContent.style.position = 'relative';
-		mainContent.style.minHeight = 'fit-content'; // Add this line
-        
+    const prioritySidebar = document.createElement('div');
+prioritySidebar.className = 'priority-sidebar';
+prioritySidebar.style.cssText = `
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    height: 100%;
+    min-height: 100%;
+    background: var(--priority-color, #444444);
+    border-radius: 0 0.5rem 0.5rem 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+`;
+
+// Ensure the parent containers have proper positioning
+listItem.style.position = 'relative';
+listItem.style.display = 'flex';
+listItem.style.minHeight = 'fit-content';
+
+mainContent.style.flex = '1';
+mainContent.style.position = 'relative';
+mainContent.style.paddingRight = '16px'; // Space for sidebar
+
+		
         // Add hover effect
         prioritySidebar.onmouseenter = () => {
             prioritySidebar.style.width = '12px';
