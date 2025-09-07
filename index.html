@@ -6680,7 +6680,7 @@ if (hgb !== undefined) {
           cr  = data.labs.cr?.[0],
           glu = data.labs.glu?.[0];
 
-    let naStr   = na  !== undefined ? na.toString()   : '--';
+   let naStr = na !== undefined ? (na < 135 || na > 145 ? markAbnormal(na) : na.toString()) : '--';
     let kStr    = k   !== undefined ? (k < 3.5 || k > 5.0 ? markAbnormal(k) : k.toString()) : '--';
     let clStr   = cl  !== undefined ? (cl < 96 || cl > 106 ? markAbnormal(cl) : cl.toString()) : '--';
     let co2Str  = co2 !== undefined ? co2.toString()  : '--';
