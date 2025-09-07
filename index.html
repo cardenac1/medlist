@@ -4280,61 +4280,80 @@ function processImportedData() {
     const importText = document.getElementById('importData').value;
     if (!importText) return;
     
+    console.log('=== Processing New Import Data ===');
+    
+    // CLEAR ALL OLD DATA FIRST
     const patient = patientData[currentPatientIndex];
+    
+    // Clear old cached data
+    patient.VIOLIN = '';           // Clear old fishbone
+    patient.ImportedData = '';     // Clear old import
+    patient.LabData = '';          // Clear old lab data
+    labData = {};                  // Clear global lab data
+    lastImportedData = '';         // Clear global import data
+    
+    console.log('Old data cleared');
+    
+    // NOW set new data
     patient.ImportedData = importText;
     lastImportedData = importText;
     
-    labData = extractLabValues(importText);
-    patient.LabData = JSON.stringify(labData);
+    console.log('New import data set, length:', importText.length);
     
-    const fishbone = generateFishbone(labData);
-    const warnings = generateWarnings(labData);
-    
-    // Update VIOLIN field - handle both regular and tab modes
-    const violinField = document.getElementById('field_VIOLIN') || 
-                       document.querySelector('[id*="VIOLIN"]') ||
-                       document.querySelector('textarea[id*="field_VIOLIN"]');
-    
-    if (violinField) {
-        violinField.value = fishbone;
-        autoResizeTextarea(violinField);
+    try {
+        // Extract fresh lab data
+        labData = extractLabValues(importText);
+        console.log('Fresh lab data extracted:', Object.keys(labData));
+        
+        // Generate fresh fishbone
+        const fishbone = generateFishbone(labData);
+        console.log('Fresh fishbone generated, length:', fishbone ? fishbone.length : 'NULL');
+        
+        // IMPORTANT: Update patient data immediately
         patient.VIOLIN = fishbone;
-    }
-    
-    // Update warnings in chart check mode
-    const warningDiv = document.getElementById('warningMessages');
-    if (warnings.length > 0) {
-        warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-        warningDiv.classList.remove('hidden');
-    } else {
-        warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-        warningDiv.classList.remove('hidden');
-    }
-    
-    saveToLocalStorage();
-    closeImportModal();
-    document.getElementById('importData').value = '';
-    
-    // IMPORTANT: Force refresh of chart check tab displays
-    if (currentViewMode === 'chartcheck') {
-        setTimeout(() => {
-            refreshViolinDisplay();
-            // Force re-render of current tab if it's VIOLIN
-            if (window.chartCheckCurrentTab === 2) { // VIOLIN tab is index 2
-                const tabs = [
-                    { title: 'Basic Info', shortName: 'Basic', fields: ['Name', 'RM', 'MRN', 'Att'] },
-                    { title: 'Clinical', shortName: 'Clinical', fields: ['Problems', 'ICS'] },
-                    { title: 'VIOLIN', shortName: 'VIOLIN', fields: ['VIOLIN'] },
-                    { title: 'Orders', shortName: 'Orders', fields: ['ORDERS', 'Priority'] }
-                ];
-                renderChartCheckTab(tabs);
+        patient.LabData = JSON.stringify(labData);
+        
+        // Update the field
+        const violinField = document.getElementById('field_VIOLIN') || 
+                           document.querySelector('[id*="VIOLIN"]') ||
+                           document.querySelector('textarea[id*="field_VIOLIN"]');
+        
+        if (violinField) {
+            violinField.value = fishbone;
+            autoResizeTextarea(violinField);
+            console.log('VIOLIN field updated with fresh data');
+        }
+        
+        // Process warnings
+        const warnings = generateWarnings(labData);
+        const warningDiv = document.getElementById('warningMessages');
+        if (warningDiv) {
+            if (warnings.length > 0) {
+                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+                warningDiv.classList.remove('hidden');
+            } else {
+                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+                warningDiv.classList.remove('hidden');
             }
-        }, 100);
+        }
+        
+        // Save immediately
+        saveToLocalStorage();
+        closeImportModal();
+        
+        // Force refresh with delay to ensure data is saved
+        setTimeout(() => {
+            if (currentViewMode === 'chartcheck') {
+                refreshViolinDisplay();
+            }
+            showFishboneInline();
+        }, 200);
+        
+    } catch (error) {
+        console.error('Error processing import:', error);
+        alert('Error processing data: ' + error.message);
     }
-    
-    setTimeout(() => showFishboneInline(), 100);
 }
-
 
 
 
@@ -9953,18 +9972,36 @@ function renderViolinTab(contentElement, patient) {
     refreshViolinDisplay();
 }
 
-function refreshViolinDisplay() {
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+
+		function refreshViolinDisplay() {
     const fishboneContainer = document.getElementById('violinFishboneDisplay');
-    const patient = patientData[currentPatientIndex];
+    if (!fishboneContainer) {
+        console.log('Fishbone container not found');
+        return;
+    }
     
-    if (!fishboneContainer) return;
+    const patient = patientData[currentPatientIndex];
+    console.log('Refreshing violin display for patient:', patient.Name);
+    console.log('Patient VIOLIN data length:', patient.VIOLIN ? patient.VIOLIN.length : 'NO DATA');
+    
+    // Clear container first
+    fishboneContainer.innerHTML = '';
     
     if (patient && patient.VIOLIN && patient.VIOLIN.trim()) {
-        fishboneContainer.innerHTML = '';
-        
-        const header = document.createElement('h4');
-        header.textContent = '';
-        fishboneContainer.appendChild(header);
+        console.log('Displaying VIOLIN data...');
         
         const preElement = document.createElement('pre');
         preElement.style.margin = '0';
@@ -9993,20 +10030,10 @@ function refreshViolinDisplay() {
             }
         }
         
-        // Show warnings if they exist
-        const warningDiv = document.getElementById('warningMessages');
-        if (warningDiv && labData && Object.keys(labData).length > 0) {
-            const warnings = generateWarnings(labData);
-            if (warnings.length > 0) {
-                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-                warningDiv.classList.remove('hidden');
-            } else {
-                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-                warningDiv.classList.remove('hidden');
-            }
-        }
+        console.log('VIOLIN display updated successfully');
         
     } else {
+        console.log('No VIOLIN data available, showing placeholder');
         fishboneContainer.innerHTML = `
             <div class="violin-no-data">
                 <h4>No VIOLIN Data Available</h4>
@@ -10015,6 +10042,11 @@ function refreshViolinDisplay() {
         `;
     }
 }
+
+
+
+
+		
 
 
 
