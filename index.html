@@ -2560,21 +2560,12 @@ function generateStatusIndicator(patient, index) {
 
 
 
-
-
-		
-
-
-
-
-
-
- function displayRows() {
+function displayRows() {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
     
     patientData.forEach((patient, index) => {
-        // Determine priority class BEFORE using it
+        // Determine priority class
         const priority = patient.Priority || '';
         const priorityNum = parseInt(priority);
         let priorityClass = 'priority-default';
@@ -2582,40 +2573,59 @@ function generateStatusIndicator(patient, index) {
             priorityClass = `priority-${priorityNum}`;
         }
         
+        // Create main list item
         const listItem = document.createElement('li');
         listItem.className = `row-item ${priorityClass}`;
         
-        // Create main content container
-        const mainContent = document.createElement('div');
-        mainContent.style.width = '100%';
-        mainContent.style.display = 'flex';
-        mainContent.style.position = 'relative';
-        mainContent.style.paddingRight = '1rem'; // Space for sidebar
-		listItem.style.minHeight = '60px'; // Set minimum height
+        // CRITICAL: Set up proper flexbox container
+        listItem.style.cssText = `
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            min-height: 80px;
+            background: var(--card-bg);
+            padding: 0;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--priority-color, #444444);
+            margin-bottom: 1rem;
+        `;
         
-        // Create content container for text
+        // Content container (left side)
         const contentContainer = document.createElement('div');
-        contentContainer.style.flex = '1';
-        contentContainer.style.display = 'flex';
-        contentContainer.style.flexDirection = 'column';
+        contentContainer.style.cssText = `
+            flex: 1;
+            padding: 1rem;
+            padding-right: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-height: 100%;
+        `;
         
-        // Create button containing first 3 rows
+        // Create first three button (clickable copy button)
         const firstThreeButton = document.createElement('button');
         firstThreeButton.className = 'first-three-btn';
-        firstThreeButton.style.width = 'fit-content';
-        firstThreeButton.style.textAlign = 'left';
-        firstThreeButton.style.background = 'transparent';
-        firstThreeButton.style.border = '1px solid transparent';
-        firstThreeButton.style.borderRadius = '0.25rem';
-        firstThreeButton.style.padding = '0.25rem 0.5rem';
-        firstThreeButton.style.cursor = 'pointer';
-        firstThreeButton.style.color = 'inherit';
-        firstThreeButton.style.alignSelf = 'flex-start';
-        firstThreeButton.style.display = 'flex';
-        firstThreeButton.style.flexDirection = 'column';
-        firstThreeButton.style.whiteSpace = 'normal';
+        firstThreeButton.style.cssText = `
+            width: fit-content;
+            text-align: left;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            color: inherit;
+            align-self: flex-start;
+            display: flex;
+            flex-direction: column;
+            white-space: normal;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+        `;
         
-        // Store the column data on the button element for the reset function
+        // Store data for copy functionality
         firstThreeButton.patientData = patient;
         firstThreeButton.columnIndexes = selectedColumns.slice(0, 3);
         firstThreeButton.colorClasses = colors;
@@ -2625,7 +2635,7 @@ function generateStatusIndicator(patient, index) {
             copyPatientInfoImproved(firstThreeButton);
         };
         
-        // Add first 3 selected columns to the button (displayed as rows)
+        // Add first 3 selected columns to the button
         const firstThreeColumns = selectedColumns.slice(0, 3);
         firstThreeColumns.forEach((colIndex, idx) => {
             const header = MASTER_HEADERS[colIndex];
@@ -2634,14 +2644,19 @@ function generateStatusIndicator(patient, index) {
                 const span = document.createElement('span');
                 span.className = colors[idx % colors.length];
                 span.textContent = value;
-                span.style.display = 'block'; // Each on its own row
+                span.style.cssText = `
+                    display: block;
+                    font-family: inherit;
+                    font-size: inherit;
+                    line-height: inherit;
+                `;
                 firstThreeButton.appendChild(span);
             }
         });
         
         contentContainer.appendChild(firstThreeButton);
         
-        // Add remaining columns as regular text rows (not in button)
+        // Add remaining columns (not in button)
         if (selectedColumns.length > 3) {
             const remainingColumns = selectedColumns.slice(3);
             remainingColumns.forEach((colIndex, idx) => {
@@ -2651,43 +2666,38 @@ function generateStatusIndicator(patient, index) {
                     const span = document.createElement('span');
                     span.className = colors[(idx + 3) % colors.length];
                     span.textContent = value;
-                    span.style.display = 'block'; // Each on its own row
-                    span.style.marginLeft = '0.5rem'; // Slight indent to show they're separate
+                    span.style.cssText = `
+                        display: block;
+                        margin-left: 0.5rem;
+                        font-family: inherit;
+                        font-size: inherit;
+                        line-height: inherit;
+                    `;
                     contentContainer.appendChild(span);
                 }
             });
         }
         
-        mainContent.appendChild(contentContainer);
+        // RIGHT PRIORITY SIDEBAR (full height)
+        const prioritySidebar = document.createElement('div');
+        prioritySidebar.className = 'priority-sidebar';
+        prioritySidebar.style.cssText = `
+            width: 8px;
+            background: var(--priority-color, #444444);
+            border-radius: 0 0.5rem 0.5rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            align-self: stretch;
+        `;
         
-    const prioritySidebar = document.createElement('div');
-prioritySidebar.className = 'priority-sidebar';
-prioritySidebar.style.cssText = `
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 8px;
-    height: 100%;
-    min-height: 100%;
-    background: var(--priority-color, #444444);
-    border-radius: 0 0.5rem 0.5rem 0;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10;
-`;
-
-// Ensure the parent containers have proper positioning
-listItem.style.position = 'relative';
-listItem.style.display = 'flex';
-listItem.style.minHeight = 'fit-content';
-
-mainContent.style.flex = '1';
-mainContent.style.position = 'relative';
-mainContent.style.paddingRight = '16px'; // Space for sidebar
-
-		
-        // Add hover effect
+        // Priority sidebar click handler
+        prioritySidebar.onclick = (e) => {
+            e.stopPropagation();
+            showStatusSelector(patient, index, prioritySidebar);
+        };
+        
+        // Priority sidebar hover effects
         prioritySidebar.onmouseenter = () => {
             prioritySidebar.style.width = '12px';
             prioritySidebar.style.boxShadow = '0 0 8px rgba(0,0,0,0.3)';
@@ -2697,32 +2707,64 @@ mainContent.style.paddingRight = '16px'; // Space for sidebar
             prioritySidebar.style.boxShadow = 'none';
         };
         
-        // Click handler for priority selection
-        prioritySidebar.onclick = (e) => {
-            e.stopPropagation();
-            showStatusSelector(patient, index, prioritySidebar);
-        };
-        
         // Add tooltip
         const priorityName = getPriorityName(patient.Priority);
         prioritySidebar.title = `Priority: ${priorityName} (Click to change)`;
         
-        mainContent.appendChild(prioritySidebar);
-        listItem.appendChild(mainContent);
+        // Row hover effects
+        listItem.onmouseenter = () => {
+            listItem.style.background = 'var(--card-hover)';
+            listItem.style.transform = 'translateX(5px)';
+            listItem.style.borderLeftWidth = '6px';
+            listItem.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+        };
         
-        // Make the entire row clickable for details (excluding the sidebar)
+        listItem.onmouseleave = () => {
+            listItem.style.background = 'var(--card-bg)';
+            listItem.style.transform = 'translateX(0)';
+            listItem.style.borderLeftWidth = '4px';
+            listItem.style.boxShadow = 'none';
+        };
+        
+        // Main row click handler (for details view)
         listItem.onclick = (e) => {
-            if (!e.target.closest('.priority-sidebar')) {
+            // Don't trigger if clicking on sidebar or copy button
+            if (!e.target.closest('.priority-sidebar') && !e.target.closest('.first-three-btn')) {
                 showDetails(index);
             }
         };
         
+        // Assemble the row
+        listItem.appendChild(contentContainer);
+        listItem.appendChild(prioritySidebar);
+        
+        // Add to list
         rowList.appendChild(listItem);
     });
     
     updateCensus();
 }
 
+
+
+		
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 
 
 		
@@ -4231,83 +4273,87 @@ function showImportModal() {
 
 
 
-function processImportedData() {
+
+
+
+
+
+
+		function processImportedData() {
     const importText = document.getElementById('importData').value;
     if (!importText) return;
     
-    console.log('=== Processing New Import Data ===');
+    console.log('Processing new import data...');
     
-    // CLEAR ALL OLD DATA FIRST
+    // FORCE CLEAR ALL CACHED DATA
     const patient = patientData[currentPatientIndex];
+    patient.VIOLIN = '';
+    patient.ImportedData = '';
+    patient.LabData = '';
+    labData = {};
+    lastImportedData = '';
     
-    // Clear old cached data
-    patient.VIOLIN = '';           // Clear old fishbone
-    patient.ImportedData = '';     // Clear old import
-    patient.LabData = '';          // Clear old lab data
-    labData = {};                  // Clear global lab data
-    lastImportedData = '';         // Clear global import data
+    // Clear the textarea immediately
+    const violinField = document.getElementById('field_VIOLIN') || 
+                       document.querySelector('textarea[id*="VIOLIN"]');
+    if (violinField) {
+        violinField.value = 'Processing...';
+    }
     
-    console.log('Old data cleared');
-    
-    // NOW set new data
+    // Process new data
     patient.ImportedData = importText;
     lastImportedData = importText;
     
-    console.log('New import data set, length:', importText.length);
+    labData = extractLabValues(importText);
+    const fishbone = generateFishbone(labData);
+    const warnings = generateWarnings(labData);
     
-    try {
-        // Extract fresh lab data
-        labData = extractLabValues(importText);
-        console.log('Fresh lab data extracted:', Object.keys(labData));
-        
-        // Generate fresh fishbone
-        const fishbone = generateFishbone(labData);
-        console.log('Fresh fishbone generated, length:', fishbone ? fishbone.length : 'NULL');
-        
-        // IMPORTANT: Update patient data immediately
-        patient.VIOLIN = fishbone;
-        patient.LabData = JSON.stringify(labData);
-        
-        // Update the field
-        const violinField = document.getElementById('field_VIOLIN') || 
-                           document.querySelector('[id*="VIOLIN"]') ||
-                           document.querySelector('textarea[id*="field_VIOLIN"]');
-        
-        if (violinField) {
-            violinField.value = fishbone;
-            autoResizeTextarea(violinField);
-            console.log('VIOLIN field updated with fresh data');
-        }
-        
-        // Process warnings
-        const warnings = generateWarnings(labData);
-        const warningDiv = document.getElementById('warningMessages');
-        if (warningDiv) {
-            if (warnings.length > 0) {
-                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-                warningDiv.classList.remove('hidden');
-            } else {
-                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-                warningDiv.classList.remove('hidden');
-            }
-        }
-        
-        // Save immediately
-        saveToLocalStorage();
-        closeImportModal();
-        
-        // Force refresh with delay to ensure data is saved
-        setTimeout(() => {
-            if (currentViewMode === 'chartcheck') {
-                refreshViolinDisplay();
-            }
-            showFishboneInline();
-        }, 200);
-        
-    } catch (error) {
-        console.error('Error processing import:', error);
-        alert('Error processing data: ' + error.message);
+    // Update patient data
+    patient.VIOLIN = fishbone;
+    patient.LabData = JSON.stringify(labData);
+    
+    // Update textarea
+    if (violinField) {
+        violinField.value = fishbone;
+        autoResizeTextarea(violinField);
     }
+    
+    // Update warnings
+    const warningDiv = document.getElementById('warningMessages');
+    if (warningDiv) {
+        if (warnings.length > 0) {
+            warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+            warningDiv.classList.remove('hidden');
+        } else {
+            warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+            warningDiv.classList.remove('hidden');
+        }
+    }
+    
+    saveToLocalStorage();
+    closeImportModal();
+    
+    // Force refresh displays
+    setTimeout(() => {
+        refreshViolinDisplay();
+        
+        // Also force update the fishbone container
+        const fishboneContainer = document.getElementById('violinFishboneDisplay');
+        if (fishboneContainer && fishbone) {
+            fishboneContainer.innerHTML = '';
+            const preElement = document.createElement('pre');
+            preElement.style.cssText = `
+                margin: 0;
+                font-family: inherit;
+                font-size: inherit;
+                line-height: inherit;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            `;
+            preElement.innerHTML = fishbone.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">*$1*</span>');
+            fishboneContainer.appendChild(preElement);
+        }
+    }, 100);
 }
 
 
