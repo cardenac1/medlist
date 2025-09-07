@@ -1643,12 +1643,16 @@ select,
 
 		/* ADD this CSS after the existing priority color variables section: */
 
-/* Priority Sidebar Styling */
 .priority-sidebar {
+    position: absolute !important; /* Override any conflicts */
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
     transition: all 0.3s ease;
-    position: relative;
     overflow: hidden;
 }
+
 
 .priority-sidebar::before {
     content: '';
@@ -2715,6 +2719,8 @@ function generateStatusIndicator(patient, index) {
         prioritySidebar.style.cursor = 'pointer';
         prioritySidebar.style.transition = 'all 0.3s ease';
         prioritySidebar.style.zIndex = '10';
+		mainContent.style.position = 'relative';
+		mainContent.style.minHeight = 'fit-content'; // Add this line
         
         // Add hover effect
         prioritySidebar.onmouseenter = () => {
