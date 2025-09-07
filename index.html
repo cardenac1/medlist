@@ -4083,8 +4083,15 @@ ${finalLine}`;
 
 
 function updatePOD() {
-    const problemsField = document.getElementById('field_Problems');
-    if (!problemsField) return;
+    // Try multiple possible field IDs for tab mode vs regular mode
+    let problemsField = document.getElementById('field_Problems') || 
+                       document.querySelector('[id*="Problems"]') ||
+                       document.querySelector('textarea[id*="field_Problems"]');
+    
+    if (!problemsField) {
+        alert('Problems field not found. Make sure you are in the Clinical tab or Details view.');
+        return;
+    }
     
     const problemsText = problemsField.value;
     if (!problemsText || !problemsText.trim()) {
@@ -4253,8 +4260,6 @@ function showImportModal() {
 
 
 
-// REPLACE the existing processImportedData function (around line 3450) with this:
-
 function processImportedData() {
     const importText = document.getElementById('importData').value;
     if (!importText) return;
@@ -4269,13 +4274,14 @@ function processImportedData() {
     const fishbone = generateFishbone(labData);
     const warnings = generateWarnings(labData);
     
-    // Update VIOLIN field with plain text (asterisks preserved)
-    const violinField = document.getElementById('field_VIOLIN');
+    // Update VIOLIN field - handle both regular and tab modes
+    const violinField = document.getElementById('field_VIOLIN') || 
+                       document.querySelector('[id*="VIOLIN"]') ||
+                       document.querySelector('textarea[id*="field_VIOLIN"]');
+    
     if (violinField) {
         violinField.value = fishbone;
         autoResizeTextarea(violinField);
-        
-        // Save the plain text with asterisks
         patient.VIOLIN = fishbone;
     }
     
@@ -4293,17 +4299,25 @@ function processImportedData() {
     closeImportModal();
     document.getElementById('importData').value = '';
     
-    // IMPORTANT: Refresh the VIOLIN tab display if we're in chart check mode
+    // IMPORTANT: Force refresh of chart check tab displays
     if (currentViewMode === 'chartcheck') {
         setTimeout(() => {
             refreshViolinDisplay();
+            // Force re-render of current tab if it's VIOLIN
+            if (window.chartCheckCurrentTab === 2) { // VIOLIN tab is index 2
+                const tabs = [
+                    { title: 'Basic Info', shortName: 'Basic', fields: ['Name', 'RM', 'MRN', 'Att'] },
+                    { title: 'Clinical', shortName: 'Clinical', fields: ['Problems', 'ICS'] },
+                    { title: 'VIOLIN', shortName: 'VIOLIN', fields: ['VIOLIN'] },
+                    { title: 'Orders', shortName: 'Orders', fields: ['ORDERS', 'Priority'] }
+                ];
+                renderChartCheckTab(tabs);
+            }
         }, 100);
     }
     
-    // Also show fishbone inline for other modes
     setTimeout(() => showFishboneInline(), 100);
 }
-		
 
 
 
@@ -9847,6 +9861,18 @@ function renderChartCheckTab(tabs) {
     contentElement.appendChild(fieldsContainer);
 }
 
+
+		function showTableView() {
+    if (!labData || Object.keys(labData).length === 0) {
+        alert('No lab data available. Please import data first using the Import button.');
+        return;
+    }
+    
+    document.getElementById('tableModal').style.display = 'block';
+    generateTableView();
+}
+
+		
 function renderViolinTab(contentElement, patient) {
     const violinContainer = document.createElement('div');
     violinContainer.className = 'violin-tab-content';
@@ -9973,6 +9999,50 @@ function refreshViolinDisplay() {
         `;
     }
 }
+
+
+
+		function closeGraphModal() {
+    const modal = document.getElementById('graphModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function closeTableModal() {
+    const modal = document.getElementById('tableModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+
+
+
+		function ensureChartCheckSync() {
+    if (currentViewMode === 'chartcheck' && currentPatientIndex !== -1) {
+        const patient = patientData[currentPatientIndex];
+        
+        // Update all visible fields with current patient data
+        const allFields = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
+        
+        allFields.forEach(field => {
+            const element = document.getElementById(`field_${field.replace(/\s+/g, '_')}`);
+            if (element && patient[field] !== undefined) {
+                element.value = patient[field] || '';
+                if (element.tagName === 'TEXTAREA') {
+                    autoResizeTextarea(element);
+                }
+            }
+        });
+        
+        // Refresh violin display if on violin tab
+        if (window.chartCheckCurrentTab === 2) {
+            setTimeout(refreshViolinDisplay, 100);
+        }
+    }
+}
+
 		
 		
 		
