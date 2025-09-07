@@ -205,7 +205,6 @@
             flex-direction: column;
             gap: 0.5rem;
             border-left: 4px solid transparent;
-			border-right: 10px solid var(--priority-color, #444444); /* Add this line */
             font-size: 1rem;
             position: relative;
         }
@@ -1640,66 +1639,21 @@ select,
 
 
 
-
-		/* ADD this CSS after the existing priority color variables section: */
-
+/* Make the sidebar fill the entire height */
 .priority-sidebar {
-    position: absolute !important; /* Override any conflicts */
-    right: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    height: 100% !important;
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
-
-
-.priority-sidebar::before {
-    content: '';
     position: absolute;
-    top: 0;
-    left: 0;
     right: 0;
+    top: 0;
     bottom: 0;
-    background: inherit;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+    width: 8px;
+    background: var(--priority-color, #444444);
+    border-radius: 0 0.5rem 0.5rem 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    height: 100% !important; /* Force full height */
 }
 
-.priority-sidebar:hover::before {
-    opacity: 1;
-}
-
-/* Row item adjustments for new sidebar */
-.row-item {
-    position: relative;
-    border-left: 4px solid var(--priority-color, #444444);
-    transition: all 0.3s ease, border-left-width 0.3s ease;
-    /* Remove any right padding since we're using the sidebar now */
-    padding-right: 0;
-}
-
-.row-item:hover {
-    background: var(--card-hover);
-    transform: translateX(5px);
-    border-left-width: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Mobile adjustments for priority sidebar */
-@media (max-width: 768px) {
-    .priority-sidebar {
-        width: 6px !important;
-    }
-    
-    .priority-sidebar:hover {
-        width: 8px !important;
-    }
-    
-    .row-item {
-        padding-right: 0.5rem;
-    }
-}
 
 
 
