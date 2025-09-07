@@ -2753,7 +2753,31 @@ function generateStatusIndicator(patient, index) {
 
 
 		
-
+function getPriorityName(priority) {
+    if (!priority || priority === '') {
+        return 'No priority set';
+    }
+    
+    const priorityNum = parseInt(priority);
+    if (!isNaN(priorityNum)) {
+        switch(priorityNum) {
+            case 0: return 'Complete';
+            case 1: return 'Urgent';
+            case 2: return 'High';
+            case 3: return 'Medium-High';
+            case 4: return 'Medium';
+            case 5: return 'Medium-Low';
+            case 6: return 'Low-Medium';
+            case 7: return 'Low';
+            case 8: return 'Very Low';
+            case 9: return 'Minimal';
+            case 10: return 'Lowest';
+            default: return `Priority ${priorityNum}`;
+        }
+    }
+    
+    return priority; // Return as-is if not a number
+}
 
 
 
