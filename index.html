@@ -1619,24 +1619,86 @@ select,
     border-left-width: 6px;
 }
 
-/* Priority Color Variables */
-.priority-0 { --priority-color: #00ff41; } /* Complete - Bright green */
-.priority-1 { --priority-color: #ff0040; } /* Urgent - Bright red */
-.priority-2 { --priority-color: #ff6600; } /* High - Bright orange */
-.priority-3 { --priority-color: #ffaa00; } /* Medium-High - Amber */
-.priority-4 { --priority-color: #ffff00; } /* Medium - Yellow */
-.priority-5 { --priority-color: #ccff00; } /* Medium-Low - Lime */
-.priority-6 { --priority-color: #66ff00; } /* Low-Medium - Chartreuse */
-.priority-7 { --priority-color: #00ffff; } /* Low - Cyan */
-.priority-8 { --priority-color: #0080ff; } /* Very Low - Blue */
-.priority-9 { --priority-color: #8000ff; } /* Minimal - Purple */
-.priority-10 { --priority-color: #ff00ff; } /* Lowest - Magenta */
-.priority-default { --priority-color: #444444; } /* No priority - Dark gray */
 
+/* Priority Color Variables - Red to Blue Gradient (Excluding Green) */
+.priority-0 { --priority-color: #00ff41; } /* Complete - Keep bright green */
+.priority-1 { --priority-color: #ff0040; } /* Urgent - Bright red */
+.priority-2 { --priority-color: #ff4000; } /* High - Red-orange */
+.priority-3 { --priority-color: #ff8000; } /* Medium-High - Orange */
+.priority-4 { --priority-color: #ffaa00; } /* Medium - Orange-yellow */
+.priority-5 { --priority-color: #ffff00; } /* Medium-Low - Yellow */
+.priority-6 { --priority-color: #cccc00; } /* Low-Medium - Dark yellow */
+.priority-7 { --priority-color: #6699ff; } /* Low - Light blue */
+.priority-8 { --priority-color: #3366ff; } /* Very Low - Blue */
+.priority-9 { --priority-color: #0033ff; } /* Minimal - Dark blue */
+.priority-10 { --priority-color: #0000ff; } /* Lowest - Deep blue */
+.priority-default { --priority-color: #444444; } /* No priority - Dark gray */
 
 
 		
 
+
+
+
+		/* ADD this CSS after the existing priority color variables section: */
+
+/* Priority Sidebar Styling */
+.priority-sidebar {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.priority-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.priority-sidebar:hover::before {
+    opacity: 1;
+}
+
+/* Row item adjustments for new sidebar */
+.row-item {
+    position: relative;
+    border-left: 4px solid var(--priority-color, #444444);
+    transition: all 0.3s ease, border-left-width 0.3s ease;
+    /* Remove any right padding since we're using the sidebar now */
+    padding-right: 0;
+}
+
+.row-item:hover {
+    background: var(--card-hover);
+    transform: translateX(5px);
+    border-left-width: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile adjustments for priority sidebar */
+@media (max-width: 768px) {
+    .priority-sidebar {
+        width: 6px !important;
+    }
+    
+    .priority-sidebar:hover {
+        width: 8px !important;
+    }
+    
+    .row-item {
+        padding-right: 0.5rem;
+    }
+}
+
+
+
+		
     </style>
 </head>
 
@@ -2553,7 +2615,7 @@ function generateStatusIndicator(patient, index) {
     rowList.innerHTML = '';
     
     patientData.forEach((patient, index) => {
-        // FIXED: Determine priority class BEFORE using it
+        // Determine priority class BEFORE using it
         const priority = patient.Priority || '';
         const priorityNum = parseInt(priority);
         let priorityClass = 'priority-default';
@@ -2564,13 +2626,18 @@ function generateStatusIndicator(patient, index) {
         const listItem = document.createElement('li');
         listItem.className = `row-item ${priorityClass}`;
         
-        // Create content container
+        // Create main content container
+        const mainContent = document.createElement('div');
+        mainContent.style.width = '100%';
+        mainContent.style.display = 'flex';
+        mainContent.style.position = 'relative';
+        mainContent.style.paddingRight = '1rem'; // Space for sidebar
+        
+        // Create content container for text
         const contentContainer = document.createElement('div');
-        contentContainer.style.width = '100%';
+        contentContainer.style.flex = '1';
         contentContainer.style.display = 'flex';
         contentContainer.style.flexDirection = 'column';
-        contentContainer.style.position = 'relative';
-        contentContainer.style.paddingRight = '2.5rem'; // Space for status dot
         
         // Create button containing first 3 rows
         const firstThreeButton = document.createElement('button');
@@ -2631,32 +2698,58 @@ function generateStatusIndicator(patient, index) {
             });
         }
         
-        // Add status dot on the RIGHT side
-        const statusDot = document.createElement('div');
-        statusDot.innerHTML = generateStatusIndicator(patient, index);
-        statusDot.style.position = 'absolute';
-        statusDot.style.right = '0.50rem';
-        statusDot.style.top = '50%';
-        statusDot.style.transform = 'translateY(-50%)';
-        statusDot.style.cursor = 'pointer';
-        statusDot.style.zIndex = '10';
-        statusDot.title = 'Click to change status';
-        statusDot.onclick = (e) => {
-            e.stopPropagation();
-            showStatusSelector(patient, index, statusDot);
+        mainContent.appendChild(contentContainer);
+        
+        // NEW: Add priority sidebar on the RIGHT
+        const prioritySidebar = document.createElement('div');
+        prioritySidebar.className = 'priority-sidebar';
+        prioritySidebar.style.position = 'absolute';
+        prioritySidebar.style.right = '0';
+        prioritySidebar.style.top = '0';
+        prioritySidebar.style.bottom = '0';
+        prioritySidebar.style.width = '8px';
+        prioritySidebar.style.background = `var(--priority-color, #444444)`;
+        prioritySidebar.style.borderRadius = '0 0.5rem 0.5rem 0';
+        prioritySidebar.style.cursor = 'pointer';
+        prioritySidebar.style.transition = 'all 0.3s ease';
+        prioritySidebar.style.zIndex = '10';
+        
+        // Add hover effect
+        prioritySidebar.onmouseenter = () => {
+            prioritySidebar.style.width = '12px';
+            prioritySidebar.style.boxShadow = '0 0 8px rgba(0,0,0,0.3)';
         };
-        contentContainer.appendChild(statusDot);
+        prioritySidebar.onmouseleave = () => {
+            prioritySidebar.style.width = '8px';
+            prioritySidebar.style.boxShadow = 'none';
+        };
         
-        listItem.appendChild(contentContainer);
+        // Click handler for priority selection
+        prioritySidebar.onclick = (e) => {
+            e.stopPropagation();
+            showStatusSelector(patient, index, prioritySidebar);
+        };
         
-        // Make the entire row clickable for details
-        listItem.onclick = () => showDetails(index);
+        // Add tooltip
+        const priorityName = getPriorityName(patient.Priority);
+        prioritySidebar.title = `Priority: ${priorityName} (Click to change)`;
+        
+        mainContent.appendChild(prioritySidebar);
+        listItem.appendChild(mainContent);
+        
+        // Make the entire row clickable for details (excluding the sidebar)
+        listItem.onclick = (e) => {
+            if (!e.target.closest('.priority-sidebar')) {
+                showDetails(index);
+            }
+        };
         
         rowList.appendChild(listItem);
     });
     
     updateCensus();
 }
+
 
 
 		
@@ -4134,7 +4227,7 @@ function showImportModal() {
 
 
 
-// 1. REPLACE the existing processImportedData function (around line 3450) with this:
+// REPLACE the existing processImportedData function (around line 3450) with this:
 
 function processImportedData() {
     const importText = document.getElementById('importData').value;
@@ -4160,7 +4253,7 @@ function processImportedData() {
         patient.VIOLIN = fishbone;
     }
     
-    // Update warnings
+    // Update warnings in chart check mode
     const warningDiv = document.getElementById('warningMessages');
     if (warnings.length > 0) {
         warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
@@ -4174,27 +4267,17 @@ function processImportedData() {
     closeImportModal();
     document.getElementById('importData').value = '';
     
-    // Show fishbone inline instead of popup
+    // IMPORTANT: Refresh the VIOLIN tab display if we're in chart check mode
+    if (currentViewMode === 'chartcheck') {
+        setTimeout(() => {
+            refreshViolinDisplay();
+        }, 100);
+    }
+    
+    // Also show fishbone inline for other modes
     setTimeout(() => showFishboneInline(), 100);
 }
-
-
-
-
-        function showTableView() {
-            document.getElementById('tableModal').style.display = 'block';
-            generateTableView();
-        }
-
-        function closeTableModal() {
-            document.getElementById('tableModal').style.display = 'none';
-        }
-
-
-// ADD THIS FUNCTION HERE
-function closeGraphModal() {
-    document.getElementById('graphModal').style.display = 'none';
-}
+		
 
 
 
@@ -8868,34 +8951,34 @@ function showPriorityStatus(index) {
 
 
 
-		function showStatusSelector(patient, index, statusDotElement) {
-// In the showStatusSelector function (around line 2990), 
-// replace the priorityOptions array with these neon colors:
+	// REPLACE the showStatusSelector function (around line 2990) with this updated version:
 
-const priorityOptions = [
-	{ num: '', name: 'No Priority', color: 'var(--card-bg)' },                   // Background color 
-    { num: '0', name: 'Priority 0 - Complete/Done', color: '#00ff41' },          // Bright neon green
-    { num: '1', name: 'Priority 1 - Urgent', color: '#ff0040' },                // Bright neon red
-    { num: '2', name: 'Priority 2 - High', color: '#ff6600' },                  // Bright neon orange
-    { num: '3', name: 'Priority 3 - Medium-High', color: '#ffaa00' },           // Bright neon amber
-    { num: '4', name: 'Priority 4 - Medium', color: '#ffff00' },                // Bright neon yellow
-    { num: '5', name: 'Priority 5 - Medium-Low', color: '#ccff00' },            // Bright neon lime
-    { num: '6', name: 'Priority 6 - Low-Medium', color: '#66ff00' },            // Bright neon chartreuse
-    { num: '7', name: 'Priority 7 - Low', color: '#00ffff' },                   // Bright neon cyan
-    { num: '8', name: 'Priority 8 - Very Low', color: '#0080ff' },              // Bright neon blue
-    { num: '9', name: 'Priority 9 - Minimal', color: '#8000ff' },               // Bright neon purple
-    { num: '10', name: 'Priority 10 - Lowest', color: '#ff00ff' },              // Bright neon magenta
-];
-			
+function showStatusSelector(patient, index, statusElement) {
+    // Updated priority options with new red-to-blue gradient
+    const priorityOptions = [
+        { num: '', name: 'No Priority', color: '#444444' },                   // Dark gray
+        { num: '0', name: 'Priority 0 - Complete/Done', color: '#00ff41' },   // Keep bright green for complete
+        { num: '1', name: 'Priority 1 - Urgent', color: '#ff0040' },          // Bright red
+        { num: '2', name: 'Priority 2 - High', color: '#ff4000' },            // Red-orange
+        { num: '3', name: 'Priority 3 - Medium-High', color: '#ff8000' },     // Orange
+        { num: '4', name: 'Priority 4 - Medium', color: '#ffaa00' },          // Orange-yellow
+        { num: '5', name: 'Priority 5 - Medium-Low', color: '#ffff00' },      // Yellow
+        { num: '6', name: 'Priority 6 - Low-Medium', color: '#cccc00' },      // Dark yellow
+        { num: '7', name: 'Priority 7 - Low', color: '#6699ff' },             // Light blue
+        { num: '8', name: 'Priority 8 - Very Low', color: '#3366ff' },        // Blue
+        { num: '9', name: 'Priority 9 - Minimal', color: '#0033ff' },         // Dark blue
+        { num: '10', name: 'Priority 10 - Lowest', color: '#0000ff' },        // Deep blue
+    ];
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'block';
     modal.innerHTML = `
-        <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-content" style="max-width: 450px;">
             <h3 style="color: var(--primary); margin-bottom: 1rem;">
                 Set Priority for ${patient.Name || 'Unnamed'}
             </h3>
-            <div style="display: grid; gap: 0.5rem; margin-bottom: 1rem; max-height: 400px; overflow-y: auto;">
+            <div style="display: grid; gap: 0.5rem; margin-bottom: 1rem; max-height: 500px; overflow-y: auto;">
                 ${priorityOptions.map(option => `
                     <button onclick="setPatientPriority('${option.num}', ${index}, this.closest('.modal'))" 
                             style="padding: 0.75rem; text-align: left; background: var(--card-bg); 
@@ -8904,9 +8987,11 @@ const priorityOptions = [
                                    align-items: center; gap: 0.75rem;"
                             onmouseover="this.style.background='var(--card-hover)'"
                             onmouseout="this.style.background='var(--card-bg)'">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; 
-                                    background: ${option.color};"></div>
-                        ${option.name}
+                        <div style="width: 20px; height: 20px; border-radius: 0.25rem; 
+                                    background: ${option.color}; border: 2px solid rgba(255,255,255,0.2);"></div>
+                        <span style="flex: 1;">${option.name}</span>
+                        <div style="width: 8px; height: 30px; background: ${option.color}; 
+                                    border-radius: 0.25rem; opacity: 0.8;"></div>
                     </button>
                 `).join('')}
             </div>
@@ -8917,6 +9002,9 @@ const priorityOptions = [
     `;
     document.body.appendChild(modal);
 }
+
+
+		
 
 
 
