@@ -2394,7 +2394,7 @@ function getChecklistStatus(patient, patientIndex) {
     }
 
     // Handle priority "C" explicitly for complete green
-    if (priority === 'C') {
+    if (priority === "C") {
         return { color: '#10b981', title: 'Priority C - Complete' }; // Green
     }
 
@@ -2565,14 +2565,18 @@ function generateStatusIndicator(patient, index) {
 function displayRows() {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
-    
-    patientData.forEach((patient, index) => {
-        // Determine priority class
+	  patientData.forEach((patient, index) => {
+        // Get priority status and color from getPriorityStatus
+        const { color, title } = getPriorityStatus(patient);
+
+        // Determine priority class for additional styling (optional)
         const priority = patient.Priority || '';
         const priorityNum = parseInt(priority);
         let priorityClass = 'priority-default';
-        if (!isNaN(priorityNum) && priorityNum >= 0 && priorityNum <= 10) {
+        if (!isNaN(priorityNum) && priorityNum >= 1 && priorityNum <= 10) {
             priorityClass = `priority-${priorityNum}`;
+        } else if (priority.toLowerCase() === 'c') {
+            priorityClass = 'priority-complete';
         }
         
         // Create main list item
