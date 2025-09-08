@@ -2395,7 +2395,7 @@ function getChecklistStatus(patient, patientIndex) {
     
     const priorityNum = parseInt(priority);
     if (!isNaN(priorityNum)) {
-        if (priorityNum === 0) {
+        if (priorityNum === "C") {
             return { color: '#10b981', title: `Priority ${priorityNum} - Complete` }; // Green
         } else if (priorityNum === 1) {
             return { color: '#ef4444', title: `Priority ${priorityNum} - Urgent` }; // Red
