@@ -2472,7 +2472,7 @@ function generateStatusIndicator(patient, index) {
     let title = 'No priority set';
     
    if (!isNaN(priorityNum)) {
-    if (priorityNum === 0) {
+    if (priorityNum === "C") {
         color = '#00ff41'; // Bright neon green - Complete
         title = `Priority ${priorityNum} - Complete`;
     } else if (priorityNum === 1) {
@@ -2746,7 +2746,7 @@ function displayRows() {
     const priorityNum = parseInt(priority);
     if (!isNaN(priorityNum)) {
         switch(priorityNum) {
-            case 0: return 'Complete';
+            case "C": return 'Complete';
             case 1: return 'Urgent';
             case 2: return 'High';
             case 3: return 'Medium-High';
@@ -8966,7 +8966,7 @@ function showStatusSelector(patient, index, statusElement) {
     // Updated priority options with new red-to-blue gradient
     const priorityOptions = [
         { num: '', name: 'No Priority', color: '#444444' },                   // Dark gray
-        { num: '0', name: 'Priority 0 - Complete/Done', color: '#00ff41' },   // Keep bright green for complete
+       { num: 'C', name: 'Priority C - Complete/Done', color: '#00ff41' },
         { num: '1', name: 'Priority 1 - Urgent', color: '#ff0040' },          // Bright red
         { num: '2', name: 'Priority 2 - High', color: '#ff4000' },            // Red-orange
         { num: '3', name: 'Priority 3 - Medium-High', color: '#ff8000' },     // Orange
