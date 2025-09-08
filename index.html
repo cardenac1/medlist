@@ -186,28 +186,7 @@
             font-family: inherit;
         }
 
-        /* Row List */
-        .row-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .row-item {
-            background: var(--card-bg);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            border-left: 4px solid transparent;
-            font-size: 1rem;
-            position: relative;
-        }
+     
 
       /* Fixed hover rule - removes border-left-color override */
 		.row-item:hover {
@@ -1021,9 +1000,7 @@ textarea, input[type="text"] {
 
 
 
-.row-item {
-    padding-right: 1rem; /* Increased padding to prevent text overlap */
-}
+
 	.violin-button-container {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
@@ -1207,13 +1184,7 @@ select,
     font-size: 0.8rem;
     min-height: 40px;
   }
-  .row-list {
-    gap: 0.75rem;
-  }
-  .row-item {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
+ 
   .fab {
     bottom: 1rem;
     right: 1rem;
@@ -1431,10 +1402,7 @@ select,
         word-wrap: break-word !important;
     }
     
-    /* Also reduce row-item padding on mobile */
-    .row-item {
-        padding: 0.5rem !important;  /* Reduced from default */
-    }
+ 
 }
 
 
@@ -1606,19 +1574,6 @@ select,
 
 
 
-		/* ============ PRIORITY LEFT ACCENT BORDER ============ */
-.row-item {
-    /* Keep all your existing styles, just add: */
-    position: relative;
-    border-left: 4px solid var(--priority-color, #444444);
-    transition: all 0.3s ease, border-left-width 0.3s ease;
-}
-
-.row-item:hover {
-    /* Keep your existing hover styles, add: */
-    border-left-width: 6px;
-}
-
 
 /* Priority Color Variables - Red to Blue Gradient (Excluding Green) */
 .priority-0 { --priority-color: #00ff41; } /* Complete - Keep bright green */
@@ -1636,22 +1591,6 @@ select,
 
 
 		
-
-
-
-/* Make the sidebar fill the entire height */
-.priority-sidebar {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 10px;
-    background: var(--priority-color, #444444);
-    border-radius: 0 0.5rem 0.5rem 0;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10;
-}
 
 
 
