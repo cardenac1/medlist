@@ -2567,10 +2567,8 @@ function displayRows() {
     rowList.innerHTML = '';
 
     patientData.forEach((patient, index) => {
-        // Debug: Log priority and getPriorityStatus output
-        console.log(`Patient ${index} Priority:`, patient.Priority, typeof patient.Priority);
+        // Get priority status and color from getPriorityStatus
         const { color, title } = getPriorityStatus(patient);
-        console.log(`Patient ${index} Priority Status:`, { color, title });
 
         // Determine priority class for additional styling (optional)
         const priority = patient.Priority || '';
@@ -2751,6 +2749,7 @@ function displayRows() {
 
     updateCensus();
 }
+		
 
 
 
