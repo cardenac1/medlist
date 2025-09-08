@@ -2387,19 +2387,25 @@ function getChecklistStatus(patient, patientIndex) {
 
 
 	function getPriorityStatus(patient) {
-    const priority = (patient.Priority || '').trim().toLowerCase();
+    // Normalize priority: handle undefined, null, or non-string values
+    const priority = (patient.Priority || '').toString().trim().toLowerCase();
+    console.log('getPriorityStatus: Normalized priority:', priority); // Debug log
 
     if (!priority) {
+        console.log('getPriorityStatus: No priority, returning default');
         return { color: 'var(--card-bg)', title: 'No priority set' }; // Gray
     }
 
-    // Handle priority "C" explicitly for complete green
-    if (priority === "C") {
-        return { color: '#10b981', title: 'Priority C - Complete' }; // Green
+    // Handle priority "C" explicitly for green
+    if (priority === 'c') {
+        console.log('getPriorityStatus: Matched priority C, returning green');
+        return { color: '#10b981', title: 'Priority C - Complete' }; // Green (emerald-500)
     }
 
+    // Handle numeric priorities
     const priorityNum = parseInt(priority);
     if (!isNaN(priorityNum)) {
+        console.log('getPriorityStatus: Priority is numeric:', priorityNum);
         switch (priorityNum) {
             case 1:
                 return { color: '#ef4444', title: 'Priority 1 - Urgent' }; // Red
@@ -2422,11 +2428,13 @@ function getChecklistStatus(patient, patientIndex) {
             case 10:
                 return { color: '#a855f7', title: 'Priority 10 - Lowest' }; // Violet
             default:
+                console.log('getPriorityStatus: Numeric priority out of range:', priorityNum);
                 return { color: 'var(--card-bg)', title: `Priority ${priorityNum} - Out of range` }; // Gray
         }
     }
 
     // Text-based priority fallback
+    console.log('getPriorityStatus: Checking text-based priority:', priority);
     if (priority.includes('done') || priority.includes('complete')) {
         return { color: '#10b981', title: `${priority} - Complete` }; // Green
     }
@@ -2443,9 +2451,10 @@ function getChecklistStatus(patient, patientIndex) {
         return { color: '#22c55e', title: `${priority} - Low` }; // Light Green
     }
 
+    console.log('getPriorityStatus: Unrecognized priority, returning default:', priority);
     return { color: 'var(--card-bg)', title: `${priority}` }; // Default gray
 }
-
+		
 
 
 
