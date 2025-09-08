@@ -2541,32 +2541,32 @@ function displayRows() {
         const listItem = document.createElement('li');
         listItem.className = `row-item ${priorityClass}`;
         
-        // CRITICAL: Set up proper flexbox container
-       listItem.style.cssText = `
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    background: var(--card-bg);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-left: 4px solid var(--priority-color, #444444);
-	font-size: 0.9rem;
-    margin-bottom: 1rem;
-`;
+        // FIXED: Equal spacing between rows, consistent font size
+        listItem.style.cssText = `
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--priority-color, #444444);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            padding: 0;
+        `;
         
-        // Content container (left side)
+        // FIXED: Reduced gap for tighter within-row spacing
         const contentContainer = document.createElement('div');
-   contentContainer.style.cssText = `
-    flex: 1;
-    padding: 1rem;
-    padding-right: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-`;
+        contentContainer.style.cssText = `
+            flex: 1;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        `;
         
-        // Create first three button (clickable copy button)
+        // FIXED: Tighter line spacing for button
         const firstThreeButton = document.createElement('button');
         firstThreeButton.className = 'first-three-btn';
         firstThreeButton.style.cssText = `
@@ -2575,7 +2575,7 @@ function displayRows() {
             background: transparent;
             border: 1px solid transparent;
             border-radius: 0.25rem;
-            padding: 0.25rem 0.5rem;
+            padding: 0.2rem 0.4rem;
             cursor: pointer;
             color: inherit;
             align-self: flex-start;
@@ -2583,8 +2583,9 @@ function displayRows() {
             flex-direction: column;
             white-space: normal;
             font-family: inherit;
-            font-size: inherit;
-            line-height: inherit;
+            font-size: 0.9rem;
+            line-height: 1.2;
+            gap: 0.1rem;
         `;
         
         // Store data for copy functionality
@@ -2597,7 +2598,7 @@ function displayRows() {
             copyPatientInfoImproved(firstThreeButton);
         };
         
-        // Add first 3 selected columns to the button
+        // FIXED: Consistent spacing for spans in button
         const firstThreeColumns = selectedColumns.slice(0, 3);
         firstThreeColumns.forEach((colIndex, idx) => {
             const header = MASTER_HEADERS[colIndex];
@@ -2609,8 +2610,9 @@ function displayRows() {
                 span.style.cssText = `
                     display: block;
                     font-family: inherit;
-                    font-size: inherit;
-                    line-height: inherit;
+                    font-size: 0.9rem;
+                    line-height: 1.2;
+                    margin-bottom: 0.05rem;
                 `;
                 firstThreeButton.appendChild(span);
             }
@@ -2618,7 +2620,7 @@ function displayRows() {
         
         contentContainer.appendChild(firstThreeButton);
         
-        // Add remaining columns (not in button)
+        // FIXED: Consistent spacing for remaining columns
         if (selectedColumns.length > 3) {
             const remainingColumns = selectedColumns.slice(3);
             remainingColumns.forEach((colIndex, idx) => {
@@ -2631,16 +2633,17 @@ function displayRows() {
                     span.style.cssText = `
                         display: block;
                         margin-left: 0.5rem;
+                        margin-bottom: 0.1rem;
                         font-family: inherit;
-                        font-size: inherit;
-                        line-height: inherit;
+                        font-size: 0.9rem;
+                        line-height: 1.2;
                     `;
                     contentContainer.appendChild(span);
                 }
             });
         }
         
-        // RIGHT PRIORITY SIDEBAR (full height)
+        // RIGHT PRIORITY SIDEBAR (unchanged)
         const prioritySidebar = document.createElement('div');
         prioritySidebar.className = 'priority-sidebar';
         prioritySidebar.style.cssText = `
@@ -2709,28 +2712,7 @@ function displayRows() {
 
 
 
-		
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
-
-
-		
-function getPriorityName(priority) {
+		function getPriorityName(priority) {
     if (!priority || priority === '') {
         return 'No priority set';
     }
@@ -2755,7 +2737,7 @@ function getPriorityName(priority) {
     
     return priority; // Return as-is if not a number
 }
-
+		
 
 
 
