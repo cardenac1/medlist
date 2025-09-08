@@ -2386,58 +2386,63 @@ function getChecklistStatus(patient, patientIndex) {
 
 
 
-		function getPriorityStatus(patient) {
-    const priority = patient.Priority || '';
-    
-    if (!priority.trim()) {
+	function getPriorityStatus(patient) {
+    const priority = (patient.Priority || '').trim().toLowerCase();
+
+    if (!priority) {
         return { color: 'var(--card-bg)', title: 'No priority set' }; // Gray
     }
-			if (priority === "C") {
-    return { color: '#10b981', title: `Priority C - Complete` }; // Green
-}
-	const priorityNum = parseInt(priority); 		
+
+    // Handle priority "C" explicitly for complete green
+    if (priority === 'c') {
+        return { color: '#10b981', title: 'Priority C - Complete' }; // Green
+    }
+
+    const priorityNum = parseInt(priority);
     if (!isNaN(priorityNum)) {
-        if (priorityNum === "11") {
-            return { color: '#10b981', title: `Priority ${priorityNum} - Complete` }; // Green
-        } else if (priorityNum === 1) {
-            return { color: '#ef4444', title: `Priority ${priorityNum} - Urgent` }; // Red
-        } else if (priorityNum === 2) {
-            return { color: '#f97316', title: `Priority ${priorityNum} - High` }; // Orange
-        } else if (priorityNum === 3) {
-            return { color: '#f59e0b', title: `Priority ${priorityNum} - Medium-High` }; // Amber
-        } else if (priorityNum === 4) {
-            return { color: '#eab308', title: `Priority ${priorityNum} - Medium` }; // Yellow
-        } else if (priorityNum === 5) {
-            return { color: '#84cc16', title: `Priority ${priorityNum} - Medium-Low` }; // Lime
-        } else if (priorityNum === 6) {
-            return { color: '#22c55e', title: `Priority ${priorityNum} - Low-Medium` }; // Light Green
-        } else if (priorityNum === 7) {
-            return { color: '#06b6d4', title: `Priority ${priorityNum} - Low` }; // Cyan
-        } else if (priorityNum === 8) {
-            return { color: '#3b82f6', title: `Priority ${priorityNum} - Very Low` }; // Blue
-        } else if (priorityNum === 9) {
-            return { color: '#8b5cf6', title: `Priority ${priorityNum} - Minimal` }; // Purple
-        } else if (priorityNum === 10) {
-            return { color: '#a855f7', title: `Priority ${priorityNum} - Lowest` }; // Violet
-        } else if (priorityNum > 10) {
-            return { color: 'var(--card-bg)', title: `Priority ${priorityNum} - Out of range` }; // Gray
+        switch (priorityNum) {
+            case 1:
+                return { color: '#ef4444', title: 'Priority 1 - Urgent' }; // Red
+            case 2:
+                return { color: '#f97316', title: 'Priority 2 - High' }; // Orange
+            case 3:
+                return { color: '#f59e0b', title: 'Priority 3 - Medium-High' }; // Amber
+            case 4:
+                return { color: '#eab308', title: 'Priority 4 - Medium' }; // Yellow
+            case 5:
+                return { color: '#84cc16', title: 'Priority 5 - Medium-Low' }; // Lime
+            case 6:
+                return { color: '#22c55e', title: 'Priority 6 - Low-Medium' }; // Light Green
+            case 7:
+                return { color: '#06b6d4', title: 'Priority 7 - Low' }; // Cyan
+            case 8:
+                return { color: '#3b82f6', title: 'Priority 8 - Very Low' }; // Blue
+            case 9:
+                return { color: '#8b5cf6', title: 'Priority 9 - Minimal' }; // Purple
+            case 10:
+                return { color: '#a855f7', title: 'Priority 10 - Lowest' }; // Violet
+            default:
+                return { color: 'var(--card-bg)', title: `Priority ${priorityNum} - Out of range` }; // Gray
         }
     }
-    
+
     // Text-based priority fallback
-    const priorityLower = priority.toLowerCase();
-    if (priorityLower.includes('done') || priorityLower.includes('complete')) {
+    if (priority.includes('done') || priority.includes('complete')) {
         return { color: '#10b981', title: `${priority} - Complete` }; // Green
-    } else if (priorityLower.includes('urgent') || priorityLower.includes('stat')) {
+    }
+    if (priority.includes('urgent') || priority.includes('stat')) {
         return { color: '#ef4444', title: `${priority} - Urgent` }; // Red
-    } else if (priorityLower.includes('high')) {
+    }
+    if (priority.includes('high')) {
         return { color: '#f97316', title: `${priority} - High` }; // Orange
-    } else if (priorityLower.includes('medium')) {
+    }
+    if (priority.includes('medium')) {
         return { color: '#f59e0b', title: `${priority} - Medium` }; // Amber
-    } else if (priorityLower.includes('low')) {
+    }
+    if (priority.includes('low')) {
         return { color: '#22c55e', title: `${priority} - Low` }; // Light Green
     }
-    
+
     return { color: 'var(--card-bg)', title: `${priority}` }; // Default gray
 }
 
@@ -2450,14 +2455,12 @@ function getChecklistStatus(patient, patientIndex) {
 
 
 
-
 function generateStatusIndicator(patient, index) {
-    // Check if this should be grey (not a consult and no priority)
+    // Check if this should be grey (no consult data and no priority)
     const consultFields = ['CC', 'HPI', 'ROS', 'PMH', 'Meds', 'All', 'Surg hx', 'FSH', 'PE'];
-    const hasConsultData = consultFields.some(field => patient[field] && patient[field].trim());
-    const hasPriority = patient.Priority && patient.Priority.trim();
-    
-    // If no consult data and no priority, show grey
+    const hasConsultData = consultFields.some(field => patient[field]?.trim());
+    const hasPriority = patient.Priority?.trim();
+
     if (!hasConsultData && !hasPriority) {
         return `
             <div class="status-dot" 
@@ -2465,85 +2468,92 @@ function generateStatusIndicator(patient, index) {
                  title="No consult data or priority assigned">
             </div>`;
     }
-    
-    // STATUS IS NOW BASED PURELY ON PRIORITY NUMBER
-    const priority = patient.Priority || '';
-    
+
+    const priority = (patient.Priority || '').trim().toLowerCase();
     let color = 'var(--card-bg)'; // Default grey
     let title = 'No priority set';
-    
-    if (priority === "C") {
-        color = '#00ff41'; // Bright neon green - Complete
+
+    // Handle priority "C" explicitly for complete green
+    if (priority === 'c') {
+        color = '#00ff41'; // Bright neon green
         title = 'Priority C - Complete';
-    } else {
+    } else if (!isNaN(parseInt(priority))) {
+        // Numeric priorities
         const priorityNum = parseInt(priority);
-        if (!isNaN(priorityNum)) {
-            if (priorityNum === 1) {
-                color = '#ff0040'; // Bright neon red - Urgent  
-                title = `Priority ${priorityNum} - Urgent`;
-            } else if (priorityNum === 2) {
-                color = '#ff6600'; // Bright neon orange - High
-                title = `Priority ${priorityNum} - High`;
-            } else if (priorityNum === 3) {
-                color = '#ffaa00'; // Bright neon amber - Medium-High
-                title = `Priority ${priorityNum} - Medium-High`;
-            } else if (priorityNum === 4) {
-                color = '#ffff00'; // Bright neon yellow - Medium
-                title = `Priority ${priorityNum} - Medium`;
-            } else if (priorityNum === 5) {
-                color = '#ccff00'; // Bright neon lime - Medium-Low
-                title = `Priority ${priorityNum} - Medium-Low`;
-            } else if (priorityNum === 6) {
-                color = '#66ff00'; // Bright neon chartreuse - Low-Medium
-                title = `Priority ${priorityNum} - Low-Medium`;
-            } else if (priorityNum === 7) {
-                color = '#00ffff'; // Bright neon cyan - Low
-                title = `Priority ${priorityNum} - Low`;
-            } else if (priorityNum === 8) {
-                color = '#0080ff'; // Bright neon blue - Very Low
-                title = `Priority ${priorityNum} - Very Low`;
-            } else if (priorityNum === 9) {
-                color = '#8000ff'; // Bright neon purple - Minimal
-                title = `Priority ${priorityNum} - Minimal`;
-            } else if (priorityNum === 10) {
-                color = '#ff00ff'; // Bright neon magenta - Lowest
-                title = `Priority ${priorityNum} - Lowest`;
-            } else {
-                color = 'var(--card-bg)'; // Dark grey for out of range
-                title = `Priority ${priorityNum} - Out of range`;
-            }
-        } else if (priority.trim()) {
-            // Text-based priority fallback with neon colors
-            const priorityLower = priority.toLowerCase();
-            if (priorityLower.includes('done') || priorityLower.includes('complete')) {
-                color = '#00ff41'; // Bright neon green
-                title = `${priority} - Complete`;
-            } else if (priorityLower.includes('urgent') || priorityLower.includes('stat')) {
+        switch (priorityNum) {
+            case 1:
                 color = '#ff0040'; // Bright neon red
-                title = `${priority} - Urgent`;
-            } else if (priorityLower.includes('high')) {
+                title = 'Priority 1 - Urgent';
+                break;
+            case 2:
                 color = '#ff6600'; // Bright neon orange
-                title = `${priority} - High`;
-            } else if (priorityLower.includes('medium')) {
+                title = 'Priority 2 - High';
+                break;
+            case 3:
                 color = '#ffaa00'; // Bright neon amber
-                title = `${priority} - Medium`;
-            } else if (priorityLower.includes('low')) {
+                title = 'Priority 3 - Medium-High';
+                break;
+            case 4:
+                color = '#ffff00'; // Bright neon yellow
+                title = 'Priority 4 - Medium';
+                break;
+            case 5:
+                color = '#ccff00'; // Bright neon lime
+                title = 'Priority 5 - Medium-Low';
+                break;
+            case 6:
+                color = '#66ff00'; // Bright neon chartreuse
+                title = 'Priority 6 - Low-Medium';
+                break;
+            case 7:
                 color = '#00ffff'; // Bright neon cyan
-                title = `${priority} - Low`;
-            } else {
-                color = 'var(--card-bg)'; // Medium grey for unrecognized text
-                title = `${priority}`;
-            }
+                title = 'Priority 7 - Low';
+                break;
+            case 8:
+                color = '#0080ff'; // Bright neon blue
+                title = 'Priority 8 - Very Low';
+                break;
+            case 9:
+                color = '#8000ff'; // Bright neon purple
+                title = 'Priority 9 - Minimal';
+                break;
+            case 10:
+                color = '#ff00ff'; // Bright neon magenta
+                title = 'Priority 10 - Lowest';
+                break;
+            default:
+                color = 'var(--card-bg)'; // Grey for out of range
+                title = `Priority ${priorityNum} - Out of range`;
+        }
+    } else if (priority) {
+        // Text-based priorities
+        if (priority.includes('done') || priority.includes('complete')) {
+            color = '#00ff41'; // Bright neon green
+            title = `${priority} - Complete`;
+        } else if (priority.includes('urgent') || priority.includes('stat')) {
+            color = '#ff0040'; // Bright neon red
+            title = `${priority} - Urgent`;
+        } else if (priority.includes('high')) {
+            color = '#ff6600'; // Bright neon orange
+            title = `${priority} - High`;
+        } else if (priority.includes('medium')) {
+            color = '#ffaa00'; // Bright neon amber
+            title = `${priority} - Medium`;
+        } else if (priority.includes('low')) {
+            color = '#00ffff'; // Bright neon cyan
+            title = `${priority} - Low`;
+        } else {
+            color = 'var(--card-bg)'; // Grey for unrecognized text
+            title = `${priority}`;
         }
     }
-    
+
     return `
         <div class="status-dot" 
              style="background: ${color};" 
              title="${title}">
         </div>`;
 }
-
 
 
 
