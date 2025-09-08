@@ -2565,7 +2565,8 @@ function generateStatusIndicator(patient, index) {
 function displayRows() {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
-	  patientData.forEach((patient, index) => {
+
+    patientData.forEach((patient, index) => {
         // Get priority status and color from getPriorityStatus
         const { color, title } = getPriorityStatus(patient);
 
@@ -2578,12 +2579,10 @@ function displayRows() {
         } else if (priority.toLowerCase() === 'c') {
             priorityClass = 'priority-complete';
         }
-        
+
         // Create main list item
         const listItem = document.createElement('li');
         listItem.className = `row-item ${priorityClass}`;
-        
-        // FIXED: Equal spacing between rows, consistent font size
         listItem.style.cssText = `
             position: relative;
             display: flex;
@@ -2592,13 +2591,13 @@ function displayRows() {
             border-radius: 0.5rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            border-left: 4px solid var(--priority-color, #444444);
+            border-left: 4px solid ${color}; /* Use color from getPriorityStatus */
             font-size: 0.9rem;
             margin-bottom: 1rem;
             padding: 0;
         `;
-        
-        // FIXED: Reduced gap for tighter within-row spacing
+
+        // Content container
         const contentContainer = document.createElement('div');
         contentContainer.style.cssText = `
             flex: 1;
@@ -2607,8 +2606,8 @@ function displayRows() {
             flex-direction: column;
             gap: 0.2rem;
         `;
-        
-        // FIXED: Tighter line spacing for button
+
+        // First three columns button
         const firstThreeButton = document.createElement('button');
         firstThreeButton.className = 'first-three-btn';
         firstThreeButton.style.cssText = `
@@ -2629,18 +2628,18 @@ function displayRows() {
             line-height: 1.2;
             gap: 0.1rem;
         `;
-        
+
         // Store data for copy functionality
         firstThreeButton.patientData = patient;
         firstThreeButton.columnIndexes = selectedColumns.slice(0, 3);
         firstThreeButton.colorClasses = colors;
-        
+
         firstThreeButton.onclick = (e) => {
             e.stopPropagation();
             copyPatientInfoImproved(firstThreeButton);
         };
-        
-        // FIXED: Consistent spacing for spans in button
+
+        // Add first three columns to button
         const firstThreeColumns = selectedColumns.slice(0, 3);
         firstThreeColumns.forEach((colIndex, idx) => {
             const header = MASTER_HEADERS[colIndex];
@@ -2659,10 +2658,10 @@ function displayRows() {
                 firstThreeButton.appendChild(span);
             }
         });
-        
+
         contentContainer.appendChild(firstThreeButton);
-        
-        // FIXED: Consistent spacing for remaining columns
+
+        // Remaining columns
         if (selectedColumns.length > 3) {
             const remainingColumns = selectedColumns.slice(3);
             remainingColumns.forEach((colIndex, idx) => {
@@ -2684,26 +2683,26 @@ function displayRows() {
                 }
             });
         }
-        
-        // RIGHT PRIORITY SIDEBAR (unchanged)
+
+        // Priority sidebar
         const prioritySidebar = document.createElement('div');
         prioritySidebar.className = 'priority-sidebar';
         prioritySidebar.style.cssText = `
             width: 12px;
-            background: var(--priority-color, #444444);
+            background: ${color}; /* Use color from getPriorityStatus */
             border-radius: 0 0.5rem 0.5rem 0;
             cursor: pointer;
             transition: all 0.3s ease;
             flex-shrink: 0;
             align-self: stretch;
         `;
-        
+
         // Priority sidebar click handler
         prioritySidebar.onclick = (e) => {
             e.stopPropagation();
             showStatusSelector(patient, index, prioritySidebar);
         };
-        
+
         // Priority sidebar hover effects
         prioritySidebar.onmouseenter = () => {
             prioritySidebar.style.width = '14px';
@@ -2713,11 +2712,11 @@ function displayRows() {
             prioritySidebar.style.width = '12px';
             prioritySidebar.style.boxShadow = 'none';
         };
-        
+
         // Add tooltip
         const priorityName = getPriorityName(patient.Priority);
         prioritySidebar.title = `Priority: ${priorityName} (Click to change)`;
-        
+
         // Row hover effects
         listItem.onmouseenter = () => {
             listItem.style.background = 'var(--card-hover)';
@@ -2725,44 +2724,58 @@ function displayRows() {
             listItem.style.borderLeftWidth = '6px';
             listItem.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
         };
-        
+
         listItem.onmouseleave = () => {
             listItem.style.background = 'var(--card-bg)';
             listItem.style.transform = 'translateX(0)';
             listItem.style.borderLeftWidth = '4px';
             listItem.style.boxShadow = 'none';
         };
-        
+
         // Main row click handler (for details view)
         listItem.onclick = (e) => {
-            // Don't trigger if clicking on sidebar or copy button
             if (!e.target.closest('.priority-sidebar') && !e.target.closest('.first-three-btn')) {
                 showDetails(index);
             }
         };
-        
+
         // Assemble the row
         listItem.appendChild(contentContainer);
         listItem.appendChild(prioritySidebar);
-        
+
         // Add to list
         rowList.appendChild(listItem);
     });
-    
+
     updateCensus();
 }
 
 
 
+
+
+
+
+
+
+
+
+
 		function getPriorityName(priority) {
-    if (!priority || priority === '') {
+    if (!priority || priority.trim() === '') {
         return 'No priority set';
     }
-    
-    const priorityNum = parseInt(priority);
+
+    const normalizedPriority = priority.toString().trim().toLowerCase();
+
+    // Handle "C" explicitly
+    if (normalizedPriority === 'c') {
+        return 'Complete';
+    }
+
+    const priorityNum = parseInt(normalizedPriority);
     if (!isNaN(priorityNum)) {
-        switch(priorityNum) {
-            case "C": return 'Complete';
+        switch (priorityNum) {
             case 1: return 'Urgent';
             case 2: return 'High';
             case 3: return 'Medium-High';
@@ -2776,11 +2789,26 @@ function displayRows() {
             default: return `Priority ${priorityNum}`;
         }
     }
-    
-    return priority; // Return as-is if not a number
-}
-		
 
+    // Text-based priority fallback
+    if (normalizedPriority.includes('done') || normalizedPriority.includes('complete')) {
+        return 'Complete';
+    }
+    if (normalizedPriority.includes('urgent') || normalizedPriority.includes('stat')) {
+        return 'Urgent';
+    }
+    if (normalizedPriority.includes('high')) {
+        return 'High';
+    }
+    if (normalizedPriority.includes('medium')) {
+        return 'Medium';
+    }
+    if (normalizedPriority.includes('low')) {
+        return 'Low';
+    }
+
+    return normalizedPriority; // Return as-is if unrecognized
+}
 
 
 
