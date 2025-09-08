@@ -8417,10 +8417,29 @@ function pasteFromClipboard() {
                         button.style.color = 'white';
                         button.disabled = false;
                         
-                        // Show fishbone inline
-                        setTimeout(() => {
-                            showFishboneInline();
-                        }, 200);
+                       // Show fishbone inline and refresh chart check display
+setTimeout(() => {
+    showFishboneInline();
+    
+    // ALSO refresh chart check tab if we're in that mode
+    if (currentViewMode === 'chartcheck') {
+        refreshViolinDisplay();
+        
+        // Update warnings in chart check mode
+        const warningDiv = document.getElementById('warningMessages');
+        if (warningDiv && warnings) {
+            if (warnings.length > 0) {
+                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
+                warningDiv.classList.remove('hidden');
+            } else {
+                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
+                warningDiv.classList.remove('hidden');
+            }
+        }
+    }
+}, 200);
+
+						
                         
                         // Auto-reset button after 3 seconds
                         setTimeout(() => {
@@ -8827,16 +8846,21 @@ preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="colo
 function showFishboneInline() {
     // Add a delay to ensure DOM elements are ready
     setTimeout(() => {
-        const fishboneDisplay = document.getElementById('fishboneDisplay');
-        if (fishboneDisplay && currentViewMode === 'chartcheck') {
-            // Auto-show the fishbone after processing
-            if (fishboneDisplay.classList.contains('hidden')) {
-                toggleFishboneDisplay(); // This will populate and show it
+        if (currentViewMode === 'chartcheck') {
+            // For chart check mode, refresh the violin tab display
+            refreshViolinDisplay();
+        } else {
+            // For basic mode, show the fishbone display
+            const fishboneDisplay = document.getElementById('fishboneDisplay');
+            if (fishboneDisplay) {
+                // Auto-show the fishbone after processing
+                if (fishboneDisplay.classList.contains('hidden')) {
+                    toggleFishboneDisplay(); // This will populate and show it
+                }
             }
         }
     }, 200);
 }
-
 
 
 
