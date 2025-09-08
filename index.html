@@ -4301,27 +4301,29 @@ function showImportModal() {
     saveToLocalStorage();
     closeImportModal();
     
-    // Force refresh displays
-    setTimeout(() => {
+// Force refresh ALL displays regardless of mode
+setTimeout(() => {
+    // Update the textarea field directly
+    const violinField = document.getElementById('field_VIOLIN') || 
+                       document.querySelector('textarea[id*="VIOLIN"]');
+    if (violinField) {
+        violinField.value = fishbone;
+        autoResizeTextarea(violinField);
+    }
+    
+    // Refresh chart check display if in that mode
+    if (currentViewMode === 'chartcheck') {
         refreshViolinDisplay();
-        
-        // Also force update the fishbone container
-        const fishboneContainer = document.getElementById('violinFishboneDisplay');
-        if (fishboneContainer && fishbone) {
-            fishboneContainer.innerHTML = '';
-            const preElement = document.createElement('pre');
-            preElement.style.cssText = `
-                margin: 0;
-                font-family: inherit;
-                font-size: inherit;
-                line-height: inherit;
-                white-space: pre-wrap;
-                word-wrap: break-word;
-            `;
-            preElement.innerHTML = fishbone.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">*$1*</span>');
-            fishboneContainer.appendChild(preElement);
-        }
-    }, 100);
+    }
+    
+    // Also try to refresh basic mode fishbone
+    const fishboneContainer = document.getElementById('fishboneDisplay');
+    if (fishboneContainer) {
+        showFishboneInline();
+    }
+}, 100);
+
+			
 }
 
 
@@ -8331,83 +8333,17 @@ function pasteFromClipboard() {
                 textarea.value = text;
                 button.textContent = 'Processing data...';
                 
-                // Add a small delay to show the pasted content
+                // Add a small delay to show the pasted content, then call the existing process function
                 setTimeout(() => {
                     try {
-                        // Process the data immediately
-                        const importText = textarea.value;
-                        if (!importText) {
-                            throw new Error('No text found in textarea after paste');
-                        }
-                        
-                        const patient = patientData[currentPatientIndex];
-                        if (!patient) {
-                            throw new Error('No current patient selected');
-                        }
-                        
-                        patient.ImportedData = importText;
-                        lastImportedData = importText;
-                        
-                        labData = extractLabValues(importText);
-                        patient.LabData = JSON.stringify(labData);
-                        
-                        const fishbone = generateFishbone(labData);
-                        const warnings = generateWarnings(labData);
-                        
-                        // Update VIOLIN field with plain text (asterisks preserved)
-                        const violinField = document.getElementById('field_VIOLIN');
-                        if (violinField) {
-                            violinField.value = fishbone;
-                            autoResizeTextarea(violinField);
-                            
-                            // Save the plain text with asterisks
-                            patient.VIOLIN = fishbone;
-                        }
-                        
-                        // Update warnings
-                        const warningDiv = document.getElementById('warningMessages');
-                        if (warningDiv) {
-                            if (warnings.length > 0) {
-                                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-                                warningDiv.classList.remove('hidden');
-                            } else {
-                                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-                                warningDiv.classList.remove('hidden');
-                            }
-                        }
-                        
-                        saveToLocalStorage();
-                        closeImportModal();
+                        // Use the existing processImportedData function instead of duplicating logic
+                        processImportedData();
                         
                         // Success feedback
                         button.textContent = 'Completed!';
                         button.style.background = 'linear-gradient(135deg, var(--success), #059669)';
                         button.style.color = 'white';
                         button.disabled = false;
-                        
-                       // Show fishbone inline and refresh chart check display
-setTimeout(() => {
-    showFishboneInline();
-    
-    // ALSO refresh chart check tab if we're in that mode
-    if (currentViewMode === 'chartcheck') {
-        refreshViolinDisplay();
-        
-        // Update warnings in chart check mode
-        const warningDiv = document.getElementById('warningMessages');
-        if (warningDiv && warnings) {
-            if (warnings.length > 0) {
-                warningDiv.innerHTML = warnings.map(w => `<div class="warning-message">${w}</div>`).join('');
-                warningDiv.classList.remove('hidden');
-            } else {
-                warningDiv.innerHTML = '<div class="warning-message" style="color: var(--accent-3);">All values within normal limits</div>';
-                warningDiv.classList.remove('hidden');
-            }
-        }
-    }
-}, 200);
-
-						
                         
                         // Auto-reset button after 3 seconds
                         setTimeout(() => {
@@ -8467,6 +8403,9 @@ setTimeout(() => {
             }, 500);
         });
 }
+
+
+		
 
 
 
