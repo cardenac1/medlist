@@ -2392,10 +2392,12 @@ function getChecklistStatus(patient, patientIndex) {
     if (!priority.trim()) {
         return { color: 'var(--card-bg)', title: 'No priority set' }; // Gray
     }
-    
-    const priorityNum = parseInt(priority);
+			if (priority === "C") {
+    return { color: '#10b981', title: `Priority C - Complete` }; // Green
+}
+	const priorityNum = parseInt(priority); 		
     if (!isNaN(priorityNum)) {
-        if (priorityNum === "C") {
+        if (priorityNum === "11") {
             return { color: '#10b981', title: `Priority ${priorityNum} - Complete` }; // Green
         } else if (priorityNum === 1) {
             return { color: '#ef4444', title: `Priority ${priorityNum} - Urgent` }; // Red
@@ -2466,72 +2468,74 @@ function generateStatusIndicator(patient, index) {
     
     // STATUS IS NOW BASED PURELY ON PRIORITY NUMBER
     const priority = patient.Priority || '';
-    const priorityNum = parseInt(priority);
     
     let color = 'var(--card-bg)'; // Default grey
     let title = 'No priority set';
     
-   if (!isNaN(priorityNum)) {
-    if (priorityNum === "C") {
+    if (priority === "C") {
         color = '#00ff41'; // Bright neon green - Complete
-        title = `Priority ${priorityNum} - Complete`;
-    } else if (priorityNum === 1) {
-        color = '#ff0040'; // Bright neon red - Urgent  
-        title = `Priority ${priorityNum} - Urgent`;
-    } else if (priorityNum === 2) {
-        color = '#ff6600'; // Bright neon orange - High
-        title = `Priority ${priorityNum} - High`;
-    } else if (priorityNum === 3) {
-        color = '#ffaa00'; // Bright neon amber - Medium-High
-        title = `Priority ${priorityNum} - Medium-High`;
-    } else if (priorityNum === 4) {
-        color = '#ffff00'; // Bright neon yellow - Medium
-        title = `Priority ${priorityNum} - Medium`;
-    } else if (priorityNum === 5) {
-        color = '#ccff00'; // Bright neon lime - Medium-Low
-        title = `Priority ${priorityNum} - Medium-Low`;
-    } else if (priorityNum === 6) {
-        color = '#66ff00'; // Bright neon chartreuse - Low-Medium
-        title = `Priority ${priorityNum} - Low-Medium`;
-    } else if (priorityNum === 7) {
-        color = '#00ffff'; // Bright neon cyan - Low
-        title = `Priority ${priorityNum} - Low`;
-    } else if (priorityNum === 8) {
-        color = '#0080ff'; // Bright neon blue - Very Low
-        title = `Priority ${priorityNum} - Very Low`;
-    } else if (priorityNum === 9) {
-        color = '#8000ff'; // Bright neon purple - Minimal
-        title = `Priority ${priorityNum} - Minimal`;
-    } else if (priorityNum === 10) {
-        color = '#ff00ff'; // Bright neon magenta - Lowest
-        title = `Priority ${priorityNum} - Lowest`;
+        title = 'Priority C - Complete';
     } else {
-        color = 'var(--card-bg)'; // Dark grey for out of range
-        title = `Priority ${priorityNum} - Out of range`;
+        const priorityNum = parseInt(priority);
+        if (!isNaN(priorityNum)) {
+            if (priorityNum === 1) {
+                color = '#ff0040'; // Bright neon red - Urgent  
+                title = `Priority ${priorityNum} - Urgent`;
+            } else if (priorityNum === 2) {
+                color = '#ff6600'; // Bright neon orange - High
+                title = `Priority ${priorityNum} - High`;
+            } else if (priorityNum === 3) {
+                color = '#ffaa00'; // Bright neon amber - Medium-High
+                title = `Priority ${priorityNum} - Medium-High`;
+            } else if (priorityNum === 4) {
+                color = '#ffff00'; // Bright neon yellow - Medium
+                title = `Priority ${priorityNum} - Medium`;
+            } else if (priorityNum === 5) {
+                color = '#ccff00'; // Bright neon lime - Medium-Low
+                title = `Priority ${priorityNum} - Medium-Low`;
+            } else if (priorityNum === 6) {
+                color = '#66ff00'; // Bright neon chartreuse - Low-Medium
+                title = `Priority ${priorityNum} - Low-Medium`;
+            } else if (priorityNum === 7) {
+                color = '#00ffff'; // Bright neon cyan - Low
+                title = `Priority ${priorityNum} - Low`;
+            } else if (priorityNum === 8) {
+                color = '#0080ff'; // Bright neon blue - Very Low
+                title = `Priority ${priorityNum} - Very Low`;
+            } else if (priorityNum === 9) {
+                color = '#8000ff'; // Bright neon purple - Minimal
+                title = `Priority ${priorityNum} - Minimal`;
+            } else if (priorityNum === 10) {
+                color = '#ff00ff'; // Bright neon magenta - Lowest
+                title = `Priority ${priorityNum} - Lowest`;
+            } else {
+                color = 'var(--card-bg)'; // Dark grey for out of range
+                title = `Priority ${priorityNum} - Out of range`;
+            }
+        } else if (priority.trim()) {
+            // Text-based priority fallback with neon colors
+            const priorityLower = priority.toLowerCase();
+            if (priorityLower.includes('done') || priorityLower.includes('complete')) {
+                color = '#00ff41'; // Bright neon green
+                title = `${priority} - Complete`;
+            } else if (priorityLower.includes('urgent') || priorityLower.includes('stat')) {
+                color = '#ff0040'; // Bright neon red
+                title = `${priority} - Urgent`;
+            } else if (priorityLower.includes('high')) {
+                color = '#ff6600'; // Bright neon orange
+                title = `${priority} - High`;
+            } else if (priorityLower.includes('medium')) {
+                color = '#ffaa00'; // Bright neon amber
+                title = `${priority} - Medium`;
+            } else if (priorityLower.includes('low')) {
+                color = '#00ffff'; // Bright neon cyan
+                title = `${priority} - Low`;
+            } else {
+                color = 'var(--card-bg)'; // Medium grey for unrecognized text
+                title = `${priority}`;
+            }
+        }
     }
-} else if (priority.trim()) {
-    // Text-based priority fallback with neon colors
-    const priorityLower = priority.toLowerCase();
-    if (priorityLower.includes('done') || priorityLower.includes('complete')) {
-        color = '#00ff41'; // Bright neon green
-        title = `${priority} - Complete`;
-    } else if (priorityLower.includes('urgent') || priorityLower.includes('stat')) {
-        color = '#ff0040'; // Bright neon red
-        title = `${priority} - Urgent`;
-    } else if (priorityLower.includes('high')) {
-        color = '#ff6600'; // Bright neon orange
-        title = `${priority} - High`;
-    } else if (priorityLower.includes('medium')) {
-        color = '#ffaa00'; // Bright neon amber
-        title = `${priority} - Medium`;
-    } else if (priorityLower.includes('low')) {
-        color = '#00ffff'; // Bright neon cyan
-        title = `${priority} - Low`;
-    } else {
-        color = 'var(--card-bg)'; // Medium grey for unrecognized text
-        title = `${priority}`;
-    }
-}
     
     return `
         <div class="status-dot" 
@@ -2539,8 +2543,6 @@ function generateStatusIndicator(patient, index) {
              title="${title}">
         </div>`;
 }
-		
-		
 
 
 
