@@ -2567,8 +2567,10 @@ function displayRows() {
     rowList.innerHTML = '';
 
     patientData.forEach((patient, index) => {
-        // Get priority status and color from getPriorityStatus
+        // Debug: Log priority and getPriorityStatus output
+        console.log(`Patient ${index} Priority:`, patient.Priority, typeof patient.Priority);
         const { color, title } = getPriorityStatus(patient);
+        console.log(`Patient ${index} Priority Status:`, { color, title });
 
         // Determine priority class for additional styling (optional)
         const priority = patient.Priority || '';
@@ -2761,54 +2763,70 @@ function displayRows() {
 
 
 
-		function getPriorityName(priority) {
-    if (!priority || priority.trim() === '') {
-        return 'No priority set';
+		function getPriorityStatus(patient) {
+    // Normalize priority: handle undefined, null, or non-string values
+    const priority = (patient.Priority || '').toString().trim().toLowerCase();
+
+    if (!priority) {
+        return { color: 'var(--card-bg)', title: 'No priority set' }; // Gray
     }
 
-    const normalizedPriority = priority.toString().trim().toLowerCase();
-
-    // Handle "C" explicitly
-    if (normalizedPriority === 'c') {
-        return 'Complete';
+    // Handle priority "C" explicitly for green
+    if (priority === 'c') {
+        return { color: '#10b981', title: 'Priority C - Complete' }; // Green (emerald-500)
     }
 
-    const priorityNum = parseInt(normalizedPriority);
+    // Handle numeric priorities
+    const priorityNum = parseInt(priority);
     if (!isNaN(priorityNum)) {
         switch (priorityNum) {
-            case 1: return 'Urgent';
-            case 2: return 'High';
-            case 3: return 'Medium-High';
-            case 4: return 'Medium';
-            case 5: return 'Medium-Low';
-            case 6: return 'Low-Medium';
-            case 7: return 'Low';
-            case 8: return 'Very Low';
-            case 9: return 'Minimal';
-            case 10: return 'Lowest';
-            default: return `Priority ${priorityNum}`;
+            case 1:
+                return { color: '#ef4444', title: 'Priority 1 - Urgent' }; // Red
+            case 2:
+                return { color: '#f97316', title: 'Priority 2 - High' }; // Orange
+            case 3:
+                return { color: '#f59e0b', title: 'Priority 3 - Medium-High' }; // Amber
+            case 4:
+                return { color: '#eab308', title: 'Priority 4 - Medium' }; // Yellow
+            case 5:
+                return { color: '#84cc16', title: 'Priority 5 - Medium-Low' }; // Lime
+            case 6:
+                return { color: '#22c55e', title: 'Priority 6 - Low-Medium' }; // Light Green
+            case 7:
+                return { color: '#06b6d4', title: 'Priority 7 - Low' }; // Cyan
+            case 8:
+                return { color: '#3b82f6', title: 'Priority 8 - Very Low' }; // Blue
+            case 9:
+                return { color: '#8b5cf6', title: 'Priority 9 - Minimal' }; // Purple
+            case 10:
+                return { color: '#a855f7', title: 'Priority 10 - Lowest' }; // Violet
+            default:
+                return { color: 'var(--card-bg)', title: `Priority ${priorityNum} - Out of range` }; // Gray
         }
     }
 
     // Text-based priority fallback
-    if (normalizedPriority.includes('done') || normalizedPriority.includes('complete')) {
-        return 'Complete';
+    if (priority.includes('done') || priority.includes('complete')) {
+        return { color: '#10b981', title: `${priority} - Complete` }; // Green
     }
-    if (normalizedPriority.includes('urgent') || normalizedPriority.includes('stat')) {
-        return 'Urgent';
+    if (priority.includes('urgent') || priority.includes('stat')) {
+        return { color: '#ef4444', title: `${priority} - Urgent` }; // Red
     }
-    if (normalizedPriority.includes('high')) {
-        return 'High';
+    if (priority.includes('high')) {
+        return { color: '#f97316', title: `${priority} - High` }; // Orange
     }
-    if (normalizedPriority.includes('medium')) {
-        return 'Medium';
+    if (priority.includes('medium')) {
+        return { color: '#f59e0b', title: `${priority} - Medium` }; // Amber
     }
-    if (normalizedPriority.includes('low')) {
-        return 'Low';
+    if (priority.includes('low')) {
+        return { color: '#22c55e', title: `${priority} - Low` }; // Light Green
     }
 
-    return normalizedPriority; // Return as-is if unrecognized
+    return { color: 'var(--card-bg)', title: `${priority}` }; // Default gray
 }
+
+
+		
 
 
 
