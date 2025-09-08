@@ -2578,19 +2578,18 @@ function displayRows() {
         listItem.className = `row-item ${priorityClass}`;
         
         // CRITICAL: Set up proper flexbox container
-        listItem.style.cssText = `
-            position: relative;
-            display: flex;
-            align-items: stretch;
-            min-height: 80px;
-            background: var(--card-bg);
-            padding: 0;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-left: 4px solid var(--priority-color, #444444);
-            margin-bottom: 1rem;
-        `;
+       listItem.style.cssText = `
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-height: 80px;
+    background: var(--card-bg);
+    padding: 0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--priority-color, #444444);
+`;
         
         // Content container (left side)
         const contentContainer = document.createElement('div');
