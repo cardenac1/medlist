@@ -2394,7 +2394,7 @@ function getChecklistStatus(patient, patientIndex) {
     }
 
     // Handle priority "C" explicitly for complete green
-    if (priority === 'c') {
+    if (priority === 'C') {
         return { color: '#10b981', title: 'Priority C - Complete' }; // Green
     }
 
@@ -2474,7 +2474,7 @@ function generateStatusIndicator(patient, index) {
     let title = 'No priority set';
 
     // Handle priority "C" explicitly for complete green
-    if (priority === 'c') {
+    if (priority === 'C') {
         color = '#00ff41'; // Bright neon green
         title = 'Priority C - Complete';
     } else if (!isNaN(parseInt(priority))) {
