@@ -1603,16 +1603,16 @@ select,
 
 /* Priority Color Variables - Red to Blue Gradient (Excluding Green) */
 .priority-0 { --priority-color: #00ff41; } /* Complete - Keep bright green */
-.priority-1 { --priority-color: #ff0040; } /* Urgent - Bright red */
-.priority-2 { --priority-color: #ff4000; } /* High - Red-orange */
-.priority-3 { --priority-color: #ff8000; } /* Medium-High - Orange */
-.priority-4 { --priority-color: #ffaa00; } /* Medium - Orange-yellow */
-.priority-5 { --priority-color: #ffff00; } /* Medium-Low - Yellow */
-.priority-6 { --priority-color: #cccc00; } /* Low-Medium - Dark yellow */
-.priority-7 { --priority-color: #6699ff; } /* Low - Light blue */
-.priority-8 { --priority-color: #3366ff; } /* Very Low - Blue */
-.priority-9 { --priority-color: #0033ff; } /* Minimal - Dark blue */
-.priority-10 { --priority-color: #0000ff; } /* Lowest - Deep blue */
+.priority-1 { --priority-color: #ff0000; } /* Urgent - Bright red */
+.priority-2 { --priority-color: #ff2400; } /* High - Red-orange */
+.priority-3 { --priority-color: #ff4900; } /* Medium-High - Orange */
+.priority-4 { --priority-color: #ff6d00; } /* Medium - Orange-yellow */
+.priority-5 { --priority-color: #ff9200; } /* Medium-Low - Yellow */
+.priority-6 { --priority-color: #ffb600; } /* Low-Medium - Dark yellow */
+.priority-7 { --priority-color: #ffdb00; } /* Low - Light blue */
+.priority-8 { --priority-color: #ffff00; } /* Very Low - Blue */
+.priority-9 { --priority-color: #800080; } /* Minimal - Dark blue */
+.priority-10 { --priority-color: #bf00bf; } /* Lowest - Deep blue */
 .priority-default { --priority-color: #444444; } /* No priority - Dark gray */
 
 
@@ -2408,25 +2408,25 @@ function getChecklistStatus(patient, patientIndex) {
         console.log('getPriorityStatus: Priority is numeric:', priorityNum);
         switch (priorityNum) {
             case 1:
-                return { color: '#ef4444', title: 'Priority 1 - Urgent' }; // Red
+                return { color: '#ff0000', title: 'Priority 1 - Urgent' }; // Red
             case 2:
-                return { color: '#f97316', title: 'Priority 2 - High' }; // Orange
+                return { color: '#ff2400', title: 'Priority 2 - High' }; // Orange
             case 3:
-                return { color: '#f59e0b', title: 'Priority 3 - Medium-High' }; // Amber
+                return { color: '#ff4900', title: 'Priority 3 - Medium-High' }; // Amber
             case 4:
-                return { color: '#eab308', title: 'Priority 4 - Medium' }; // Yellow
+                return { color: '#ff6d00', title: 'Priority 4 - Medium' }; // Yellow
             case 5:
-                return { color: '#ffff00', title: 'Priority 5 - Medium-Low' }; // yellow
+                return { color: '#ff9200', title: 'Priority 5 - Medium-Low' }; // yellow
             case 6:
-                return { color: '#BA8E23', title: 'Priority 6 - Low-Medium' }; // dark yellow
+                return { color: '#ffb600', title: 'Priority 6 - Low-Medium' }; // dark yellow
             case 7:
-                return { color: '#06b6d4', title: 'Priority 7 - Low' }; // Cyan
+                return { color: '#ffdb00', title: 'Priority 7 - Low' }; // Cyan
             case 8:
-                return { color: '#3b82f6', title: 'Priority 8 - Very Low' }; // Blue
+                return { color: '#ffff00', title: 'Priority 8 - Very Low' }; // Blue
             case 9:
-                return { color: '#8b5cf6', title: 'Priority 9 - Minimal' }; // Purple
+                return { color: '#800080', title: 'Priority 9 - Minimal' }; // Purple
             case 10:
-                return { color: '#a855f7', title: 'Priority 10 - Lowest' }; // Violet
+                return { color: '#bf00bf', title: 'Priority 10 - Lowest' }; // Violet
             default:
                 console.log('getPriorityStatus: Numeric priority out of range:', priorityNum);
                 return { color: 'var(--card-bg)', title: `Priority ${priorityNum} - Out of range` }; // Gray
@@ -2491,43 +2491,43 @@ function generateStatusIndicator(patient, index) {
         const priorityNum = parseInt(priority);
         switch (priorityNum) {
             case 1:
-                color = '#ff0040'; // Bright neon red
+                color = '#ff0000'; // Bright neon red
                 title = 'Priority 1 - Urgent';
                 break;
             case 2:
-                color = '#ff6600'; // Bright neon orange
+                color = '#ff2400'; // Bright neon orange
                 title = 'Priority 2 - High';
                 break;
             case 3:
-                color = '#ffaa00'; // Bright neon amber
+                color = '#ff4900'; // Bright neon amber
                 title = 'Priority 3 - Medium-High';
                 break;
             case 4:
-                color = '#ffff00'; // Bright neon yellow
+                color = '#ff6d00'; // Bright neon yellow
                 title = 'Priority 4 - Medium';
                 break;
             case 5:
-                color = '#ccff00'; // Bright neon lime
+                color = '#ff9200'; // Bright neon lime
                 title = 'Priority 5 - Medium-Low';
                 break;
             case 6:
-                color = '#66ff00'; // Bright neon chartreuse
+                color = '#ffb600'; // Bright neon chartreuse
                 title = 'Priority 6 - Low-Medium';
                 break;
             case 7:
-                color = '#00ffff'; // Bright neon cyan
+                color = '#ffdb00'; // Bright neon cyan
                 title = 'Priority 7 - Low';
                 break;
             case 8:
-                color = '#0080ff'; // Bright neon blue
+                color = '#ffff00'; // Bright neon blue
                 title = 'Priority 8 - Very Low';
                 break;
             case 9:
-                color = '#8000ff'; // Bright neon purple
+                color = '#800080'; // Bright neon purple
                 title = 'Priority 9 - Minimal';
                 break;
             case 10:
-                color = '#ff00ff'; // Bright neon magenta
+                color = '#bf00bf'; // Bright neon magenta
                 title = 'Priority 10 - Lowest';
                 break;
             default:
