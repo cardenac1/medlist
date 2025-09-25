@@ -3034,13 +3034,6 @@ function clearSearch() {
 
 
 
-function normalizeNarrative(patient) {
-  // If Problems is empty but HPI has content, migrate it
-  const hpi = (patient['HPI'] || '').trim();
-  const probs = (patient['Problems'] || '').trim();
-  if (!probs && hpi) {
-    patient['Problems'] = hpi;
-  }
 
 
 		
