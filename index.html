@@ -2571,7 +2571,7 @@ function generateStatusIndicator(patient, index) {
 
 
 
-function displayRows() {
+function displayRows(data = patientData) {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
 
@@ -3001,39 +3001,41 @@ function displayRows() {
             }
         }
 
-        function searchRows() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            
-            if (!searchTerm) {
-                alert("Please enter a search term.");
-                return;
-            }
 
-            filteredIndexes = [];
-            const filteredData = [];
 
-            patientData.forEach((patient, index) => {
-                const matchFound = Object.values(patient).some(value => {
-                    return (value || '').toString().toLowerCase().includes(searchTerm);
-                });
-                
-                if (matchFound) {
-                    filteredIndexes.push(index);
-                    filteredData.push(patient);
-                }
-            });
 
-            displayFilteredRows(filteredData);
-        }
 
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            filteredIndexes = [];
-            displayRows();
-            const searchWrapper = document.querySelector('.search-wrapper');
-            searchWrapper.classList.remove('expanded');
-            document.getElementById('searchContainer').classList.remove('active');
-        }
+		function searchRows() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (!searchTerm) {
+        clearSearch();
+        return;
+    }
+
+    // Filter from patientData using the same fields you normally show
+    const filtered = patientData.filter(patient =>
+        Object.values(patient).some(value =>
+            (value || '').toString().toLowerCase().includes(searchTerm)
+        )
+    );
+
+    // Render using the same row logic but only with filtered data
+    displayRows(filtered);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    displayRows(); // show all rows again
+    const searchWrapper = document.querySelector('.search-wrapper');
+    searchWrapper.classList.remove('expanded');
+    document.getElementById('searchContainer').classList.remove('active');
+}
+
+
+
+
+
+		
 
         // ============ DETAILS VIEW ============
         function showDetails(index) {
