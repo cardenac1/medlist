@@ -7817,40 +7817,38 @@ function generateFullChecklistHTML() {
     const patient = patientData[currentPatientIndex];
     const patientKey = `${currentPatientIndex}_${patient.Name || 'unnamed'}`;
     const isTrauma = patient.Type !== 'Consult';
-    
+
     // Initialize patient's checklist if not exists
     if (!tempChecklistStates[patientKey]) {
         tempChecklistStates[patientKey] = {};
     }
-    
+
     const states = tempChecklistStates[patientKey];
-    
+
     // Define all checklist items with colors and sections
     const traumaItems = [
         // ADD TO LIST
         { section: 'ADD TO LIST', color: '#dc2626', text: 'Add to list' },
-        
-        // STAFF  
+
+        // STAFF
         { section: 'STAFF', color: '#d97706', text: 'Staff' },
         { section: 'STAFF', color: '#d97706', text: 'Order Scans' },
-        
+
         // NOTE
-        { section: 'NOTE (include HCP)', color: '#16a34a', text: 'Advanced Directives/Goals of Care/HCP' },   
-        
+        { section: 'NOTE (include HCP)', color: '#16a34a', text: 'Advanced Directives/Goals of Care/HCP' },
+
         // F/U SCANS AND LABS
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Primary review of imaging' },
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Plan by injury: CTH, CT C/T/L Spine, CT chest/abdomen/pelvis, + additional scans. https://docs.google.com/document/d/12lbPO5K7jMPhruuoedT-piCaQSr9dja2OObAeMD2NWk/edit?tab=t.0' },
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Review labs' },
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'If going to OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
 
-
-   		// DISPO/ADDENDUM
+        // DISPO/ADDENDUM
         { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Sign out to ICU/Floor/ED' },
         { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Update family' },
-        { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Tertiary Survey' }, 
+        { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Tertiary Survey' },
 
-		
-		// ORDERS/CONSULTS
+        // ORDERS/CONSULTS
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Extra Scans/Consults' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Diet order vs. NPO/IVF' },
@@ -7861,23 +7859,15 @@ function generateFullChecklistHTML() {
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Nursing Orders: Peripheral IVs, Intake and output, Incentive spirometry, Ambulation/activity orders, weight bearing status' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Neuro vs. neurovascular checks, Foley, OGT, chest tube, central line, arterial line (AND procedure notes)' },
-       { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Order daily 2 AM labs' },
-	   { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Resucitation Status Orders' },
-	   { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Interval scans/studies/consults' },
-
-
-			
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Order daily 2 AM labs' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Resucitation Status Orders' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Interval scans/studies/consults' },
     ];
-    
+
     const consultItems = [
-        // ADD TO LIST
         { section: 'ADD TO LIST', color: '#2563eb', text: 'Add to list' },
-        
-        // STAFF
- 		{ section: 'STAFF', color: '#2563eb', text: 'HX/Vitals/IOs/Labs/Imaging' },
-		{ section: 'STAFF', color: '#16a34a', text: 'Staff' },
-        
-        // ORDERS
+        { section: 'STAFF', color: '#2563eb', text: 'HX/Vitals/IOs/Labs/Imaging' },
+        { section: 'STAFF', color: '#16a34a', text: 'Staff' },
         { section: 'ORDERS', color: '#d97706', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS', color: '#d97706', text: 'Diet order vs. NPO/IVF' },
         { section: 'ORDERS', color: '#d97706', text: 'Home medications' },
@@ -7887,16 +7877,14 @@ function generateFullChecklistHTML() {
         { section: 'ORDERS', color: '#d97706', text: 'Nursing Orders: Peripheral IVs, Intake and output, Incentive spirometry, Ambulation/activity orders, weight bearing status, Notify provider of abnormal vital signs, Neuro vs. neurovascular checks, Foley, OGT, chest tube, central line, arterial line (AND procedure notes)' },
         { section: 'ORDERS', color: '#d97706', text: 'Order daily 2 AM labs' },
         { section: 'ORDERS', color: '#d97706', text: 'Consultations/Imaging/Interventions' },
-        
-        // NOTE
         { section: 'NOTE', color: '#9333ea', text: 'Complete consultation note' }
     ];
-    
+
     const items = isTrauma ? traumaItems : consultItems;
     const completed = items.filter((_, i) => states[`item_${i}`]).length;
     const progress = Math.round((completed / items.length) * 100);
-    
-    // Generate HTML with toggle button
+
+    // Header & Progress
     let html = `
         <div style="margin-bottom: 1.5rem; text-align: center;">
             <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
@@ -7914,7 +7902,7 @@ function generateFullChecklistHTML() {
                 </button>
             </div>
         </div>
-        
+
         <div style="margin-bottom: 0.5rem; padding: 0.2rem; background: var(--card-bg); border-radius: 0.5rem; border: 2px solid var(--primary);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <strong style="color: var(--primary);">Progress</strong>
@@ -7924,32 +7912,35 @@ function generateFullChecklistHTML() {
                 <div id="progressBar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
             </div>
         </div>`;
-    
+
     // Group items by section
     const sections = {};
     items.forEach((item, index) => {
         if (!sections[item.section]) {
             sections[item.section] = [];
         }
-        sections[item.section].push({...item, index});
+        sections[item.section].push({ ...item, index });
     });
-    
 
-// Generate HTML for each section
-Object.entries(sections).forEach(([sectionName, sectionItems]) => {
-    const sectionColor = sectionItems[0].color;
-    
-    html += `
-        <div style="margin-bottom: 0.75rem;">
-            <h4 style="color: ${sectionColor}; margin-bottom: 0.25rem; font-size: 1.1em; font-weight: bold;">
-                ${sectionName}
-            </h4>
-            <div style="margin-left: 1rem; display: grid; gap: 0.15rem;">`;
-        
+    // Render each section
+    Object.entries(sections).forEach(([sectionName, sectionItems]) => {
+        const sectionColor = sectionItems[0].color;
+        const isOrders = sectionName.toUpperCase().includes("ORDERS");
+        const sectionId = sectionName.replace(/[^a-zA-Z0-9]/g, "_");
+
+        html += `
+            <div style="margin-bottom: 0.75rem;">
+                <h4 style="color: ${sectionColor}; margin-bottom: 0.25rem; font-size: 1.1em; font-weight: bold; cursor: ${isOrders ? 'pointer' : 'default'};"
+                    ${isOrders ? `onclick="toggleSection('${sectionId}')"` : ''}>
+                    ${sectionName} ${isOrders ? '▸' : ''}
+                </h4>
+                <div id="${isOrders ? sectionId : ''}" 
+                     style="margin-left: 1rem; display: grid; gap: 0.15rem; ${isOrders ? 'display:none;' : ''}">`;
+
         sectionItems.forEach(item => {
             const isChecked = states[`item_${item.index}`] || false;
             html += `
-    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.25rem; transition: background 0.2s; border: 1px solid transparent;"
+                <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.25rem; transition: background 0.2s; border: 1px solid transparent;"
                        onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';" 
                        onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
                     <input type="checkbox" ${isChecked ? 'checked' : ''} 
@@ -7960,12 +7951,26 @@ Object.entries(sections).forEach(([sectionName, sectionItems]) => {
                     </span>
                 </label>`;
         });
-        
+
         html += `</div></div>`;
     });
-    
+
     return html;
 }
+
+// helper toggle
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.style.display = section.style.display === 'none' ? 'grid' : 'none';
+    const header = section.previousElementSibling;
+    if (header && header.innerHTML.includes('▸')) {
+        header.innerHTML = header.innerHTML.replace('▸', '▾');
+    } else if (header) {
+        header.innerHTML = header.innerHTML.replace('▾', '▸');
+    }
+}
+
 
 
 
