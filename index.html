@@ -7841,7 +7841,7 @@ function generateFullChecklistHTML() {
 
         // F/U SCANS AND LABS
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Primary review of imaging' },
-        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Plan by injury: CTH, CT C/T/L Spine, CT chest/abdomen/pelvis, + additional scans. https://docs.google.com/document/d/12lbPO5K7jMPhruuoedT-piCaQSr9dja2OObAeMD2NWk/edit?tab=t.0' },
+        { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Plan by injury: CTH, CT C/T/L Spine, CT chest/abdomen/pelvis, + additional scans. <a href="https://docs.google.com/document/d/12lbPO5K7jMPhruuoedT-piCaQSr9dja2OObAeMD2NWk/edit?tab=t.0" target="_blank" rel="noopener noreferrer">Reading CT scans</a>' },
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Review labs' },
         { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'If going to OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
 
@@ -7854,15 +7854,13 @@ function generateFullChecklistHTML() {
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Extra Scans/Consults' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Diet order vs. NPO/IVF' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Home medications' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'DVT prophylaxis' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Patient care: Blood glucose monitoring, Drain/NGT/Foley/OGT/chest tube/central line/arterial line/Peripheral IV orders, Vital signs, Intake and output, IPCD/SCDs, Continuous pulse oximetry, Cardiac telemetry, Weight, neurological/neurovacular checks, weight, code/resuscitation status, Resp: Continuous pulse oximetry, Incentive spirometry' },
+		        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' }, 
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Activity: OOB ad lib/with assistance/Bedrest, weight bearing status' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Pain meds' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Floor Orders: Vital signs, Continuous pulse oximetry, Telemetry monitoring' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Nursing Orders: Peripheral IVs, Intake and output, Incentive spirometry, Ambulation/activity orders, weight bearing status' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Neuro vs. neurovascular checks, Foley, OGT, chest tube, central line, arterial line (AND procedure notes)' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Order daily 2 AM labs' },
-        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Resucitation Status Orders' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: '<a href="http://www.icucalorie.com/dvt/"> DVT prophylaxis </a> ' },
+	    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Home medications' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Daily 2 AM labs (6am txp)' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Interval scans/studies/consults' },
     ];
 
@@ -7872,12 +7870,13 @@ function generateFullChecklistHTML() {
         { section: 'STAFF', color: '#16a34a', text: 'Staff' },
         { section: 'ORDERS', color: '#d97706', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS', color: '#d97706', text: 'Diet order vs. NPO/IVF' },
-        { section: 'ORDERS', color: '#d97706', text: 'Home medications' },
-        { section: 'ORDERS', color: '#d97706', text: 'DVT prophylaxis' },
+        { section: 'ORDERS', color: '#d97706', text: 'Patient care: Blood glucose monitoring, Drain/NGT/Foley/OGT/chest tube/central line/arterial line/Peripheral IV orders, Vital signs, Intake and output, IPCD/SCDs, Continuous pulse oximetry, Cardiac telemetry, Weight, neurological/neurovacular checks, weight, code/resuscitation status, Resp: Continuous pulse oximetry, Incentive spirometry' },
+        { section: 'ORDERS', color: '#d97706', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' },
+        { section: 'ORDERS', color: '#d97706', text: 'Activity: OOB ad lib/with assistance/Bedrest, weight bearing status' },
         { section: 'ORDERS', color: '#d97706', text: 'Pain meds' },
-        { section: 'ORDERS', color: '#d97706', text: 'Floor Orders: Vital signs, Continuous pulse oximetry, Telemetry monitoring' },
-        { section: 'ORDERS', color: '#d97706', text: 'Nursing Orders: Peripheral IVs, Intake and output, Incentive spirometry, Ambulation/activity orders, weight bearing status, Notify provider of abnormal vital signs, Neuro vs. neurovascular checks, Foley, OGT, chest tube, central line, arterial line (AND procedure notes)' },
-        { section: 'ORDERS', color: '#d97706', text: 'Order daily 2 AM labs' },
+        { section: 'ORDERS', color: '#d97706', text: '<a href="http://www.icucalorie.com/dvt/"> DVT prophylaxis </a>' },
+        { section: 'ORDERS', color: '#d97706', text: 'Home meds' },
+        { section: 'ORDERS', color: '#d97706', text: 'Daily 2 AM labs (6am txp)' },
         { section: 'ORDERS', color: '#d97706', text: 'Consultations/Imaging/Interventions' },
         { section: 'NOTE', color: '#9333ea', text: 'Complete consultation note' }
     ];
