@@ -3034,6 +3034,14 @@ function clearSearch() {
 
 
 
+function normalizeNarrative(patient) {
+  // If Problems is empty but HPI has content, migrate it
+  const hpi = (patient['HPI'] || '').trim();
+  const probs = (patient['Problems'] || '').trim();
+  if (!probs && hpi) {
+    patient['Problems'] = hpi;
+  }
+
 
 		
 
@@ -7867,7 +7875,8 @@ function generateFullChecklistHTML() {
     const consultItems = [
         { section: 'ADD TO LIST', color: '#2563eb', text: 'Add to list' },
         { section: 'STAFF', color: '#2563eb', text: 'HX/Vitals/IOs/Labs/Imaging' },
-        { section: 'STAFF', color: '#16a34a', text: 'Staff' },
+        { section: 'STAFF', color: '#16a34a', text: 'Staff' }, 
+	        { section: 'ORDERS', color: '#d97706', text: 'Booking for OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
         { section: 'ORDERS', color: '#d97706', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS', color: '#d97706', text: 'Diet order vs. NPO/IVF' },
         { section: 'ORDERS', color: '#d97706', text: 'Patient care: Blood glucose monitoring, Drain/NGT/Foley/OGT/chest tube/central line/arterial line/Peripheral IV orders, Vital signs, Intake and output, IPCD/SCDs, Continuous pulse oximetry, Cardiac telemetry, Weight, neurological/neurovacular checks, weight, code/resuscitation status, Resp: Continuous pulse oximetry, Incentive spirometry' },
