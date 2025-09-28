@@ -7579,45 +7579,86 @@ function extractDoseInfo(line) {
 
 
 
-	   function showStaffPresentation() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function showStaffPresentation() {
     if (currentPatientIndex === -1) return;
-    
+
     const patient = patientData[currentPatientIndex];
-    
+
     // Check if it's a consult
     if (patient.Type !== 'Consult') {
         alert("This is a regular patient entry. Convert to consult first to generate staff presentation.");
         return;
     }
-    
-    // Extract data
-    const cc = patient.CC || 'No chief complaint';
-    const ageGender = patient['A/G'] || 'Unknown age/gender';
-    const pmh = patient.PMH || '';
-    const hpi = patient.HPI || '';
-    const ros = patient.ROS || '';
-    const violin = patient.VIOLIN || 'No labs/vitals documented';
-    const pe = patient.PE || 'No physical exam documented';
-    const todo = patient['To do'] || 'No plan documented';
-    
-    // Format PMH phrase
-    const pmhPhrase = pmh ? `with PMH ${pmh}` : 'with no PMH';
- 
- // Extract patient identifiers
-    const name = patient.Name || 'Unknown';
-    const rm = patient.RM || 'Unknown';
-    const mrn = patient.MRN || 'Unknown';
-    
 
-// Build the presentation with patient identifiers at the top
+    // Small helper
+    const isBlank = v => v == null || String(v).trim() === '';
+
+    // Extract common data
+    const cc     = isBlank(patient.CC) ? 'No chief complaint' : patient.CC.trim();
+    const violin = isBlank(patient.VIOLIN) ? 'No labs/vitals documented' : patient.VIOLIN.trim();
+    const pe     = isBlank(patient.PE) ? 'No physical exam documented' : patient.PE.trim();
+    const todo   = isBlank(patient['To do']) ? 'No plan documented' : String(patient['To do']).trim();
+
+    // Identifiers
+    const name = isBlank(patient.Name) ? 'Unknown' : patient.Name.trim();
+    const rm   = isBlank(patient.RM) ? 'Unknown' : String(patient.RM).trim();
+    const mrn  = isBlank(patient.MRN) ? 'Unknown' : String(patient.MRN).trim();
+
+    // Decide which mode to use
+    const ageGender = isBlank(patient['A/G']) ? '' : String(patient['A/G']).trim();
+    const useProblemsMode = isBlank(ageGender);
+
+    // Build content for each mode
+    let middleBlock = '';
+    if (useProblemsMode) {
+        // Prefer 'Problems', but fall back to a few common variants just in case
+        const problems =
+            !isBlank(patient.Problems) ? String(patient.Problems).trim() :
+            !isBlank(patient.PROBLEMS) ? String(patient.PROBLEMS).trim() :
+            !isBlank(patient['Problem List']) ? String(patient['Problem List']).trim() :
+            'No problems listed';
+
+        middleBlock = `Problems: ${problems}\n\n`;
+    } else {
+        const pmh = isBlank(patient.PMH) ? '' : String(patient.PMH).trim();
+        const hpi = isBlank(patient.HPI) ? '' : String(patient.HPI).trim();
+        const ros = isBlank(patient.ROS) ? '' : String(patient.ROS).trim();
+
+        // PMH phrase
+        const pmhPhrase = pmh ? `with PMH ${pmh}` : 'with no PMH';
+
+        // Assemble the narrative; trim empty parts gracefully
+        const parts = [
+            `${ageGender} ${pmhPhrase}`,
+            hpi,
+            ros
+        ].filter(s => !isBlank(s));
+
+        middleBlock = parts.join(', ').replace(/\s+,/g, ',') + '\n\n';
+    }
+
+    // Build final presentation
     let presentation = `${name}\n${rm}\nMRN: ${mrn}\n\n`;
     presentation += `Consult for ${cc}\n\n`;
-    presentation += `${ageGender} ${pmhPhrase}, ${hpi} ${ros}\n\n`;
-    presentation += `${violin} \n\n ${pe}\n\n`;
+    presentation += middleBlock;
+    presentation += `${violin}\n\n${pe}\n\n`;
     presentation += `Plan: ${todo}`;
-    
-    
-    // Create modal for presentation
+
+    // Modal
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'block';
@@ -7633,10 +7674,30 @@ function extractDoseInfo(line) {
         </div>
     `;
     document.body.appendChild(modal);
-    
+
     // Store presentation for copy function
     window.currentStaffPresentation = presentation;
 }
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 
 function copyStaffPresentation() {
     if (window.currentStaffPresentation) {
