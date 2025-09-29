@@ -8200,25 +8200,30 @@ function updateFullChecklist(patientKey, index, checked, totalItems) {
     if (!tempChecklistStates[patientKey]) {
         tempChecklistStates[patientKey] = {};
     }
-    tempChecklistStates[patientKey][`item_${index}`] = checked;
-    
-    // SAVE TO LOCALSTORAGE FOR PERSISTENCE
+    tempChecklistStates[patientKey][`item_${index}`] = !!checked;
+
+    // Persist
     try {
         localStorage.setItem('checklistStates', JSON.stringify(tempChecklistStates));
     } catch (e) {
         console.error('Failed to save checklist states:', e);
     }
-    
-    // Update progress display
+
+    // Recompute progress (count only checklist items)
     const states = tempChecklistStates[patientKey];
-    const completed = Object.values(states).filter(Boolean).length;
+    const completed = Object.keys(states).filter(k => k.startsWith('item_') && states[k]).length;
     const progress = Math.round((completed / totalItems) * 100);
-    
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    
-    if (progressBar) progressBar.style.width = `${progress}%`;
-    if (progressText) progressText.textContent = `${completed}/${totalItems} (${progress}%)`;
+
+    // Update BOTH progress bars/texts
+    const topBar = document.getElementById('progressBarTop');
+    const botBar = document.getElementById('progressBarBottom');
+    const topText = document.getElementById('progressTextTop');
+    const botText = document.getElementById('progressTextBottom');
+
+    if (topBar) topBar.style.width = `${progress}%`;
+    if (botBar) botBar.style.width = `${progress}%`;
+    if (topText) topText.textContent = `${completed}/${totalItems} (${progress}%)`;
+    if (botText) botText.textContent = `${completed}/${totalItems} (${progress}%)`;
 }
 
 
