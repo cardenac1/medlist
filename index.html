@@ -1724,6 +1724,59 @@ select,
 
 		
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		/* === Scoped help styling inside the existing modal body === */
+.help-modal-body .help-section { color: var(--text-primary); background: transparent; line-height: 1.55; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+
+/* Section chips (bold headers) */
+.help-modal-body .section-header {
+  display: inline-block; font-weight: 800; letter-spacing: .2px;
+  padding: 6px 10px; border-radius: 999px; margin: 8px 0 12px;
+  background: #111827; border: 1px solid #374151; color: #fff;
+}
+
+/* Color accents by tag */
+.help-modal-body .section-header[data-tag="problems"]{ box-shadow: inset 0 0 0 9999px rgba(96,165,250,.18); border-color: rgba(96,165,250,.38); }
+.help-modal-body .section-header[data-tag="ros"]     { box-shadow: inset 0 0 0 9999px rgba(52,211,153,.18); border-color: rgba(52,211,153,.38); }
+.help-modal-body .section-header[data-tag="pmh"]     { box-shadow: inset 0 0 0 9999px rgba(245,158,11,.18); border-color: rgba(245,158,11,.38); }
+.help-modal-body .section-header[data-tag="meds"]    { box-shadow: inset 0 0 0 9999px rgba(167,139,250,.18); border-color: rgba(167,139,250,.38); }
+.help-modal-body .section-header[data-tag="allg"]    { box-shadow: inset 0 0 0 9999px rgba(244,114,182,.18); border-color: rgba(244,114,182,.38); }
+.help-modal-body .section-header[data-tag="cex"]     { box-shadow: inset 0 0 0 9999px rgba(248,113,113,.18); border-color: rgba(248,113,113,.38); }
+.help-modal-body .section-header[data-tag="trauma"]  { box-shadow: inset 0 0 0 9999px rgba(244,63,94,.18);  border-color: rgba(244,63,94,.38);  }
+
+/* Collapsible groups */
+.help-modal-body .help-collapsible { background: #0f172a; border: 1px solid #27324a; border-radius: 10px; padding: 8px 10px; margin: 10px 0; }
+.help-modal-body .help-collapsible summary { cursor: pointer; font-weight: 800; color: var(--text-primary); outline: none; }
+.help-modal-body .help-collapsible[open] { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15) inset; }
+
+/* Topic chip + lists + subnote */
+.help-modal-body .topic-header { font-weight: 800; display: inline-block; margin: 6px 0 4px; padding: 2px 8px; border-radius: 9px; background: #152036; color: #fca5a5; border: 1px solid #2a3a62; }
+.help-modal-body ul { margin: 6px 0 10px 1.1rem; }
+.help-modal-body li { margin: 4px 0; }
+.help-modal-body .subnote { color: var(--text-secondary, #9ca3af); font-size: .9em; }
+
+		
 		
     </style>
 </head>
