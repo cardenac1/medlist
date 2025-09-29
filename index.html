@@ -7632,7 +7632,7 @@ function showStaffPresentation() {
             !isBlank(patient['Problem List']) ? String(patient['Problem List']).trim() :
             'No problems listed';
 
-        middleBlock = `Problems: ${problems}\n\n`;
+        middleBlock = `${problems}\n\n`;
     } else {
         const pmh = isBlank(patient.PMH) ? '' : String(patient.PMH).trim();
         const hpi = isBlank(patient.HPI) ? '' : String(patient.HPI).trim();
