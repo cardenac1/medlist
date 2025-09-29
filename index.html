@@ -8047,14 +8047,14 @@ function generateFullChecklistHTML() {
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Diet order vs. NPO/IVF' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Patient care: Blood glucose monitoring, Drain/NGT/Foley/OGT/chest tube/central line/arterial line/Peripheral IV orders, Vital signs, Intake and output, IPCD/SCDs, Continuous pulse oximetry, Cardiac telemetry, Weight, neurological/neurovacular checks, weight, code/resuscitation status, Resp: Continuous pulse oximetry, Incentive spirometry' },
-		        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' }, 
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Notify provider of abnormal vital signs (SBP >180 or <100, MAP <65, HR >110 or <50, RR >30 or <10, Change in O2 delivery)' }, 
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Activity: OOB ad lib/with assistance/Bedrest, weight bearing status' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Pain meds' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: '<a href="http://www.icucalorie.com/dvt/"> DVT prophylaxis </a> ' },
-	    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Home medications' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Home medications' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Daily 2 AM labs (6am txp)' },
         { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Interval scans/studies/consults' },
-   		{ section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'EVIDENCE BASED MANAGEMENT of their diagnosis' },
+        { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'EVIDENCE BASED MANAGEMENT of their diagnosis' },
 
     ];
 
@@ -8062,7 +8062,7 @@ function generateFullChecklistHTML() {
         { section: 'ADD TO LIST', color: '#2563eb', text: 'Add to list' },
         { section: 'STAFF', color: '#2563eb', text: 'HX/Vitals/IOs/Labs/Imaging with attending reads' },
         { section: 'STAFF', color: '#16a34a', text: 'Staff' }, 
- 		{ section: 'NOTE', color: '#9333ea', text: 'Complete consultation note' }, 
+        { section: 'NOTE', color: '#9333ea', text: 'Complete consultation note' }, 
         { section: 'ORDERS', color: '#d97706', text: 'PSO if admitting - call bed board' },
         { section: 'ORDERS', color: '#d97706', text: 'Diet order vs. NPO/IVF' },
         { section: 'ORDERS', color: '#d97706', text: 'Patient care: Blood glucose monitoring, Drain/NGT/Foley/OGT/chest tube/central line/arterial line/Peripheral IV orders, Vital signs, Intake and output, IPCD/SCDs, Continuous pulse oximetry, Cardiac telemetry, Weight, neurological/neurovacular checks, weight, code/resuscitation status, Resp: Continuous pulse oximetry, Incentive spirometry' },
@@ -8073,8 +8073,8 @@ function generateFullChecklistHTML() {
         { section: 'ORDERS', color: '#d97706', text: 'Home meds' },
         { section: 'ORDERS', color: '#d97706', text: 'Daily 2 AM labs (6am txp)' },
         { section: 'ORDERS', color: '#d97706', text: 'Consultations/Imaging/Interventions' },
-		{ section: 'ORDERS', color: '#d97706', text: 'EVIDENCE BASED MANAGEMENT of their diagnosis' },
-		{ section: 'ORDERS', color: '#d97706', text: 'Booking for OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
+        { section: 'ORDERS', color: '#d97706', text: 'EVIDENCE BASED MANAGEMENT of their diagnosis' },
+        { section: 'ORDERS', color: '#d97706', text: 'Booking for OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
 
     ];
 
@@ -8082,7 +8082,7 @@ function generateFullChecklistHTML() {
     const completed = items.filter((_, i) => states[`item_${i}`]).length;
     const progress = Math.round((completed / items.length) * 100);
 
-    // Header & Progress
+    // Header & Progress (TOP)
     let html = `
         <div style="margin-bottom: 1.5rem; text-align: center;">
             <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
@@ -8104,10 +8104,10 @@ function generateFullChecklistHTML() {
         <div style="margin-bottom: 0.5rem; padding: 0.2rem; background: var(--card-bg); border-radius: 0.5rem; border: 2px solid var(--primary);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <strong style="color: var(--primary);">Progress</strong>
-                <span id="progressText" style="color: var(--text-primary);">${completed}/${items.length} (${progress}%)</span>
+                <span id="progressTextTop" style="color: var(--text-primary);">${completed}/${items.length} (${progress}%)</span>
             </div>
             <div style="background: var(--dark-bg); border-radius: 1rem; height: 10px; overflow: hidden;">
-                <div id="progressBar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
+                <div id="progressBarTop" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
             </div>
         </div>`;
 
@@ -8153,6 +8153,18 @@ function generateFullChecklistHTML() {
         html += `</div></div>`;
     });
 
+    // Progress (BOTTOM)
+    html += `
+        <div style="margin-top: 0.5rem; padding: 0.2rem; background: var(--card-bg); border-radius: 0.5rem; border: 2px solid var(--primary);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <strong style="color: var(--primary);">Progress</strong>
+                <span id="progressTextBottom" style="color: var(--text-primary);">${completed}/${items.length} (${progress}%)</span>
+            </div>
+            <div style="background: var(--dark-bg); border-radius: 1rem; height: 10px; overflow: hidden;">
+                <div id="progressBarBottom" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
+            </div>
+        </div>`;
+
     return html;
 }
 
@@ -8168,6 +8180,7 @@ function toggleSection(sectionId) {
         header.innerHTML = header.innerHTML.replace('▾', '▸');
     }
 }
+
 
 
 
