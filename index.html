@@ -7608,10 +7608,10 @@ function showStaffPresentation() {
     const isBlank = v => v == null || String(v).trim() === '';
 
     // Extract common data
-    const cc     = isBlank(patient.CC) ? 'No chief complaint' : patient.CC.trim();
-    const violin = isBlank(patient.VIOLIN) ? 'No labs/vitals documented' : patient.VIOLIN.trim();
-    const pe     = isBlank(patient.PE) ? 'No physical exam documented' : patient.PE.trim();
-    const todo   = isBlank(patient['To do']) ? 'No plan documented' : String(patient['To do']).trim();
+    const cc     = isBlank(patient.CC) ? '' : patient.CC.trim();
+    const violin = isBlank(patient.VIOLIN) ? '' : patient.VIOLIN.trim();
+    const pe     = isBlank(patient.PE) ? '' : patient.PE.trim();
+    const todo   = isBlank(patient['To do']) ? '' : String(patient['To do']).trim();
 
     // Identifiers
     const name = isBlank(patient.Name) ? 'Unknown' : patient.Name.trim();
