@@ -1,60 +1,576 @@
-import React, { useState } from 'react';
-import { Camera, Upload, FileText, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medical OCR - Patient Information Extractor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
-export default function PatientOCR() {
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [extractedData, setExtractedData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
-      setExtractedData(null);
-      setError(null);
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-  };
 
-  const extractPatientInfo = async () => {
-    if (!image) return;
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #cffafe 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
 
-    setLoading(true);
-    setError(null);
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-    try {
-      const base64Image = await new Promise((resolve, reject) => {
+    .container {
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .slide-in {
+      animation: slideIn 0.4s ease-out;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .header-title svg {
+      width: 2.5rem;
+      height: 2.5rem;
+      color: #0891b2;
+    }
+
+    .header-title h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-subtitle {
+      color: #64748b;
+      font-size: 1.125rem;
+    }
+
+    /* Card */
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+      border-radius: 1rem;
+      padding: 2rem;
+    }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+      border-color: #0891b2;
+      background: rgba(8, 145, 178, 0.02);
+    }
+
+    .upload-area input {
+      display: none;
+    }
+
+    .upload-icons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .upload-icons svg {
+      width: 3rem;
+      height: 3rem;
+      color: #0891b2;
+    }
+
+    .upload-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-subtitle {
+      color: #64748b;
+      margin-bottom: 1rem;
+    }
+
+    .upload-hint {
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+
+    /* Instructions */
+    .instructions {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: linear-gradient(90deg, #ecfeff 0%, #dbeafe 100%);
+      border-radius: 0.75rem;
+      border: 1px solid #a5f3fc;
+    }
+
+    .instructions h4 {
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .instructions .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: #0891b2;
+    }
+
+    .instructions ul {
+      list-style: none;
+    }
+
+    .instructions li {
+      font-size: 0.875rem;
+      color: #475569;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: start;
+      gap: 0.5rem;
+    }
+
+    .instructions li span:first-child {
+      color: #0891b2;
+      font-weight: 700;
+    }
+
+    /* Preview Section */
+    .preview-section {
+      display: none;
+    }
+
+    .preview-section.active {
+      display: block;
+    }
+
+    .image-preview {
+      margin-bottom: 1.5rem;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .image-preview img {
+      width: 100%;
+      height: auto;
+      max-height: 24rem;
+      object-fit: contain;
+      background: #f8fafc;
+      display: block;
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .button {
+      flex: 1;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+      color: white;
+    }
+
+    .button-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(8, 145, 178, 0.3);
+    }
+
+    .button-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .button-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .button-secondary {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .button-secondary:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+
+    .button svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    /* Alert */
+    .alert {
+      padding: 1rem;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: start;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .alert-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+    }
+
+    .alert-error svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: #ef4444;
+      flex-shrink: 0;
+      margin-top: 0.125rem;
+    }
+
+    .alert-error p {
+      color: #b91c1c;
+      font-size: 0.875rem;
+    }
+
+    /* Results */
+    .results {
+      display: none;
+    }
+
+    .results.active {
+      display: block;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .results-header svg {
+      width: 1.5rem;
+      height: 1.5rem;
+      color: #22c55e;
+    }
+
+    .results-header h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .data-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .data-field {
+      border-left: 3px solid #0891b2;
+      background: linear-gradient(90deg, rgba(8, 145, 178, 0.05) 0%, transparent 100%);
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .data-field label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .data-field p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    /* Hidden utility */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header fade-in">
+      <div class="header-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <h1>Medical OCR</h1>
+      </div>
+      <p class="header-subtitle">Extract patient information from medical documents</p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card fade-in">
+      <!-- Upload Section -->
+      <div id="uploadSection">
+        <label class="upload-area" for="fileInput">
+          <input type="file" id="fileInput" accept="image/*" capture="environment">
+          <div class="upload-icons">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <h3 class="upload-title">Upload or Capture Document</h3>
+          <p class="upload-subtitle">Click to select a file or take a photo</p>
+          <p class="upload-hint">Supports: JPG, PNG, HEIC</p>
+        </label>
+
+        <div class="instructions">
+          <h4>
+            <span class="dot"></span>
+            What we extract:
+          </h4>
+          <ul>
+            <li>
+              <span>•</span>
+              <span><strong>Patient Name</strong> — Located at the top (LASTNAME, FIRSTNAME)</span>
+            </li>
+            <li>
+              <span>•</span>
+              <span><strong>MRN</strong> — Medical Record Number from bottom right</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Preview Section -->
+      <div id="previewSection" class="preview-section">
+        <div class="image-preview">
+          <img id="imagePreview" src="" alt="Document preview">
+        </div>
+
+        <div class="button-group">
+          <button id="extractBtn" class="button button-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Extract Information</span>
+          </button>
+          <button id="resetBtn" class="button button-secondary">New Image</button>
+        </div>
+
+        <div id="errorAlert" class="alert alert-error hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <p id="errorMessage"></p>
+        </div>
+
+        <div id="results" class="results">
+          <div class="results-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <h3>Extracted Information</h3>
+          </div>
+
+          <div class="data-fields">
+            <div class="data-field">
+              <label>Patient Name</label>
+              <p id="patientName">-</p>
+            </div>
+            <div class="data-field">
+              <label>Medical Record Number</label>
+              <p id="patientMRN">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Secure OCR processing • Patient data handled with care</p>
+    </div>
+  </div>
+
+  <script>
+    let selectedFile = null;
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadSection = document.getElementById('uploadSection');
+    const previewSection = document.getElementById('previewSection');
+    const imagePreview = document.getElementById('imagePreview');
+    const extractBtn = document.getElementById('extractBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const errorAlert = document.getElementById('errorAlert');
+    const errorMessage = document.getElementById('errorMessage');
+    const results = document.getElementById('results');
+    const patientName = document.getElementById('patientName');
+    const patientMRN = document.getElementById('patientMRN');
+
+    // Handle file selection
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        selectedFile = file;
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(image);
-      });
+        reader.onload = (e) => {
+          imagePreview.src = e.target.result;
+          uploadSection.classList.add('hidden');
+          previewSection.classList.add('active');
+          previewSection.classList.add('slide-in');
+          errorAlert.classList.add('hidden');
+          results.classList.remove('active');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'image',
-                  source: {
-                    type: 'base64',
-                    media_type: image.type,
-                    data: base64Image,
+    // Reset function
+    resetBtn.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      imagePreview.src = '';
+      uploadSection.classList.remove('hidden');
+      previewSection.classList.remove('active');
+      errorAlert.classList.add('hidden');
+      results.classList.remove('active');
+    });
+
+    // Extract information
+    extractBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      extractBtn.disabled = true;
+      resetBtn.disabled = true;
+      extractBtn.innerHTML = `
+        <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+        <span>Processing...</span>
+      `;
+      errorAlert.classList.add('hidden');
+      results.classList.remove('active');
+
+      try {
+        // Convert file to base64
+        const base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedFile);
+        });
+
+        // Call Claude API
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'image',
+                    source: {
+                      type: 'base64',
+                      media_type: selectedFile.type,
+                      data: base64Image,
+                    },
                   },
-                },
-                {
-                  type: 'text',
-                  text: `Analyze this medical document image and extract ONLY the following information:
+                  {
+                    type: 'text',
+                    text: `Analyze this medical document image and extract ONLY the following information:
 1. Patient name in format "LASTNAME, FIRSTNAME" (usually found at the top of the document)
 2. MRN (Medical Record Number) which is typically labeled as "MRN:" followed by numbers (usually found at the bottom right)
 
@@ -65,291 +581,47 @@ Respond ONLY with a JSON object in this exact format with no preamble or markdow
 }
 
 If you cannot find either piece of information, use null for that field.`,
-                },
-              ],
-            },
-          ],
-        }),
-      });
+                  },
+                ],
+              },
+            ],
+          }),
+        });
 
-      const data = await response.json();
-      const textContent = data.content
-        .filter((item) => item.type === 'text')
-        .map((item) => item.text)
-        .join('');
-
-      const cleanText = textContent.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(cleanText);
-
-      setExtractedData(parsed);
-    } catch (err) {
-      setError('Failed to extract patient information. Please try again with a clearer image.');
-      console.error('OCR Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const reset = () => {
-    setImage(null);
-    setImagePreview(null);
-    setExtractedData(null);
-    setError(null);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
-
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error?.message || 'API request failed');
         }
 
-        body {
-          font-family: 'DM Sans', -apple-system, sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
+        const textContent = data.content
+          .filter((item) => item.type === 'text')
+          .map((item) => item.text)
+          .join('');
 
-        .mono {
-          font-family: 'JetBrains Mono', monospace;
-        }
+        const cleanText = textContent.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(cleanText);
 
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+        // Display results
+        patientName.textContent = parsed.name || 'Not found';
+        patientMRN.textContent = parsed.mrn || 'Not found';
+        results.classList.add('active');
+        results.classList.add('slide-in');
 
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.6;
-          }
-        }
-
-        .fade-in {
-          animation: fadeIn 0.5s ease-out;
-        }
-
-        .slide-in {
-          animation: slideIn 0.4s ease-out;
-        }
-
-        .gradient-text {
-          background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .card {
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.5);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-        }
-
-        .button-primary {
-          background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-          transition: all 0.3s ease;
-        }
-
-        .button-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 24px rgba(8, 145, 178, 0.3);
-        }
-
-        .button-primary:active {
-          transform: translateY(0);
-        }
-
-        .upload-area {
-          border: 2px dashed #cbd5e1;
-          transition: all 0.3s ease;
-        }
-
-        .upload-area:hover {
-          border-color: #0891b2;
-          background: rgba(8, 145, 178, 0.02);
-        }
-
-        .data-field {
-          border-left: 3px solid #0891b2;
-          background: linear-gradient(90deg, rgba(8, 145, 178, 0.05) 0%, transparent 100%);
-        }
-      `}</style>
-
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-12 fade-in">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <FileText className="w-10 h-10 text-cyan-600" strokeWidth={2} />
-            <h1 className="text-4xl font-bold gradient-text">Medical OCR</h1>
-          </div>
-          <p className="text-slate-600 text-lg">
-            Extract patient information from medical documents
-          </p>
-        </div>
-
-        {/* Main Content */}
-        <div className="card rounded-2xl p-8 fade-in">
-          {!imagePreview ? (
-            <div>
-              {/* Upload Area */}
-              <label className="upload-area block rounded-xl p-12 cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <div className="text-center">
-                  <div className="flex justify-center gap-4 mb-6">
-                    <Upload className="w-12 h-12 text-cyan-600" strokeWidth={1.5} />
-                    <Camera className="w-12 h-12 text-cyan-600" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                    Upload or Capture Document
-                  </h3>
-                  <p className="text-slate-500">
-                    Click to select a file or take a photo
-                  </p>
-                  <p className="text-sm text-slate-400 mt-4">
-                    Supports: JPG, PNG, HEIC
-                  </p>
-                </div>
-              </label>
-
-              {/* Instructions */}
-              <div className="mt-8 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-cyan-100">
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-cyan-600"></div>
-                  What we extract:
-                </h4>
-                <ul className="space-y-2 text-sm text-slate-600">
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyan-600 font-bold">•</span>
-                    <span><strong>Patient Name</strong> — Located at the top (LASTNAME, FIRSTNAME)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyan-600 font-bold">•</span>
-                    <span><strong>MRN</strong> — Medical Record Number from bottom right</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <div className="slide-in">
-              {/* Image Preview */}
-              <div className="mb-6">
-                <div className="rounded-xl overflow-hidden border-2 border-slate-200 shadow-lg">
-                  <img
-                    src={imagePreview}
-                    alt="Document preview"
-                    className="w-full h-auto max-h-96 object-contain bg-slate-50"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 mb-6">
-                <button
-                  onClick={extractPatientInfo}
-                  disabled={loading}
-                  className="button-primary flex-1 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-5 h-5" />
-                      Extract Information
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={reset}
-                  disabled={loading}
-                  className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors disabled:opacity-50"
-                >
-                  New Image
-                </button>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="slide-in p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 mb-6">
-                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
-
-              {/* Extracted Data */}
-              {extractedData && (
-                <div className="slide-in space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <CheckCircle2 className="w-6 h-6 text-green-500" />
-                    <h3 className="text-lg font-semibold text-slate-800">
-                      Extracted Information
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="data-field p-4 rounded-lg">
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">
-                        Patient Name
-                      </label>
-                      <p className="mono text-lg font-semibold text-slate-900">
-                        {extractedData.name || 'Not found'}
-                      </p>
-                    </div>
-
-                    <div className="data-field p-4 rounded-lg">
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">
-                        Medical Record Number
-                      </label>
-                      <p className="mono text-lg font-semibold text-slate-900">
-                        {extractedData.mrn || 'Not found'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-slate-500">
-          <p>Secure OCR processing • Patient data handled with care</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+      } catch (err) {
+        console.error('OCR Error:', err);
+        errorMessage.textContent = 'Failed to extract patient information. Please try again with a clearer image.';
+        errorAlert.classList.remove('hidden');
+        errorAlert.classList.add('slide-in');
+      } finally {
+        extractBtn.disabled = false;
+        resetBtn.disabled = false;
+        extractBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Extract Information</span>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
