@@ -3610,9 +3610,8 @@ function displayRows(data = patientData) {
         // Remaining columns (beyond standard fields)
         if (selectedColumns.length > 3) {
             const remainingColumns = selectedColumns.slice(3);
-            const extraContainer = document.createElement('div');
-            extraContainer.style.cssText = `display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.15rem;`;
             let hasExtra = false;
+
             remainingColumns.forEach((colIndex, idx) => {
                 const header = MASTER_HEADERS[colIndex];
                 const value = patient[header] || '';
@@ -3620,16 +3619,27 @@ function displayRows(data = patientData) {
                     hasExtra = true;
                     const span = document.createElement('span');
                     span.className = colors[(idx + 3) % colors.length];
-                    span.style.cssText = `
-                        font-size: 0.78rem;
-                        line-height: 1.3;
-                        font-family: 'Inter', sans-serif;
-                    `;
+
+                    // Special formatting for "To do" field - display on its own line
+                    if (header === 'To do') {
+                        span.style.cssText = `
+                            display: block;
+                            font-size: 1rem;
+                            line-height: 1.3;
+                            font-family: 'Inter', sans-serif;
+                            margin-top: 0.15rem;
+                        `;
+                    } else {
+                        span.style.cssText = `
+                            font-size: 0.78rem;
+                            line-height: 1.3;
+                            font-family: 'Inter', sans-serif;
+                        `;
+                    }
                     span.textContent = value;
-                    extraContainer.appendChild(span);
+                    contentContainer.appendChild(span);
                 }
             });
-            if (hasExtra) contentContainer.appendChild(extraContainer);
         }
 
         // Priority sidebar
