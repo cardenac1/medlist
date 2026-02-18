@@ -44,10 +44,10 @@
             --card-bg-solid: #0d0d0d;
             --card-hover: rgba(25, 25, 25, 0.95);
             --glass-bg: rgba(10, 10, 10, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
             --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-strong: rgba(255, 255, 255, 0.14);
+            --border: rgba(255, 255, 255, 0.15);
+            --border-strong: rgba(255, 255, 255, 0.25);
             --text-primary: #e8eaed;
             --text-secondary: #9aa0a6;
             --text-muted: #5f6368;
@@ -643,6 +643,21 @@ const VIOLIN_DASHBOARD_CSS = `
             color: var(--primary);
         }
 
+        .details-header-top {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .sticky-meta-badges {
+            display: none;
+        }
+
+        .sticky-copy-btn {
+            display: none;
+        }
+
         .view-selector {
             display: flex;
             gap: 0.5rem;
@@ -887,22 +902,22 @@ const VIOLIN_DASHBOARD_CSS = `
 }
 .dashboard-card {
     background: rgba(10, 10, 10, 0.7);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: 1rem;
     overflow: hidden;
     transition: all 200ms ease;
 }
 .dashboard-card:hover {
-    border-color: rgba(59,130,246,0.2);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    border-color: rgba(59,130,246,0.35);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 .dashboard-card-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.65rem 0.85rem;
-    background: rgba(255,255,255,0.03);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
     cursor: pointer;
     user-select: none;
 }
@@ -921,8 +936,8 @@ const VIOLIN_DASHBOARD_CSS = `
     padding: 0.75rem 0.85rem;
 }
 .patient-header-card {
-    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(6,182,212,0.05));
-    border: 1px solid rgba(59,130,246,0.15);
+    background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(6,182,212,0.07));
+    border: 1px solid rgba(59,130,246,0.3);
     border-radius: 1rem;
     padding: 1rem;
     margin-bottom: 0.25rem;
@@ -939,8 +954,8 @@ const VIOLIN_DASHBOARD_CSS = `
     gap: 0.5rem;
 }
 .patient-header-card .meta-badge {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
     padding: 0.2rem 0.6rem;
     border-radius: 100px;
     font-size: 0.75rem;
@@ -1693,18 +1708,112 @@ select,
   .chart-check-controls           { display: grid; grid-template-columns: 1fr; grid-template-rows: repeat(3,1fr); gap:0.4rem; margin:1rem 0; }
 
 .details-header {
-    padding: 0.75rem;
-    position: sticky;  /* Changed from relative to sticky */
-    top: 0;           /* Add this to ensure it sticks to top */
-    z-index: 100;     /* Add this to ensure it stays above content */
-    background: var(--card-bg);
+    padding: 0.5rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5, 5, 15, 0.95);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
   }
 
-	
+  .details-header-top {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: nowrap;
+  }
+
   .sticky-text {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  /* Show RM/MRN badges in sticky header on mobile */
+  .sticky-meta-badges {
+    display: flex !important;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+  .sticky-meta-badges .sticky-badge {
+    padding: 0.15rem 0.4rem;
+    border-radius: 100px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  .sticky-badge-rm {
+    background: rgba(59,130,246,0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.3);
+  }
+  .sticky-badge-mrn {
+    background: rgba(6,182,212,0.12);
+    color: #22d3ee;
+    border: 1px solid rgba(6,182,212,0.3);
+  }
+
+  /* Copy button in sticky header */
+  .sticky-copy-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 28px;
+    white-space: nowrap;
+  }
+  .sticky-copy-btn:active {
+    background: var(--success);
+    color: #fff;
+    border-color: var(--success);
+  }
+
+  /* Hide the patient-header-card display elements on mobile (name + badges are in sticky header) */
+  .patient-header-card .patient-name-display {
+    display: none;
+  }
+  .patient-header-card .patient-meta {
+    display: none;
+  }
+  .patient-header-card {
+    padding: 0.6rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.75rem;
+  }
+
+  /* Make edit fields in patient header compact on mobile */
+  .patient-header-card .mobile-edit-fields {
+    gap: 0.3rem;
+  }
+
+  /* Compact dashboard cards on mobile */
+  .dashboard-grid {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  .dashboard-card {
+    border-radius: 0.75rem;
+  }
+  .dashboard-card-header {
+    padding: 0.5rem 0.65rem;
+  }
+  .dashboard-card-body {
+    padding: 0.5rem 0.65rem;
   }
 
 /* MOBILE VIEW SELECTOR */
@@ -1996,31 +2105,10 @@ select,
 
 
 @media (max-width: 768px) {
-    /* ... existing mobile styles ... */
-    
-    /* Compact first three button spans - keep separate lines but reduce height */
+    /* Hide first-three-btn on mobile - info already shown in topRow */
     .first-three-btn {
-        white-space: normal !important;
-        text-align: left !important;
-        line-height: 1.1 !important;
-        height: auto !important;
-        min-height: 44px !important;  /* Reduced from 60px */
-        padding: 0.3rem 0.4rem !important;  /* Much less padding */
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
+        display: none !important;
     }
-    
-    .first-three-btn span {
-        display: block !important;
-        width: 100% !important;
-        line-height: 1.1 !important;  /* Tighter line height */
-        margin-bottom: 1px !important;  /* Minimal spacing between lines */
-        white-space: normal !important;
-        word-wrap: break-word !important;
-    }
-    
- 
 }
 
 
@@ -2663,7 +2751,11 @@ async function testOCRAvailability() {
         <!-- Details View -->
         <div class="details-view" id="detailsView">
             <div class="details-header">
-                <div id="stickyTextContainer" class="sticky-text"></div>
+                <div class="details-header-top">
+                    <div id="stickyTextContainer" class="sticky-text"></div>
+                    <div id="stickyMetaBadges" class="sticky-meta-badges"></div>
+                    <button id="stickyCopyBtn" class="sticky-copy-btn" onclick="copyStickyPatientInfo()" title="Copy Name/RM/MRN">Copy</button>
+                </div>
                 <div class="view-selector">
                     <button class="view-button active" onclick="switchView('basic')">Details</button>
                     <button class="view-button" onclick="switchView('chartcheck')">📊 Chart Check</button>
@@ -3390,9 +3482,9 @@ function displayRows(data = patientData) {
             font-size: 0.85rem;
             margin-bottom: 0.5rem;
             padding: 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            border-right: 1px solid rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-top: 1px solid rgba(255,255,255,0.14);
+            border-right: 1px solid rgba(255,255,255,0.14);
+            border-bottom: 1px solid rgba(255,255,255,0.14);
             backdrop-filter: blur(8px);
         `;
 
@@ -3932,7 +4024,23 @@ function clearSearch() {
     }
     
     document.getElementById('stickyTextContainer').textContent = patient.Name || 'Unnamed Patient';
-    
+
+    // Populate mobile sticky meta badges (RM + MRN)
+    const stickyBadges = document.getElementById('stickyMetaBadges');
+    stickyBadges.innerHTML = '';
+    if (patient.RM) {
+        const rmBadge = document.createElement('span');
+        rmBadge.className = 'sticky-badge sticky-badge-rm';
+        rmBadge.textContent = patient.RM;
+        stickyBadges.appendChild(rmBadge);
+    }
+    if (patient.MRN) {
+        const mrnBadge = document.createElement('span');
+        mrnBadge.className = 'sticky-badge sticky-badge-mrn';
+        mrnBadge.textContent = patient.MRN;
+        stickyBadges.appendChild(mrnBadge);
+    }
+
     // Reset view mode to basic if it's invalid
     if (!currentViewMode) currentViewMode = 'basic';
     
@@ -4046,6 +4154,23 @@ function switchView(mode) {
                     if (header === 'Name') {
                         pNameDisplay.textContent = this.value || 'Unnamed Patient';
                         document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+                    }
+                    // Update sticky RM/MRN badges on mobile
+                    if (header === 'RM' || header === 'MRN') {
+                        const stickyBadges = document.getElementById('stickyMetaBadges');
+                        stickyBadges.innerHTML = '';
+                        if (patient.RM) {
+                            const rmB = document.createElement('span');
+                            rmB.className = 'sticky-badge sticky-badge-rm';
+                            rmB.textContent = patient.RM;
+                            stickyBadges.appendChild(rmB);
+                        }
+                        if (patient.MRN) {
+                            const mrnB = document.createElement('span');
+                            mrnB.className = 'sticky-badge sticky-badge-mrn';
+                            mrnB.textContent = patient.MRN;
+                            stickyBadges.appendChild(mrnB);
+                        }
                     }
                     saveToLocalStorage();
                 });
@@ -10491,6 +10616,39 @@ function copyStaffPresentation() {
 
 	    
 	
+function copyStickyPatientInfo() {
+    const patient = patientData[currentPatientIndex];
+    if (!patient) return;
+    const name = patient.Name || '';
+    const rm = patient.RM || '';
+    const mrn = patient.MRN || '';
+    const textToCopy = [name, rm, mrn].filter(Boolean).join('\n');
+    const btn = document.getElementById('stickyCopyBtn');
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        btn.textContent = 'Copied!';
+        btn.style.background = 'var(--success)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--success)';
+        setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 800);
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = textToCopy;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 800);
+    });
+}
+
 function copyPatientInfoImproved(button) {
     const patient = button.patientData;
     const name = patient.Name || 'Unknown';
