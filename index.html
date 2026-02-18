@@ -7050,17 +7050,24 @@ function saveLabsImaging() {
                 return;
             }
 
-            if (trimmedLine.toLowerCase().includes('scheduled:')) {
+            // Detect section headers (with or without colon)
+            const lineLowerTrimmed = trimmedLine.toLowerCase().replace(/:$/, '');
+            if (lineLowerTrimmed === 'scheduled' || trimmedLine.toLowerCase().includes('scheduled:')) {
                 currentSection = 'Scheduled';
                 inHomeMedsSection = false;
                 return;
-            } else if (trimmedLine.toLowerCase().includes('prn:')) {
+            } else if (lineLowerTrimmed === 'prn' || trimmedLine.toLowerCase().includes('prn:')) {
                 currentSection = 'PRN';
                 inHomeMedsSection = false;
                 return;
-            } else if (trimmedLine.toLowerCase().includes('continuous:')) {
+            } else if (lineLowerTrimmed === 'continuous' || trimmedLine.toLowerCase().includes('continuous:')) {
                 currentSection = 'Continuous';
                 inHomeMedsSection = false;
+                return;
+            }
+
+            // Skip other non-medication header lines (e.g., "Active", "Active PRN", medication count lines)
+            if (trimmedLine.match(/^(Active\s*(Scheduled|PRN|Continuous)?|Medications?\s*\(\d+\))$/i)) {
                 return;
             }
 
