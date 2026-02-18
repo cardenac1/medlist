@@ -3571,7 +3571,7 @@ function displayRows(data = patientData) {
             cursor: pointer;
             color: inherit;
             align-self: flex-start;
-            display: none;
+            display: flex;
             flex-direction: column;
             white-space: normal;
             font-family: 'Inter', sans-serif;
@@ -3592,17 +3592,27 @@ function displayRows(data = patientData) {
             copyPatientInfoImproved(firstThreeButton);
         };
 
-        // Add first three columns to hidden button (for copy)
+        // Add first three columns with labels to button
         const firstThreeColumns = selectedColumns.slice(0, 3);
         firstThreeColumns.forEach((colIndex, idx) => {
             const header = MASTER_HEADERS[colIndex];
             const value = patient[header] || '';
             if (value) {
-                const span = document.createElement('span');
-                span.className = colors[idx % colors.length];
-                span.textContent = value;
-                span.style.cssText = `display:block;font-size:0.85rem;line-height:1.3;`;
-                firstThreeButton.appendChild(span);
+                const labelValueContainer = document.createElement('div');
+                labelValueContainer.style.cssText = `display:flex;gap:0.3rem;align-items:baseline;`;
+
+                const label = document.createElement('span');
+                label.style.cssText = `font-size:0.7rem;color:#94a3b8;opacity:0.7;`;
+                label.textContent = header + ':';
+                labelValueContainer.appendChild(label);
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = colors[idx % colors.length];
+                valueSpan.textContent = value;
+                valueSpan.style.cssText = `display:inline;font-size:0.85rem;line-height:1.3;`;
+                labelValueContainer.appendChild(valueSpan);
+
+                firstThreeButton.appendChild(labelValueContainer);
             }
         });
         contentContainer.appendChild(firstThreeButton);
@@ -4007,22 +4017,22 @@ function clearSearch() {
         alert('Error: Patient not found');
         return;
     }
-    
+
     currentPatientIndex = index;
     const detailsView = document.getElementById('detailsView');
-    
+
     // Ensure detailsView exists
     if (!detailsView) {
         console.error('Details view element not found');
         return;
     }
-    
+
     const patient = patientData[index];
     if (!patient) {
         console.error('Patient data not found at index:', index);
         return;
     }
-    
+
     document.getElementById('stickyTextContainer').textContent = patient.Name || 'Unnamed Patient';
 
     // Populate mobile sticky meta badges (RM + MRN)
@@ -4043,7 +4053,7 @@ function clearSearch() {
 
     // Reset view mode to basic if it's invalid
     if (!currentViewMode) currentViewMode = 'basic';
-    
+
     // Show appropriate view based on current mode
     try {
         switchView(currentViewMode);
@@ -4051,12 +4061,32 @@ function clearSearch() {
         console.error('Error switching view:', e);
         switchView('basic');
     }
-    
+
     detailsView.style.display = 'block';
     updateNavButtons();
 
+    // Auto-copy patient info to clipboard
+    const name = patient.Name || 'Unknown';
+    const rm = patient.RM || 'Unknown';
+    const mrn = patient.MRN || 'Unknown';
+    const textToCopy = `${name}\n${rm}\n${mrn}`;
 
-	 
+    navigator.clipboard.writeText(textToCopy).catch(err => {
+        // Fallback method if clipboard API fails
+        const ta = document.createElement('textarea');
+        ta.value = textToCopy;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+        } catch (e) {
+            console.error('Failed to copy patient info:', e);
+        }
+        document.body.removeChild(ta);
+    });
+
 }
  
 
@@ -4417,26 +4447,9 @@ case 'chartcheck': {
                 }
             });
 
-            // RIGHT: Sidebar with progress ring + checklist + to-do
+            // RIGHT: Sidebar with checklist + to-do
             const ccSidebar = document.createElement('div');
             ccSidebar.className = 'chartcheck-sidebar';
-
-            // Progress ring
-            const progressContainer = document.createElement('div');
-            progressContainer.className = 'progress-ring-container';
-            progressContainer.id = 'ccProgressRing';
-            const ringSize = 80;
-            const ringStroke = 6;
-            const ringRadius = (ringSize - ringStroke) / 2;
-            const ringCircumference = 2 * Math.PI * ringRadius;
-            progressContainer.innerHTML = `
-                <svg width="${ringSize}" height="${ringSize}" viewBox="0 0 ${ringSize} ${ringSize}">
-                    <circle cx="${ringSize/2}" cy="${ringSize/2}" r="${ringRadius}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="${ringStroke}"/>
-                    <circle id="ccProgressCircle" cx="${ringSize/2}" cy="${ringSize/2}" r="${ringRadius}" fill="none" stroke="#3b82f6" stroke-width="${ringStroke}" stroke-linecap="round" stroke-dasharray="${ringCircumference}" stroke-dashoffset="${ringCircumference}" transform="rotate(-90 ${ringSize/2} ${ringSize/2})" style="transition:stroke-dashoffset 0.5s ease"/>
-                    <text x="${ringSize/2}" y="${ringSize/2}" text-anchor="middle" dy="0.35em" fill="#f1f5f9" font-size="1.1rem" font-weight="700" font-family="Inter,sans-serif" id="ccProgressText">0%</text>
-                </svg>
-                <span class="progress-ring-label">Chart Check Progress</span>`;
-            ccSidebar.appendChild(progressContainer);
 
             // To-do section in sidebar
             const todoCard = document.createElement('div');
@@ -10664,16 +10677,26 @@ function copyPatientInfoImproved(button) {
     
     const rebuildOriginalContent = () => {
         button.innerHTML = '';
-        
+
         columnIndexes.forEach((colIndex, idx) => {
             const header = MASTER_HEADERS[colIndex];
             const value = patient[header] || '';
             if (value) {
-                const span = document.createElement('span');
-                span.className = colorClasses[idx % colorClasses.length];
-                span.textContent = value;
-                span.style.display = 'block';
-                button.appendChild(span);
+                const labelValueContainer = document.createElement('div');
+                labelValueContainer.style.cssText = `display:flex;gap:0.3rem;align-items:baseline;`;
+
+                const label = document.createElement('span');
+                label.style.cssText = `font-size:0.7rem;color:#94a3b8;opacity:0.7;`;
+                label.textContent = header + ':';
+                labelValueContainer.appendChild(label);
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = colorClasses[idx % colorClasses.length];
+                valueSpan.textContent = value;
+                valueSpan.style.cssText = `display:inline;font-size:0.85rem;line-height:1.3;`;
+                labelValueContainer.appendChild(valueSpan);
+
+                button.appendChild(labelValueContainer);
             }
         });
     };
