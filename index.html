@@ -3479,8 +3479,8 @@ function displayRows(data = patientData) {
             cursor: pointer;
             transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
             border-left: 3px solid ${color};
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.3rem;
             padding: 0;
             border-top: 1px solid rgba(255,255,255,0.14);
             border-right: 1px solid rgba(255,255,255,0.14);
@@ -3492,10 +3492,10 @@ function displayRows(data = patientData) {
         const contentContainer = document.createElement('div');
         contentContainer.style.cssText = `
             flex: 1;
-            padding: 0.65rem 0.85rem;
+            padding: 0.4rem 0.5rem;
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
+            gap: 0.15rem;
             min-width: 0;
         `;
 
@@ -3523,7 +3523,7 @@ function displayRows(data = patientData) {
             const nameEl = document.createElement('span');
             nameEl.style.cssText = `
                 font-weight: 700;
-                font-size: 0.95rem;
+                font-size: 0.8rem;
                 color: #f1f5f9;
                 letter-spacing: -0.01em;
             `;
@@ -3537,9 +3537,9 @@ function displayRows(data = patientData) {
             roomBadge.style.cssText = `
                 background: rgba(59,130,246,0.12);
                 color: #60a5fa;
-                padding: 0.15rem 0.5rem;
+                padding: 0.08rem 0.35rem;
                 border-radius: 100px;
-                font-size: 0.85rem;
+                font-size: 0.7rem;
                 font-weight: 600;
                 font-family: 'JetBrains Mono', monospace;
                 border: 1px solid rgba(59,130,246,0.2);
@@ -3554,9 +3554,9 @@ function displayRows(data = patientData) {
             mrnBadge.style.cssText = `
                 background: rgba(6,182,212,0.1);
                 color: #22d3ee;
-                padding: 0.15rem 0.5rem;
+                padding: 0.08rem 0.35rem;
                 border-radius: 100px;
-                font-size: 0.85rem;
+                font-size: 0.7rem;
                 font-weight: 600;
                 font-family: 'JetBrains Mono', monospace;
                 border: 1px solid rgba(6,182,212,0.2);
@@ -3624,14 +3624,14 @@ function displayRows(data = patientData) {
                     if (header === 'To do') {
                         span.style.cssText = `
                             display: block;
-                            font-size: 1rem;
+                            font-size: 0.85rem;
                             line-height: 1.3;
                             font-family: 'Inter', sans-serif;
-                            margin-top: 0.15rem;
+                            margin-top: 0.1rem;
                         `;
                     } else {
                         span.style.cssText = `
-                            font-size: 0.78rem;
+                            font-size: 0.7rem;
                             line-height: 1.3;
                             font-family: 'Inter', sans-serif;
                         `;
