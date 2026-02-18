@@ -3519,59 +3519,49 @@ function displayRows(data = patientData) {
 
         // Patient name (prominent)
         if (patientName) {
-            const nameEl = document.createElement('div');
+            const nameEl = document.createElement('span');
             nameEl.style.cssText = `
-                display: flex;
-                gap: 0.3rem;
-                align-items: baseline;
-            `;
-            const nameLabel = document.createElement('span');
-            nameLabel.style.cssText = `font-size:0.7rem;color:#94a3b8;opacity:0.7;`;
-            nameLabel.textContent = 'Name:';
-            nameEl.appendChild(nameLabel);
-
-            const nameVal = document.createElement('span');
-            nameVal.style.cssText = `
                 font-weight: 700;
                 font-size: 0.95rem;
                 color: #f1f5f9;
                 letter-spacing: -0.01em;
             `;
-            nameVal.textContent = patientName;
-            nameEl.appendChild(nameVal);
+            nameEl.textContent = patientName;
             topRow.appendChild(nameEl);
         }
 
         // Room badge
         if (room) {
-            const roomDiv = document.createElement('div');
-            roomDiv.style.cssText = `display:flex;gap:0.3rem;align-items:baseline;`;
-            const roomLabel = document.createElement('span');
-            roomLabel.style.cssText = `font-size:0.7rem;color:#94a3b8;opacity:0.7;`;
-            roomLabel.textContent = 'RM:';
-            roomDiv.appendChild(roomLabel);
-
-            const roomVal = document.createElement('span');
-            roomVal.style.cssText = `color: #60a5fa; font-size: 0.75rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;`;
-            roomVal.textContent = room;
-            roomDiv.appendChild(roomVal);
-            topRow.appendChild(roomDiv);
+            const roomBadge = document.createElement('span');
+            roomBadge.style.cssText = `
+                background: rgba(59,130,246,0.12);
+                color: #60a5fa;
+                padding: 0.1rem 0.45rem;
+                border-radius: 100px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                font-family: 'JetBrains Mono', monospace;
+                border: 1px solid rgba(59,130,246,0.2);
+            `;
+            roomBadge.textContent = 'RM ' + room;
+            topRow.appendChild(roomBadge);
         }
 
         // MRN badge
         if (mrn) {
-            const mrnDiv = document.createElement('div');
-            mrnDiv.style.cssText = `display:flex;gap:0.3rem;align-items:baseline;`;
-            const mrnLabel = document.createElement('span');
-            mrnLabel.style.cssText = `font-size:0.7rem;color:#94a3b8;opacity:0.7;`;
-            mrnLabel.textContent = 'MRN:';
-            mrnDiv.appendChild(mrnLabel);
-
-            const mrnVal = document.createElement('span');
-            mrnVal.style.cssText = `color: #22d3ee; font-size: 0.75rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;`;
-            mrnVal.textContent = mrn;
-            mrnDiv.appendChild(mrnVal);
-            topRow.appendChild(mrnDiv);
+            const mrnBadge = document.createElement('span');
+            mrnBadge.style.cssText = `
+                background: rgba(6,182,212,0.1);
+                color: #22d3ee;
+                padding: 0.1rem 0.45rem;
+                border-radius: 100px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                font-family: 'JetBrains Mono', monospace;
+                border: 1px solid rgba(6,182,212,0.2);
+            `;
+            mrnBadge.textContent = mrn;
+            topRow.appendChild(mrnBadge);
         }
 
         // Store data for copy functionality on the topRow button
