@@ -3473,7 +3473,7 @@ function displayRows(data = patientData) {
         listItem.style.cssText = `
             position: relative;
             display: grid;
-            grid-template-columns: 1fr 2fr 20px;
+            grid-template-columns: 1fr 1fr 20px;
             align-items: stretch;
             background: rgba(10, 10, 10, 0.65);
             border-radius: 0.85rem;
@@ -3497,7 +3497,7 @@ function displayRows(data = patientData) {
             flex-direction: column;
             gap: 0.15rem;
             min-width: 0;
-            justify-content: center;
+            justify-content: flex-start;
         `;
 
         // To do column container
@@ -3506,7 +3506,8 @@ function displayRows(data = patientData) {
             padding: 0.4rem 0.5rem;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
+            align-items: flex-start;
             gap: 0.15rem;
             min-width: 0;
             overflow: hidden;
