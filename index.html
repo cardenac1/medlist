@@ -3483,7 +3483,6 @@ function displayRows(data = patientData) {
             margin-bottom: 0.15rem;
             padding: 0;
             border-top: 1px solid rgba(255,255,255,0.14);
-            border-right: 1px solid rgba(255,255,255,0.14);
             border-bottom: 1px solid rgba(255,255,255,0.14);
             backdrop-filter: blur(8px);
         `;
@@ -4285,6 +4284,7 @@ function switchView(mode) {
                     if (body.style.display === 'none') {
                         body.style.display = 'block';
                         collapseIcon.style.transform = 'rotate(0deg)';
+                        body.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
                     } else {
                         body.style.display = 'none';
                         collapseIcon.style.transform = 'rotate(-90deg)';
@@ -4348,7 +4348,10 @@ function switchView(mode) {
                         cardBody.appendChild(fullOrdersDiv);
                     }
 
-                    setTimeout(() => autoResizeTextarea(textarea), 0);
+                    // Only auto-resize now if the body is visible; collapsed cards resize when expanded
+                    if (startExpanded) {
+                        setTimeout(() => autoResizeTextarea(textarea), 0);
+                    }
                 }
 
                 card.appendChild(cardBody);
