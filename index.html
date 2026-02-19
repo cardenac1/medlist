@@ -4200,38 +4200,60 @@ function switchView(mode) {
                 const lbl = document.createElement('label');
                 lbl.textContent = header;
                 lbl.style.cssText = 'margin-top:0;';
-                const inp = document.createElement('input');
-                inp.type = 'text';
-                inp.id = `field_${header.replace(/\s+/g, '_')}`;
-                inp.value = patient[header] || '';
-                inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
-                inp.addEventListener('input', function() {
-                    patient[header] = this.value;
-                    if (header === 'Name') {
-                        pNameDisplay.textContent = this.value || 'Unnamed Patient';
-                        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
-                    }
-                    // Update sticky RM/MRN badges on mobile
-                    if (header === 'RM' || header === 'MRN') {
-                        const stickyBadges = document.getElementById('stickyMetaBadges');
-                        stickyBadges.innerHTML = '';
-                        if (patient.RM) {
-                            const rmB = document.createElement('span');
-                            rmB.className = 'sticky-badge sticky-badge-rm';
-                            rmB.textContent = patient.RM;
-                            stickyBadges.appendChild(rmB);
-                        }
-                        if (patient.MRN) {
-                            const mrnB = document.createElement('span');
-                            mrnB.className = 'sticky-badge sticky-badge-mrn';
-                            mrnB.textContent = patient.MRN;
-                            stickyBadges.appendChild(mrnB);
-                        }
-                    }
-                    saveToLocalStorage();
-                });
                 fieldWrap.appendChild(lbl);
-                fieldWrap.appendChild(inp);
+
+                if (header === 'Priority') {
+                    // Visual priority selector button
+                    const { color } = getPriorityStatus(patient);
+                    const priorityBtn = document.createElement('button');
+                    priorityBtn.id = 'detailPriorityBtn';
+                    priorityBtn.style.cssText = `margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;width:100%;text-align:left;background:var(--card-bg);border:2px solid ${color};border-radius:0.375rem;color:var(--text-primary);cursor:pointer;display:flex;align-items:center;gap:0.5rem;`;
+                    const colorBox = document.createElement('div');
+                    colorBox.id = 'detailPriorityColorBox';
+                    colorBox.style.cssText = `width:14px;height:14px;border-radius:0.2rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
+                    const priorityText = document.createElement('span');
+                    priorityText.id = 'detailPriorityText';
+                    priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
+                    priorityBtn.appendChild(colorBox);
+                    priorityBtn.appendChild(priorityText);
+                    priorityBtn.onclick = (e) => {
+                        e.preventDefault();
+                        showStatusSelector(patient, currentPatientIndex, priorityBtn);
+                    };
+                    fieldWrap.appendChild(priorityBtn);
+                } else {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.id = `field_${header.replace(/\s+/g, '_')}`;
+                    inp.value = patient[header] || '';
+                    inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
+                    inp.addEventListener('input', function() {
+                        patient[header] = this.value;
+                        if (header === 'Name') {
+                            pNameDisplay.textContent = this.value || 'Unnamed Patient';
+                            document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+                        }
+                        // Update sticky RM/MRN badges on mobile
+                        if (header === 'RM' || header === 'MRN') {
+                            const stickyBadges = document.getElementById('stickyMetaBadges');
+                            stickyBadges.innerHTML = '';
+                            if (patient.RM) {
+                                const rmB = document.createElement('span');
+                                rmB.className = 'sticky-badge sticky-badge-rm';
+                                rmB.textContent = patient.RM;
+                                stickyBadges.appendChild(rmB);
+                            }
+                            if (patient.MRN) {
+                                const mrnB = document.createElement('span');
+                                mrnB.className = 'sticky-badge sticky-badge-mrn';
+                                mrnB.textContent = patient.MRN;
+                                stickyBadges.appendChild(mrnB);
+                            }
+                        }
+                        saveToLocalStorage();
+                    });
+                    fieldWrap.appendChild(inp);
+                }
                 shortFieldsRow.appendChild(fieldWrap);
             });
             headerCard.appendChild(shortFieldsRow);
@@ -12250,16 +12272,41 @@ function getStatusColor(colorName) {
 		function setPatientPriority(priorityNum, index, modal) {
     // Set the priority number
     patientData[index].Priority = priorityNum;
-    
+
     // Remove any saved status since we're now using priority-based system
     delete patientData[index].SavedStatus;
-    
+
     // Save to localStorage
     saveToLocalStorage();
-    
-    // Refresh the display
+
+    // Refresh the list display
     displayRows();
-    
+
+    // Update the details view priority selector button if currently viewing this patient
+    if (currentPatientIndex === index) {
+        const patient = patientData[index];
+        const { color } = getPriorityStatus(patient);
+
+        const btn = document.getElementById('detailPriorityBtn');
+        if (btn) {
+            btn.style.borderColor = color;
+        }
+        const colorBox = document.getElementById('detailPriorityColorBox');
+        if (colorBox) {
+            colorBox.style.background = color;
+        }
+        const priorityText = document.getElementById('detailPriorityText');
+        if (priorityText) {
+            priorityText.textContent = priorityNum ? getPriorityName(priorityNum) : 'Set Priority';
+        }
+
+        // Also update the Priority text input in chart check / consult modes
+        const priorityInput = document.getElementById('field_Priority');
+        if (priorityInput) {
+            priorityInput.value = priorityNum;
+        }
+    }
+
     // Close the modal
     modal.remove();
 }
