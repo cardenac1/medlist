@@ -7516,7 +7516,7 @@ else {
 
         // Build table HTML with toggle buttons
         let tableHTML = '<div style="background: var(--card-bg); padding: 0.6rem; border-radius: 0.5rem; border: 1px solid var(--primary);">';
-        tableHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">';
+        tableHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">';
         tableHTML += '<strong style="color: var(--primary); font-size: 16px;">📋 Full Orders List</strong>';
 
         // Toggle buttons
@@ -7533,7 +7533,7 @@ else {
         tableHTML += '</div>';
         tableHTML += '</div>';
 
-        tableHTML += '<div style="font-family: \'Courier New\', monospace; font-size: 11.5px; background: #252525; border-radius: 8px; padding: 0.5rem;">';
+        tableHTML += '<div style="font-family: \'Courier New\', monospace; font-size: 11.5px; background: #252525; border-radius: 8px; padding: 0.25rem 0.4rem;">';
 
         // Fetch current orders to read top sections
         const currentOrdersForTop = document.getElementById('field_ORDERS')?.value || '';
@@ -7547,27 +7547,27 @@ else {
         }
 
         // VITALS/INTAKE/OUTPUTS Section
-        tableHTML += `<div style="margin-bottom: 0.4rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">`;
+        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
+        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: #10b981; font-weight: 600; font-size: 13px;">VITALS/INTAKE/OUTPUTS:</div>`;
         tableHTML += `<button type="button" onclick="editVitalsIO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #10b981;" title="Edit Vitals/Intake/Outputs">✏️</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
         tableHTML += existingVitalsIO || '<em style="color: var(--text-secondary);">No vitals/IO orders</em>';
         tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.3rem;"></div>`;
+        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
         tableHTML += '</div>';
 
         // LABS/IMAGING Section
-        tableHTML += `<div style="margin-bottom: 0.4rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">`;
+        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
+        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: #f59e0b; font-weight: 600; font-size: 13px;">LABS/IMAGING:</div>`;
         tableHTML += `<button type="button" onclick="editLabsImaging()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #f59e0b;" title="Edit Labs/Imaging">✏️</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
         tableHTML += existingLabsImaging || '<em style="color: var(--text-secondary);">No labs/imaging orders</em>';
         tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.3rem;"></div>`;
+        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
         tableHTML += '</div>';
 
       tableHTML += createCategoryRow('NEURO/PAIN/SEDATION', categorizedMeds['neuro']);
@@ -7596,32 +7596,32 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
         }
 
         // LABS/MISC Section
-        tableHTML += `<div style="margin-bottom: 0.4rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">`;
+        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
+        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: #06b6d4; font-weight: 600; font-size: 13px;">LABS/MISC:</div>`;
         tableHTML += `<button type="button" onclick="editLabsMisc()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #06b6d4;" title="Edit LABS/MISC">✏️</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
         tableHTML += existingLabsMisc || '<em style="color: var(--text-secondary);">No labs/misc orders</em>';
         tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.3rem;"></div>`;
+        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
         tableHTML += '</div>';
 
         // LTD Section
-        tableHTML += `<div style="margin-bottom: 0.4rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">`;
+        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
+        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: var(--primary); font-weight: 600; font-size: 13px;">LTD:</div>`;
         tableHTML += `<button type="button" onclick="editLTD()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit LTD">✏️</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2;">`;
         tableHTML += existingLTD || '<em style="color: var(--text-secondary);">No LTD data</em>';
         tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.3rem;"></div>`;
+        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
         tableHTML += '</div>';
 
         // DISPO Section
-        tableHTML += `<div style="margin-bottom: 0.4rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">`;
+        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
+        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: var(--primary); font-weight: 600; font-size: 13px;">DISPO:</div>`;
         tableHTML += `<button type="button" onclick="editDISPO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit DISPO">✏️</button>`;
         tableHTML += `</div>`;
@@ -7630,34 +7630,38 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
         tableHTML += `</div>`;
         tableHTML += '</div>';
 
-        // HOME MEDS section (at the very end)
+        // HOME MEDS section (at the very end) — always rendered
         const homeMedsRaw = lastImportedData ? extractHomeMeds(lastImportedData) : '';
-        if (homeMedsRaw) {
-            const homeMedLines = homeMedsRaw.split('\n').filter(l => l.trim());
-            if (homeMedLines.length > 0) {
-                tableHTML += `<div style="margin-bottom: 0.15rem; margin-top: 0.3rem;">`;
-                tableHTML += `<div style="border-bottom: 1px solid #444; margin-bottom: 0.3rem;"></div>`;
-                tableHTML += `<div style="color: #a78bfa; font-weight: 600; font-size: 13px; margin-bottom: 0.1rem;">HOME MEDS:</div>`;
-                homeMedLines.forEach((line, idx) => {
-                    const medId = `homed_${idx}`;
-                    if (deletedOrders.has(medId)) return;
-                    const displayLine = showAbbreviatedTable ? abbreviateMedText(line.trim()) : line.trim();
-                    const medName = line.trim().split(/\s+/)[0].toLowerCase();
-                    tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.05rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
-                    tableHTML += `<span>💊 ${displayLine}</span>`;
-                    tableHTML += `<div style="display: flex; gap: 4px;">`;
-                    tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
-                            class="med-status-btn"
-                            data-med-id="${medId}"
-                            data-status="stop"
-                            style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
-                            title="Remove this medication">🟥</button>`;
-                    tableHTML += `</div>`;
-                    tableHTML += '</div>';
-                });
+        const homeMedLines = homeMedsRaw
+            ? homeMedsRaw.split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0 && !l.match(/^(PRN|Scheduled|Continuous|Active|Active\s+PRN|Active\s+Scheduled|Active\s+Continuous|Medications?\s*\(\d+\))$/i))
+            : [];
+        tableHTML += `<div style="margin-bottom: 0.1rem; margin-top: 0.2rem;">`;
+        tableHTML += `<div style="border-bottom: 1px solid #444; margin-bottom: 0.2rem;"></div>`;
+        tableHTML += `<div style="color: #a78bfa; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">HOME MEDS:</div>`;
+        if (homeMedLines.length > 0) {
+            homeMedLines.forEach((line, idx) => {
+                const medId = `homed_${idx}`;
+                if (deletedOrders.has(medId)) return;
+                const displayLine = showAbbreviatedTable ? abbreviateMedText(line) : line;
+                const medName = line.split(/\s+/)[0].toLowerCase();
+                tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
+                tableHTML += `<span>💊 ${displayLine}</span>`;
+                tableHTML += `<div style="display: flex; gap: 4px;">`;
+                tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
+                        class="med-status-btn"
+                        data-med-id="${medId}"
+                        data-status="stop"
+                        style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
+                        title="Remove this medication">🟥</button>`;
+                tableHTML += `</div>`;
                 tableHTML += '</div>';
-            }
+            });
+        } else {
+            tableHTML += `<div style="color: var(--text-secondary); font-style: italic; font-size: 12px;">No Home Meds</div>`;
         }
+        tableHTML += '</div>';
 
         tableHTML += '</div>';
         tableHTML += '</div>';
