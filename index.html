@@ -3473,14 +3473,14 @@ function displayRows(data = patientData) {
             position: relative;
             display: grid;
             grid-template-columns: 1fr 1fr 20px;
-            align-items: stretch;
+            align-items: start;
             background: rgba(10, 10, 10, 0.65);
             border-radius: 0.85rem;
             cursor: pointer;
             transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-            border-left: 3px solid ${color};
-            border-right: 3px solid ${color};
-            font-size: 0.75rem;
+            border-left: 5px solid ${color};
+            border-right: 5px solid ${color};
+            font-size: 0.82rem;
             margin-bottom: 0.15rem;
             padding: 0;
             border-top: 1px solid rgba(255,255,255,0.14);
@@ -3536,7 +3536,7 @@ function displayRows(data = patientData) {
             const nameEl = document.createElement('span');
             nameEl.style.cssText = `
                 font-weight: 700;
-                font-size: 0.8rem;
+                font-size: 0.87rem;
                 color: #00f0ff;
                 letter-spacing: -0.01em;
             `;
@@ -3550,9 +3550,9 @@ function displayRows(data = patientData) {
             roomBadge.style.cssText = `
                 background: rgba(255,51,51,0.12);
                 color: #ff3333;
-                padding: 0.04rem 0.28rem;
+                padding: 0.05rem 0.32rem;
                 border-radius: 100px;
-                font-size: 0.68rem;
+                font-size: 0.74rem;
                 font-weight: 600;
                 font-family: 'JetBrains Mono', monospace;
                 border: 1px solid rgba(255,51,51,0.3);
@@ -3567,9 +3567,9 @@ function displayRows(data = patientData) {
             mrnBadge.style.cssText = `
                 background: rgba(0,255,0,0.12);
                 color: #00ff00;
-                padding: 0.04rem 0.28rem;
+                padding: 0.05rem 0.32rem;
                 border-radius: 100px;
-                font-size: 0.68rem;
+                font-size: 0.74rem;
                 font-weight: 600;
                 font-family: 'JetBrains Mono', monospace;
                 border: 1px solid rgba(0,255,0,0.3);
@@ -3630,7 +3630,7 @@ function displayRows(data = patientData) {
                 if (header === 'To do' && value) {
                     const toDoSpan = document.createElement('span');
                     toDoSpan.style.cssText = `
-                        font-size: 0.72rem;
+                        font-size: 0.78rem;
                         line-height: 1.2;
                         font-family: 'Inter', sans-serif;
                         color: #ffffff;
