@@ -3524,7 +3524,7 @@ function displayRows(data = patientData) {
             nameEl.style.cssText = `
                 font-weight: 700;
                 font-size: 0.8rem;
-                color: #f1f5f9;
+                color: #00f0ff;
                 letter-spacing: -0.01em;
             `;
             nameEl.textContent = patientName;
@@ -3535,14 +3535,14 @@ function displayRows(data = patientData) {
         if (room) {
             const roomBadge = document.createElement('span');
             roomBadge.style.cssText = `
-                background: rgba(59,130,246,0.12);
-                color: #60a5fa;
+                background: rgba(255,51,51,0.12);
+                color: #ff3333;
                 padding: 0.08rem 0.35rem;
                 border-radius: 100px;
                 font-size: 0.7rem;
                 font-weight: 600;
                 font-family: 'JetBrains Mono', monospace;
-                border: 1px solid rgba(59,130,246,0.2);
+                border: 1px solid rgba(255,51,51,0.3);
             `;
             roomBadge.textContent = 'RM ' + room;
             topRow.appendChild(roomBadge);
@@ -3552,14 +3552,14 @@ function displayRows(data = patientData) {
         if (mrn) {
             const mrnBadge = document.createElement('span');
             mrnBadge.style.cssText = `
-                background: rgba(6,182,212,0.1);
-                color: #22d3ee;
+                background: rgba(0,255,0,0.12);
+                color: #00ff00;
                 padding: 0.08rem 0.35rem;
                 border-radius: 100px;
                 font-size: 0.7rem;
                 font-weight: 600;
                 font-family: 'JetBrains Mono', monospace;
-                border: 1px solid rgba(6,182,212,0.2);
+                border: 1px solid rgba(0,255,0,0.3);
             `;
             mrnBadge.textContent = mrn;
             topRow.appendChild(mrnBadge);
@@ -3628,6 +3628,7 @@ function displayRows(data = patientData) {
                             line-height: 1.3;
                             font-family: 'Inter', sans-serif;
                             margin-top: 0.1rem;
+                            color: #ffffff;
                         `;
                     } else {
                         span.style.cssText = `
