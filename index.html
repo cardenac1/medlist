@@ -3445,7 +3445,8 @@ function displayRows(data = patientData) {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
 
-    patientData.forEach((patient, index) => {
+    data.forEach((patient) => {
+        const index = patientData.indexOf(patient);
         // Get priority status and color from getPriorityStatus
         const { color, title } = getPriorityStatus(patient);
 
