@@ -7265,8 +7265,11 @@ function saveLabsImaging() {
                 route = 'INH';
             }
 
+            // Remove " PRN" from the end of medication text to avoid duplication
+            let cleanedMedText = trimmedLine.replace(/\s+PRN\s*$/i, '');
+
             const medObj = {
-                text: trimmedLine,
+                text: cleanedMedText,
                 route: route,
                 isPRN: isPRN
             };
@@ -7405,8 +7408,8 @@ else {
             let html = '';
 
             // Category header
-            html += `<div style="margin-bottom: 0.15rem;">`;
-            html += `<div style="color: var(--primary); font-weight: 600; font-size: 13px; margin-bottom: 0.1rem;">${categoryName}:</div>`;
+            html += `<div style="margin-bottom: 0.05rem;">`;
+            html += `<div style="color: var(--primary); font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}:</div>`;
 
             // PO medications
             if (poMeds.length > 0) {
@@ -7438,7 +7441,7 @@ else {
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
-                    html += `<div style="color: ${color}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.05rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
+                    html += `<div style="color: ${color}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
                     html += `<span>${displayText}</span>`;
                     html += `<div style="display: flex; gap: 4px;">`;
                     html += `<button type="button" onclick="editMedication(event, '${medId}', 'po', ${idx}, '${categoryName.replace(/'/g, "\\'")}', '${escapedText}', '${medRoute}', ${medIsPRN})"
@@ -7486,7 +7489,7 @@ else {
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
-                    html += `<div style="color: ${color}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.05rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
+                    html += `<div style="color: ${color}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
                     html += `<span>${displayText}</span>`;
                     html += `<div style="display: flex; gap: 4px;">`;
                     html += `<button type="button" onclick="editMedication(event, '${medId}', 'iv', ${idx}, '${categoryName.replace(/'/g, "\\'")}', '${escapedText}', '${medRoute}', ${medIsPRN})"
@@ -7505,7 +7508,7 @@ else {
             }
 
             // Category separator
-            html += `<div style="border-bottom: 1px solid #444; margin-top: 0.15rem;"></div>`;
+            html += `<div style="border-bottom: 1px solid #444; margin-top: 0.05rem;"></div>`;
             html += '</div>';
 
             return html;
