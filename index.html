@@ -3263,7 +3263,7 @@ function getChecklistStatus(patient, patientIndex) {
 
     if (!priority) {
         console.log('getPriorityStatus: No priority, returning default');
-        return { color: 'var(--card-bg)', title: 'No priority set' }; // Gray
+        return { color: '#444444', title: 'No priority set' };
     }
 
     // Handle priority "C" explicitly for green (ANSI GREEN - RESERVED)
@@ -3322,7 +3322,7 @@ function getChecklistStatus(patient, patientIndex) {
     }
 
     console.log('getPriorityStatus: Unrecognized priority, returning default:', priority);
-    return { color: 'var(--card-bg)', title: `${priority}` }; // Default gray
+    return { color: '#444444', title: `${priority}` };
 }
 		
 
