@@ -980,8 +980,7 @@ const VIOLIN_DASHBOARD_CSS = `
 .chartcheck-sidebar {
     position: sticky;
     top: 80px;
-    height: fit-content;
-    max-height: calc(100vh - 100px);
+    height: calc(100vh - 100px);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -4194,75 +4193,53 @@ function switchView(mode) {
             // Editable short fields row inside header
             const shortFieldsRow = document.createElement('div');
             shortFieldsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.65rem;';
-            ['Name', 'RM', 'MRN', 'Att', 'Priority'].forEach(header => {
+            ['Name', 'RM', 'MRN', 'Att'].forEach(header => {
                 const fieldWrap = document.createElement('div');
                 fieldWrap.style.cssText = 'flex:1;min-width:80px;';
                 const lbl = document.createElement('label');
                 lbl.textContent = header;
                 lbl.style.cssText = 'margin-top:0;';
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.id = `field_${header.replace(/\s+/g, '_')}`;
+                inp.value = patient[header] || '';
+                inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
+                inp.addEventListener('input', function() {
+                    patient[header] = this.value;
+                    if (header === 'Name') {
+                        pNameDisplay.textContent = this.value || 'Unnamed Patient';
+                        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+                    }
+                    // Update sticky RM/MRN badges on mobile
+                    if (header === 'RM' || header === 'MRN') {
+                        const stickyBadges = document.getElementById('stickyMetaBadges');
+                        stickyBadges.innerHTML = '';
+                        if (patient.RM) {
+                            const rmB = document.createElement('span');
+                            rmB.className = 'sticky-badge sticky-badge-rm';
+                            rmB.textContent = patient.RM;
+                            stickyBadges.appendChild(rmB);
+                        }
+                        if (patient.MRN) {
+                            const mrnB = document.createElement('span');
+                            mrnB.className = 'sticky-badge sticky-badge-mrn';
+                            mrnB.textContent = patient.MRN;
+                            stickyBadges.appendChild(mrnB);
+                        }
+                    }
+                    saveToLocalStorage();
+                });
                 fieldWrap.appendChild(lbl);
-
-                if (header === 'Priority') {
-                    // Visual priority selector button
-                    const { color } = getPriorityStatus(patient);
-                    const priorityBtn = document.createElement('button');
-                    priorityBtn.id = 'detailPriorityBtn';
-                    priorityBtn.style.cssText = `margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;width:100%;text-align:left;background:var(--card-bg);border:2px solid ${color};border-radius:0.375rem;color:var(--text-primary);cursor:pointer;display:flex;align-items:center;gap:0.5rem;`;
-                    const colorBox = document.createElement('div');
-                    colorBox.id = 'detailPriorityColorBox';
-                    colorBox.style.cssText = `width:14px;height:14px;border-radius:0.2rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
-                    const priorityText = document.createElement('span');
-                    priorityText.id = 'detailPriorityText';
-                    priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
-                    priorityBtn.appendChild(colorBox);
-                    priorityBtn.appendChild(priorityText);
-                    priorityBtn.onclick = (e) => {
-                        e.preventDefault();
-                        showStatusSelector(patient, currentPatientIndex, priorityBtn);
-                    };
-                    fieldWrap.appendChild(priorityBtn);
-                } else {
-                    const inp = document.createElement('input');
-                    inp.type = 'text';
-                    inp.id = `field_${header.replace(/\s+/g, '_')}`;
-                    inp.value = patient[header] || '';
-                    inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
-                    inp.addEventListener('input', function() {
-                        patient[header] = this.value;
-                        if (header === 'Name') {
-                            pNameDisplay.textContent = this.value || 'Unnamed Patient';
-                            document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
-                        }
-                        // Update sticky RM/MRN badges on mobile
-                        if (header === 'RM' || header === 'MRN') {
-                            const stickyBadges = document.getElementById('stickyMetaBadges');
-                            stickyBadges.innerHTML = '';
-                            if (patient.RM) {
-                                const rmB = document.createElement('span');
-                                rmB.className = 'sticky-badge sticky-badge-rm';
-                                rmB.textContent = patient.RM;
-                                stickyBadges.appendChild(rmB);
-                            }
-                            if (patient.MRN) {
-                                const mrnB = document.createElement('span');
-                                mrnB.className = 'sticky-badge sticky-badge-mrn';
-                                mrnB.textContent = patient.MRN;
-                                stickyBadges.appendChild(mrnB);
-                            }
-                        }
-                        saveToLocalStorage();
-                    });
-                    fieldWrap.appendChild(inp);
-                }
+                fieldWrap.appendChild(inp);
                 shortFieldsRow.appendChild(fieldWrap);
             });
             headerCard.appendChild(shortFieldsRow);
             dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
-            const cardIcons = { 'Problems': '🩺', 'ICS': '📋', 'VIOLIN': '🎻', 'ORDERS': '💊', 'To do': '✅' };
-            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'To do': '#22c55e' };
-            const textFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do'];
+            const cardIcons = { 'Problems': '🩺', 'ICS': '📋', 'VIOLIN': '🎻', 'ORDERS': '💊', 'To do': '✅', 'Priority': '⚡' };
+            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'To do': '#22c55e', 'Priority': '#ef4444' };
+            const textFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do', 'Priority'];
 
             textFields.forEach(header => {
                 const card = document.createElement('div');
@@ -4320,34 +4297,62 @@ function switchView(mode) {
                 const cardBody = document.createElement('div');
                 cardBody.className = 'dashboard-card-body';
 
-                const textarea = document.createElement('textarea');
-                textarea.id = `field_${header.replace(/\s+/g, '_')}`;
-                textarea.value = patient[header] || '';
-                textarea.style.cssText = 'margin:0;';
-                if (header === 'ORDERS') {
-                    textarea.placeholder = 'PAIN:\nAC:\nABX:\nN/F:\nLTD:\nDISPO:';
+                // Collapse all cards by default except To do and Priority
+                const startExpanded = (header === 'To do' || header === 'Priority');
+                if (!startExpanded) {
+                    cardBody.style.display = 'none';
+                    collapseIcon.style.transform = 'rotate(-90deg)';
                 }
-                textarea.addEventListener('input', function() {
-                    patient[header] = this.value;
-                    saveToLocalStorage();
-                    autoResizeTextarea(this);
-                });
 
-                cardBody.appendChild(textarea);
+                if (header === 'Priority') {
+                    // Visual priority selector button
+                    const { color } = getPriorityStatus(patient);
+                    const priorityBtn = document.createElement('button');
+                    priorityBtn.id = 'detailPriorityBtn';
+                    priorityBtn.style.cssText = `margin:0;padding:0.6rem 0.85rem;font-size:0.85rem;width:100%;text-align:left;background:var(--card-bg);border:2px solid ${color};border-radius:0.5rem;color:var(--text-primary);cursor:pointer;display:flex;align-items:center;gap:0.6rem;`;
+                    const colorBox = document.createElement('div');
+                    colorBox.id = 'detailPriorityColorBox';
+                    colorBox.style.cssText = `width:16px;height:16px;border-radius:0.25rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
+                    const priorityText = document.createElement('span');
+                    priorityText.id = 'detailPriorityText';
+                    priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
+                    priorityBtn.appendChild(colorBox);
+                    priorityBtn.appendChild(priorityText);
+                    priorityBtn.onclick = (e) => {
+                        e.preventDefault();
+                        showStatusSelector(patient, currentPatientIndex, priorityBtn);
+                    };
+                    cardBody.appendChild(priorityBtn);
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.id = `field_${header.replace(/\s+/g, '_')}`;
+                    textarea.value = patient[header] || '';
+                    textarea.style.cssText = 'margin:0;';
+                    if (header === 'ORDERS') {
+                        textarea.placeholder = 'PAIN:\nAC:\nABX:\nN/F:\nLTD:\nDISPO:';
+                    }
+                    textarea.addEventListener('input', function() {
+                        patient[header] = this.value;
+                        saveToLocalStorage();
+                        autoResizeTextarea(this);
+                    });
 
-                // Full orders display for ORDERS card
-                if (header === 'ORDERS') {
-                    const fullOrdersDiv = document.createElement('div');
-                    fullOrdersDiv.id = 'fullOrdersDisplay';
-                    fullOrdersDiv.className = 'orders-section hidden';
-                    fullOrdersDiv.style.marginTop = '0.5rem';
-                    cardBody.appendChild(fullOrdersDiv);
+                    cardBody.appendChild(textarea);
+
+                    // Full orders display for ORDERS card
+                    if (header === 'ORDERS') {
+                        const fullOrdersDiv = document.createElement('div');
+                        fullOrdersDiv.id = 'fullOrdersDisplay';
+                        fullOrdersDiv.className = 'orders-section hidden';
+                        fullOrdersDiv.style.marginTop = '0.5rem';
+                        cardBody.appendChild(fullOrdersDiv);
+                    }
+
+                    setTimeout(() => autoResizeTextarea(textarea), 0);
                 }
 
                 card.appendChild(cardBody);
                 dashGrid.appendChild(card);
-
-                setTimeout(() => autoResizeTextarea(textarea), 0);
             });
 
             form.appendChild(dashGrid);
@@ -4499,16 +4504,18 @@ case 'chartcheck': {
             const ccSidebar = document.createElement('div');
             ccSidebar.className = 'chartcheck-sidebar';
 
-            // To-do section in sidebar
+            // To-do section in sidebar — fills the remaining column height
             const todoCard = document.createElement('div');
             todoCard.className = 'chartcheck-section';
+            todoCard.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;';
             todoCard.innerHTML = '<div class="chartcheck-section-header"><span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span></div>';
             const todoBody = document.createElement('div');
             todoBody.className = 'chartcheck-section-body';
+            todoBody.style.cssText = 'flex:1;display:flex;flex-direction:column;padding:0.5rem 0.6rem;';
             const todoTextarea = document.createElement('textarea');
             todoTextarea.id = 'field_To_do';
             todoTextarea.value = patient['To do'] || '';
-            todoTextarea.style.cssText = 'margin:0;min-height:120px;overflow-y:auto;resize:vertical;';
+            todoTextarea.style.cssText = 'flex:1;margin:0;min-height:0;resize:none;';
             todoTextarea.addEventListener('input', function() {
                 patient['To do'] = this.value;
                 saveToLocalStorage();
@@ -12479,35 +12486,6 @@ function updateChartCheckProgress() {
             mainContainer.style.boxShadow = 'none';
             mainContainer.style.borderWidth = '3px';
         }
-        
-        // Add percentage text at bottom center of container
-        let percentageDisplay = mainContainer.querySelector('.chart-check-percentage');
-        if (!percentageDisplay) {
-            percentageDisplay = document.createElement('div');
-            percentageDisplay.className = 'chart-check-percentage';
-            percentageDisplay.style.cssText = `
-                position: absolute;
-                bottom: -25px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: var(--card-bg);
-                color: ${borderColor};
-                padding: 0.5rem 1rem;
-                border-radius: 0.5rem;
-                font-weight: bold;
-                font-size: 0.9rem;
-                white-space: nowrap;
-                border: 2px solid ${borderColor};
-                transition: color 0.3s ease, border-color 0.3s ease;
-            `;
-            mainContainer.style.position = 'relative';
-            mainContainer.appendChild(percentageDisplay);
-        } else {
-            percentageDisplay.style.color = borderColor;
-            percentageDisplay.style.borderColor = borderColor;
-        }
-        
-        percentageDisplay.textContent = `${percentage}% Complete`;
     }
 }
 
