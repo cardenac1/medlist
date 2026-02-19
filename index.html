@@ -3684,7 +3684,7 @@ function displayRows(data = patientData) {
             align-self: stretch;
         `;
 
-        // Priority sidebar click handler
+        // Priority sidebar click handler — stopPropagation as backup
         prioritySidebar.onclick = (e) => {
             e.stopPropagation();
             showStatusSelector(patient, index, prioritySidebar);
@@ -3717,9 +3717,16 @@ function displayRows(data = patientData) {
             listItem.style.boxShadow = 'none';
         };
 
-        // Main row click handler (for details view)
+        // Main row click handler
         listItem.onclick = (e) => {
-            if (!e.target.closest('.priority-sidebar') && !e.target.closest('button')) {
+            // Treat the rightmost 32px of the card as the priority sidebar zone,
+            // catching clicks on rounded corners that miss the sidebar div itself
+            const rect = listItem.getBoundingClientRect();
+            const inSidebarZone = (e.clientX >= rect.right - 32);
+
+            if (inSidebarZone || e.target.closest('.priority-sidebar')) {
+                showStatusSelector(patient, index, prioritySidebar);
+            } else if (!e.target.closest('button')) {
                 showDetails(index);
             }
         };
