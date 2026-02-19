@@ -4200,38 +4200,83 @@ function switchView(mode) {
                 const lbl = document.createElement('label');
                 lbl.textContent = header;
                 lbl.style.cssText = 'margin-top:0;';
-                const inp = document.createElement('input');
-                inp.type = 'text';
-                inp.id = `field_${header.replace(/\s+/g, '_')}`;
-                inp.value = patient[header] || '';
-                inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
-                inp.addEventListener('input', function() {
-                    patient[header] = this.value;
-                    if (header === 'Name') {
-                        pNameDisplay.textContent = this.value || 'Unnamed Patient';
-                        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
-                    }
-                    // Update sticky RM/MRN badges on mobile
-                    if (header === 'RM' || header === 'MRN') {
-                        const stickyBadges = document.getElementById('stickyMetaBadges');
-                        stickyBadges.innerHTML = '';
-                        if (patient.RM) {
-                            const rmB = document.createElement('span');
-                            rmB.className = 'sticky-badge sticky-badge-rm';
-                            rmB.textContent = patient.RM;
-                            stickyBadges.appendChild(rmB);
+
+                if (header === 'Priority') {
+                    // Create priority selector with dropdown and color box
+                    const priorityContainer = document.createElement('div');
+                    priorityContainer.style.cssText = 'display:flex;gap:0.4rem;align-items:center;margin:0.2rem 0 0;';
+
+                    // Color box
+                    const colorBox = document.createElement('div');
+                    colorBox.id = 'priorityColorBox';
+                    colorBox.style.cssText = 'width:24px;height:24px;border-radius:4px;border:1px solid #555;flex-shrink:0;';
+
+                    // Priority dropdown
+                    const prioritySelect = document.createElement('select');
+                    prioritySelect.id = 'field_Priority';
+                    prioritySelect.style.cssText = 'margin:0;padding:0.4rem 0.5rem;font-size:0.8rem;flex:1;background:#333;color:#fff;border:1px solid #666;border-radius:4px;cursor:pointer;';
+
+                    const priorityOptions = ['', 'C', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+                    priorityOptions.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt || '(None)';
+                        prioritySelect.appendChild(option);
+                    });
+                    prioritySelect.value = patient[header] || '';
+
+                    // Update priority color when changed
+                    const updatePriorityColor = () => {
+                        const priorityStatus = getPriorityStatus(patient);
+                        colorBox.style.backgroundColor = priorityStatus.color;
+                        colorBox.title = priorityStatus.title;
+                    };
+                    updatePriorityColor();
+
+                    prioritySelect.addEventListener('change', function() {
+                        patient[header] = this.value;
+                        updatePriorityColor();
+                        saveToLocalStorage();
+                    });
+
+                    priorityContainer.appendChild(colorBox);
+                    priorityContainer.appendChild(prioritySelect);
+                    fieldWrap.appendChild(lbl);
+                    fieldWrap.appendChild(priorityContainer);
+                } else {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.id = `field_${header.replace(/\s+/g, '_')}`;
+                    inp.value = patient[header] || '';
+                    inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
+                    inp.addEventListener('input', function() {
+                        patient[header] = this.value;
+                        if (header === 'Name') {
+                            pNameDisplay.textContent = this.value || 'Unnamed Patient';
+                            document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
                         }
-                        if (patient.MRN) {
-                            const mrnB = document.createElement('span');
-                            mrnB.className = 'sticky-badge sticky-badge-mrn';
-                            mrnB.textContent = patient.MRN;
-                            stickyBadges.appendChild(mrnB);
+                        // Update sticky RM/MRN badges on mobile
+                        if (header === 'RM' || header === 'MRN') {
+                            const stickyBadges = document.getElementById('stickyMetaBadges');
+                            stickyBadges.innerHTML = '';
+                            if (patient.RM) {
+                                const rmB = document.createElement('span');
+                                rmB.className = 'sticky-badge sticky-badge-rm';
+                                rmB.textContent = patient.RM;
+                                stickyBadges.appendChild(rmB);
+                            }
+                            if (patient.MRN) {
+                                const mrnB = document.createElement('span');
+                                mrnB.className = 'sticky-badge sticky-badge-mrn';
+                                mrnB.textContent = patient.MRN;
+                                stickyBadges.appendChild(mrnB);
+                            }
                         }
-                    }
-                    saveToLocalStorage();
-                });
-                fieldWrap.appendChild(lbl);
-                fieldWrap.appendChild(inp);
+                        saveToLocalStorage();
+                    });
+                    fieldWrap.appendChild(lbl);
+                    fieldWrap.appendChild(inp);
+                }
                 shortFieldsRow.appendChild(fieldWrap);
             });
             headerCard.appendChild(shortFieldsRow);
