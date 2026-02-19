@@ -3479,6 +3479,7 @@ function displayRows(data = patientData) {
             cursor: pointer;
             transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
             border-left: 3px solid ${color};
+            border-right: 3px solid ${color};
             font-size: 0.75rem;
             margin-bottom: 0.15rem;
             padding: 0;
@@ -9125,7 +9126,7 @@ if (outputSummaryMatch) {
                 const isEnteral = /enteral|tube feed|nasogastric|ng tube|peg|jejunostomy|@\d+cc\/hr/i.test(intakeType);
 
                 if (isEnteral) {
-                    fishbone += `${intakeType}: ${total}mL/${elapsedHoursDisplay}hr (${hourly}mL/hr) - last: ${latest.dateTimeStr}\n`;
+                    fishbone += `${intakeType}: ${latest.volume}mL/hr - last: ${latest.dateTimeStr}\n`;
                 } else {
                     fishbone += `${intakeType}: ${total}mL/${elapsedHoursDisplay}hr - last: ${latest.dateTimeStr}\n`;
                 }
