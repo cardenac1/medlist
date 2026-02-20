@@ -7910,10 +7910,10 @@ if ((data.ventModeRaw || data.ventFiO2Raw || data.ventFrequencyRaw || data.ventT
 
 
 
-	// Extract vitals (from last 48 hours to catch more data for suggestions)
-            // Helper function to check if entry is within 48 hours (extended from 24 for better suggestion coverage)
+	// Extract vitals (from last 24 hours only)
+            // Helper function to check if entry is within 24 hours
             const now = new Date();
-            const fortyEightHoursAgo = new Date(now - 48 * 60 * 60 * 1000);
+            const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
 
             function isWithin24Hours(dateTimeStr) {
                 const parts = dateTimeStr.match(/(\d{2})\/(\d{2})\/(\d{2,4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
@@ -7921,8 +7921,8 @@ if ((data.ventModeRaw || data.ventFiO2Raw || data.ventFrequencyRaw || data.ventT
                 const yr = parts[3].length === 2 ? '20' + parts[3] : parts[3];
                 const sec = parts[6] || '00';
                 const dt = new Date(`${yr}-${parts[1]}-${parts[2]} ${parts[4]}:${parts[5]}:${sec}`);
-                // Changed to 48 hours to ensure vitals are captured for suggestions
-                return dt >= fortyEightHoursAgo && dt <= now;
+                // Only include vitals from the last 24 hours
+                return dt >= twentyFourHoursAgo && dt <= now;
             }
             
             // Extract temperature with timestamps
@@ -9884,7 +9884,14 @@ function extractOrders(text) {
         return parts.join('\n');
     }
 
-    const medsText = medsMatch[1];
+    let medsText = medsMatch[1];
+
+    // Exclude HOME MEDICATIONS section - only process hospital medications
+    const homeMedsIndex = medsText.search(/<HOME\s+MEDICATIONS>/i);
+    if (homeMedsIndex !== -1) {
+        // Truncate at the HOME MEDICATIONS marker to exclude home meds
+        medsText = medsText.substring(0, homeMedsIndex);
+    }
     fullOrdersText = medsText;
 
     // Extract diet order
