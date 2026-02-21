@@ -5048,6 +5048,14 @@ function switchView(mode) {
                         showStatusSelector(patient, currentPatientIndex, priorityBtn);
                     };
                     cardBody.appendChild(priorityBtn);
+                } else if (header === 'To do') {
+                    // Interactive todo component
+                    const todoDiv = document.createElement('div');
+                    todoDiv.id = 'todoContainer';
+                    todoDiv.className = 'todo-container';
+                    todoDiv.style.cssText = 'min-height:100px;';
+                    renderTodoList(todoDiv, patient);
+                    cardBody.appendChild(todoDiv);
                 } else {
                     const textarea = document.createElement('textarea');
                     textarea.id = `field_${header.replace(/\s+/g, '_')}`;
