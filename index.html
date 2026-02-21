@@ -1607,16 +1607,9 @@ textarea, input[type="text"] {
 .todo-suggestion-item .todo-promote-btn:hover {
     background: rgba(245,158,11,0.2);
 }
-.todo-mode-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.3rem;
-    margin-bottom: 0.3rem;
-    flex-shrink: 0;
-}
 .todo-mode-btn {
     font-size: 0.65rem;
+    margin-left: 0.15rem;
     color: #64748b;
     cursor: pointer;
     padding: 0.15rem 0.4rem;
@@ -3373,18 +3366,10 @@ const helpContent = {
                 });
                 container.appendChild(textarea);
                 setTimeout(autoSizeRawTodo, 0);
-
-                // Mode toggle
-                const toggle = buildTodoModeToggle();
-                container.insertBefore(toggle, container.firstChild);
                 return;
             }
 
             const parsed = parseTodoText(todoText);
-
-            // Mode toggle row
-            const toggle = buildTodoModeToggle();
-            container.appendChild(toggle);
 
             // Task list
             const listEl = document.createElement('div');
@@ -3626,16 +3611,16 @@ const helpContent = {
             return el;
         }
 
-        // Build the mode toggle (interactive / raw)
-        function buildTodoModeToggle() {
-            const toggle = document.createElement('div');
-            toggle.className = 'todo-mode-toggle';
-
+        // Inject List/Raw toggle buttons into a header element
+        function injectTodoModeButtons(headerEl) {
             const interactiveBtn = document.createElement('button');
             interactiveBtn.className = 'todo-mode-btn' + (todoViewMode === 'interactive' ? ' active' : '');
             interactiveBtn.textContent = 'List';
-            interactiveBtn.addEventListener('click', () => {
+            interactiveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 todoViewMode = 'interactive';
+                interactiveBtn.classList.add('active');
+                rawBtn.classList.remove('active');
                 const container = document.getElementById('todoContainer');
                 if (container && patientData[currentPatientIndex]) {
                     renderTodoList(container, patientData[currentPatientIndex]);
@@ -3645,17 +3630,19 @@ const helpContent = {
             const rawBtn = document.createElement('button');
             rawBtn.className = 'todo-mode-btn' + (todoViewMode === 'raw' ? ' active' : '');
             rawBtn.textContent = 'Raw';
-            rawBtn.addEventListener('click', () => {
+            rawBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 todoViewMode = 'raw';
+                rawBtn.classList.add('active');
+                interactiveBtn.classList.remove('active');
                 const container = document.getElementById('todoContainer');
                 if (container && patientData[currentPatientIndex]) {
                     renderTodoList(container, patientData[currentPatientIndex]);
                 }
             });
 
-            toggle.appendChild(interactiveBtn);
-            toggle.appendChild(rawBtn);
-            return toggle;
+            headerEl.appendChild(interactiveBtn);
+            headerEl.appendChild(rawBtn);
         }
 
         // Update the count badge in the To Do header
@@ -5013,6 +5000,8 @@ function switchView(mode) {
                     labBtn.textContent = 'Labs';
                     labBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); showTableView(); };
                     cardHeader.appendChild(labBtn);
+                } else if (header === 'To do') {
+                    injectTodoModeButtons(cardHeader);
                 }
 
                 // Collapse toggle
@@ -5260,7 +5249,11 @@ case 'chartcheck': {
             const todoCard = document.createElement('div');
             todoCard.className = 'chartcheck-section';
             todoCard.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;';
-            todoCard.innerHTML = '<div class="chartcheck-section-header"><span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span><span id="todoBadge" class="todo-count-badge" style="display:none;"></span></div>';
+            const todoHeader = document.createElement('div');
+            todoHeader.className = 'chartcheck-section-header';
+            todoHeader.innerHTML = '<span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span><span id="todoBadge" class="todo-count-badge" style="display:none;"></span>';
+            injectTodoModeButtons(todoHeader);
+            todoCard.appendChild(todoHeader);
             const todoBody = document.createElement('div');
             todoBody.className = 'chartcheck-section-body';
             todoBody.id = 'todoContainer';
@@ -5397,11 +5390,13 @@ if (currentViewMode !== 'chartcheck') {
             showTableView();
         };
         label.appendChild(toggleBtn);
+    } else if (header === 'To do') {
+        injectTodoModeButtons(label);
     }
 }
 
-				
-				
+
+
 
 
 		    
