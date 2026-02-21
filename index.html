@@ -5478,8 +5478,6 @@ if (header === 'To do') {
     input.id = 'todoContainer';
     input.className = 'todo-container';
     input.style.cssText = 'min-height:120px;';
-    // Defer rendering until after appended to DOM
-    setTimeout(() => renderTodoList(input, patient), 0);
 }
 else if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
     input = document.createElement('input');
@@ -5552,8 +5550,10 @@ if (header !== 'To do') {
                 }
                 
                 form.appendChild(input);
-                
-                if (input.tagName === 'TEXTAREA') {
+
+                if (header === 'To do') {
+                    renderTodoList(input, patient);
+                } else if (input.tagName === 'TEXTAREA') {
                     setTimeout(() => autoResizeTextarea(input), 0);
                 }
             });
