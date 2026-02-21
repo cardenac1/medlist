@@ -1405,6 +1405,237 @@ textarea, input[type="text"] {
     font-size: 0.9rem;
 }
 
+/* Interactive Todo List */
+.todo-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+.todo-add-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+.todo-add-input {
+    flex: 1;
+    background: var(--dark-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.35rem;
+    padding: 0.4rem 0.6rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.todo-add-input:focus {
+    border-color: #22c55e;
+}
+.todo-add-input::placeholder {
+    color: rgba(148,163,184,0.5);
+    font-style: italic;
+}
+.todo-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+}
+.todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    padding: 0.3rem 0.35rem;
+    border-radius: 0.3rem;
+    transition: background 0.15s, opacity 0.25s;
+    cursor: default;
+    position: relative;
+    min-height: 1.6rem;
+}
+.todo-item:hover {
+    background: rgba(255,255,255,0.04);
+}
+.todo-item.completed {
+    opacity: 0.5;
+}
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: #64748b;
+}
+.todo-checkbox {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border: 1.5px solid #475569;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: all 0.15s;
+    background: transparent;
+    flex-shrink: 0;
+}
+.todo-checkbox:hover {
+    border-color: #22c55e;
+    background: rgba(34,197,94,0.1);
+}
+.todo-checkbox.checked {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+.todo-checkbox.checked::after {
+    content: '';
+    width: 4px;
+    height: 8px;
+    border: solid #000;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+.todo-text {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+.todo-text-input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #22c55e;
+    border-radius: 0.2rem;
+    padding: 0.1rem 0.3rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    outline: none;
+}
+.todo-delete {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s;
+    color: #64748b;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.todo-item:hover .todo-delete {
+    opacity: 1;
+}
+.todo-delete:hover {
+    background: rgba(239,68,68,0.2);
+    color: #ef4444;
+}
+.todo-plain-line {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    padding: 0.15rem 0.35rem;
+    word-break: break-word;
+}
+.todo-suggestions-header {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #f59e0b;
+    padding: 0.5rem 0.35rem 0.2rem;
+    border-top: 1px solid rgba(245,158,11,0.2);
+    margin-top: 0.4rem;
+}
+.todo-suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.8rem;
+    color: #fbbf24;
+    line-height: 1.4;
+}
+.todo-suggestion-item .todo-promote-btn {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #f59e0b;
+    font-size: 0.7rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.todo-suggestion-item .todo-promote-btn:hover {
+    background: rgba(245,158,11,0.2);
+}
+.todo-mode-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    margin-bottom: 0.3rem;
+    flex-shrink: 0;
+}
+.todo-mode-btn {
+    font-size: 0.65rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.2rem;
+    transition: color 0.15s, background 0.15s;
+    border: none;
+    background: none;
+    font-family: inherit;
+}
+.todo-mode-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.06);
+}
+.todo-mode-btn.active {
+    color: #22c55e;
+    background: rgba(34,197,94,0.1);
+}
+.todo-item-enter {
+    animation: todoSlideIn 0.2s ease-out;
+}
+@keyframes todoSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.todo-item-remove {
+    animation: todoSlideOut 0.2s ease-in forwards;
+}
+@keyframes todoSlideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(20px); }
+}
+.todo-count-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.6rem;
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+    font-weight: 600;
+    margin-left: auto;
+}
+
 
 
 
@@ -2965,6 +3196,371 @@ const helpContent = {
 
 	
 
+        // ============ INTERACTIVE TODO LIST ============
+        const TODO_SUGGESTIONS_MARKER = '=== AUTO-GENERATED SUGGESTIONS ===';
+
+        // Parse the plain-text To do field into structured items
+        function parseTodoText(text) {
+            if (!text) return { tasks: [], suggestions: [] };
+            const markerIdx = text.indexOf(TODO_SUGGESTIONS_MARKER);
+            const userPart = markerIdx !== -1 ? text.substring(0, markerIdx).trimEnd() : text;
+            const sugPart = markerIdx !== -1 ? text.substring(markerIdx + TODO_SUGGESTIONS_MARKER.length).trim() : '';
+
+            const tasks = [];
+            const userLines = userPart.split('\n');
+            for (let i = 0; i < userLines.length; i++) {
+                const line = userLines[i];
+                if (line.match(/^\[x\]\s/i)) {
+                    tasks.push({ type: 'task', text: line.substring(4), done: true, lineIndex: i });
+                } else if (line.match(/^\[ \]\s/)) {
+                    tasks.push({ type: 'task', text: line.substring(4), done: false, lineIndex: i });
+                } else if (line.trim() !== '') {
+                    tasks.push({ type: 'plain', text: line, lineIndex: i });
+                }
+            }
+
+            const suggestions = [];
+            if (sugPart) {
+                sugPart.split('\n').forEach(line => {
+                    if (line.trim()) suggestions.push(line.trim());
+                });
+            }
+
+            return { tasks, suggestions };
+        }
+
+        // Serialize structured items back to plain text
+        function serializeTodoItems(tasks, suggestions) {
+            const lines = [];
+            for (const item of tasks) {
+                if (item.type === 'task') {
+                    lines.push((item.done ? '[x] ' : '[ ] ') + item.text);
+                } else {
+                    lines.push(item.text);
+                }
+            }
+            let result = lines.join('\n');
+            if (suggestions.length > 0) {
+                result += '\n\n' + TODO_SUGGESTIONS_MARKER + '\n' + suggestions.join('\n');
+            }
+            return result;
+        }
+
+        // Current todo mode: 'interactive' or 'raw'
+        let todoViewMode = 'interactive';
+
+        // Render the interactive todo list into a container
+        function renderTodoList(container, patient) {
+            if (!container || !patient) return;
+            container.innerHTML = '';
+
+            const todoText = patient['To do'] || '';
+
+            if (todoViewMode === 'raw') {
+                // Raw textarea mode
+                const textarea = document.createElement('textarea');
+                textarea.id = 'field_To_do';
+                textarea.value = todoText;
+                textarea.style.cssText = 'flex:1;margin:0;min-height:0;resize:none;';
+                textarea.addEventListener('input', function() {
+                    patient['To do'] = this.value;
+                    saveToLocalStorage();
+                });
+                container.appendChild(textarea);
+
+                // Mode toggle
+                const toggle = buildTodoModeToggle();
+                container.insertBefore(toggle, container.firstChild);
+                return;
+            }
+
+            const parsed = parseTodoText(todoText);
+
+            // Mode toggle row
+            const toggle = buildTodoModeToggle();
+            container.appendChild(toggle);
+
+            // Quick-add input row
+            const addRow = document.createElement('div');
+            addRow.className = 'todo-add-row';
+            const addInput = document.createElement('input');
+            addInput.type = 'text';
+            addInput.className = 'todo-add-input';
+            addInput.placeholder = 'Add task... (Enter)';
+            addInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && this.value.trim()) {
+                    e.preventDefault();
+                    const newText = this.value.trim();
+                    this.value = '';
+                    parsed.tasks.push({ type: 'task', text: newText, done: false });
+                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                    saveToLocalStorage();
+                    renderTodoList(container, patient);
+                    // Re-focus the input after re-render
+                    const newInput = container.querySelector('.todo-add-input');
+                    if (newInput) newInput.focus();
+                    updateTodoBadge(patient);
+                }
+            });
+            addRow.appendChild(addInput);
+            container.appendChild(addRow);
+
+            // Task list
+            const listEl = document.createElement('div');
+            listEl.className = 'todo-list';
+
+            // Render pending tasks first, then completed
+            const pending = parsed.tasks.filter(t => t.type === 'task' && !t.done);
+            const completed = parsed.tasks.filter(t => t.type === 'task' && t.done);
+            const plains = parsed.tasks.filter(t => t.type === 'plain');
+
+            // Plain text lines (like "- dc medname")
+            plains.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'todo-item';
+                // Allow promoting plain lines to tasks
+                const promoteBtn = document.createElement('div');
+                promoteBtn.className = 'todo-checkbox';
+                promoteBtn.title = 'Convert to task';
+                promoteBtn.addEventListener('click', () => {
+                    item.type = 'task';
+                    item.done = false;
+                    // Clean up leading "- " from plain text
+                    if (item.text.match(/^-\s+/)) item.text = item.text.replace(/^-\s+/, '');
+                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                    saveToLocalStorage();
+                    renderTodoList(container, patient);
+                    updateTodoBadge(patient);
+                });
+
+                const textEl = document.createElement('span');
+                textEl.className = 'todo-text';
+                textEl.style.color = '#94a3b8';
+                textEl.textContent = item.text;
+
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'todo-delete';
+                deleteBtn.innerHTML = '&times;';
+                deleteBtn.title = 'Remove';
+                deleteBtn.addEventListener('click', () => {
+                    const idx = parsed.tasks.indexOf(item);
+                    if (idx !== -1) {
+                        el.classList.add('todo-item-remove');
+                        setTimeout(() => {
+                            parsed.tasks.splice(idx, 1);
+                            patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                            saveToLocalStorage();
+                            renderTodoList(container, patient);
+                            updateTodoBadge(patient);
+                        }, 200);
+                    }
+                });
+
+                el.appendChild(promoteBtn);
+                el.appendChild(textEl);
+                el.appendChild(deleteBtn);
+                listEl.appendChild(el);
+            });
+
+            // Pending tasks
+            pending.forEach(item => {
+                listEl.appendChild(buildTaskElement(item, parsed, container, patient));
+            });
+
+            // Completed tasks
+            completed.forEach(item => {
+                listEl.appendChild(buildTaskElement(item, parsed, container, patient));
+            });
+
+            // Auto-suggestions section
+            if (parsed.suggestions.length > 0) {
+                const sugHeader = document.createElement('div');
+                sugHeader.className = 'todo-suggestions-header';
+                sugHeader.textContent = 'Auto-Suggestions';
+                listEl.appendChild(sugHeader);
+
+                parsed.suggestions.forEach((sug, sugIdx) => {
+                    const sugEl = document.createElement('div');
+                    sugEl.className = 'todo-suggestion-item';
+
+                    const promoteBtn = document.createElement('div');
+                    promoteBtn.className = 'todo-promote-btn';
+                    promoteBtn.innerHTML = '+';
+                    promoteBtn.title = 'Add as task';
+                    promoteBtn.addEventListener('click', () => {
+                        // Promote suggestion to task
+                        const cleanText = sug.replace(/^[-*]\s*/, '').replace(/^\d+\.\s*/, '');
+                        parsed.tasks.push({ type: 'task', text: cleanText, done: false });
+                        parsed.suggestions.splice(sugIdx, 1);
+                        patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                        saveToLocalStorage();
+                        renderTodoList(container, patient);
+                        updateTodoBadge(patient);
+                    });
+
+                    const textEl = document.createElement('span');
+                    textEl.textContent = sug;
+
+                    sugEl.appendChild(promoteBtn);
+                    sugEl.appendChild(textEl);
+                    listEl.appendChild(sugEl);
+                });
+            }
+
+            container.appendChild(listEl);
+
+            // Hidden field to maintain the field_To_do id for external code
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.id = 'field_To_do';
+            hiddenField.value = todoText;
+            container.appendChild(hiddenField);
+
+            updateTodoBadge(patient);
+        }
+
+        // Build a single task element (checkbox + text + delete)
+        function buildTaskElement(item, parsed, container, patient) {
+            const el = document.createElement('div');
+            el.className = 'todo-item' + (item.done ? ' completed' : '');
+            el.classList.add('todo-item-enter');
+
+            // Checkbox
+            const checkbox = document.createElement('div');
+            checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
+            checkbox.title = item.done ? 'Mark incomplete' : 'Mark complete';
+            checkbox.addEventListener('click', () => {
+                item.done = !item.done;
+                patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                saveToLocalStorage();
+                renderTodoList(container, patient);
+                updateTodoBadge(patient);
+            });
+
+            // Text (double-click to edit)
+            const textEl = document.createElement('span');
+            textEl.className = 'todo-text';
+            textEl.textContent = item.text;
+            textEl.addEventListener('dblclick', () => {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'todo-text-input';
+                input.value = item.text;
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        item.text = this.value.trim() || item.text;
+                        patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                        saveToLocalStorage();
+                        renderTodoList(container, patient);
+                    } else if (e.key === 'Escape') {
+                        renderTodoList(container, patient);
+                    }
+                });
+                input.addEventListener('blur', function() {
+                    item.text = this.value.trim() || item.text;
+                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                    saveToLocalStorage();
+                    renderTodoList(container, patient);
+                });
+                textEl.replaceWith(input);
+                input.focus();
+                input.select();
+            });
+
+            // Delete
+            const deleteBtn = document.createElement('div');
+            deleteBtn.className = 'todo-delete';
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.title = 'Delete task';
+            deleteBtn.addEventListener('click', () => {
+                const idx = parsed.tasks.indexOf(item);
+                if (idx !== -1) {
+                    el.classList.add('todo-item-remove');
+                    setTimeout(() => {
+                        parsed.tasks.splice(idx, 1);
+                        patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                        saveToLocalStorage();
+                        renderTodoList(container, patient);
+                        updateTodoBadge(patient);
+                    }, 200);
+                }
+            });
+
+            el.appendChild(checkbox);
+            el.appendChild(textEl);
+            el.appendChild(deleteBtn);
+            return el;
+        }
+
+        // Build the mode toggle (interactive / raw)
+        function buildTodoModeToggle() {
+            const toggle = document.createElement('div');
+            toggle.className = 'todo-mode-toggle';
+
+            const interactiveBtn = document.createElement('button');
+            interactiveBtn.className = 'todo-mode-btn' + (todoViewMode === 'interactive' ? ' active' : '');
+            interactiveBtn.textContent = 'List';
+            interactiveBtn.addEventListener('click', () => {
+                todoViewMode = 'interactive';
+                const container = document.getElementById('todoContainer');
+                if (container && patientData[currentPatientIndex]) {
+                    renderTodoList(container, patientData[currentPatientIndex]);
+                }
+            });
+
+            const rawBtn = document.createElement('button');
+            rawBtn.className = 'todo-mode-btn' + (todoViewMode === 'raw' ? ' active' : '');
+            rawBtn.textContent = 'Raw';
+            rawBtn.addEventListener('click', () => {
+                todoViewMode = 'raw';
+                const container = document.getElementById('todoContainer');
+                if (container && patientData[currentPatientIndex]) {
+                    renderTodoList(container, patientData[currentPatientIndex]);
+                }
+            });
+
+            toggle.appendChild(interactiveBtn);
+            toggle.appendChild(rawBtn);
+            return toggle;
+        }
+
+        // Update the count badge in the To Do header
+        function updateTodoBadge(patient) {
+            const badge = document.getElementById('todoBadge');
+            if (!badge) return;
+            const parsed = parseTodoText(patient['To do'] || '');
+            const taskItems = parsed.tasks.filter(t => t.type === 'task');
+            const doneCount = taskItems.filter(t => t.done).length;
+            const totalCount = taskItems.length;
+            if (totalCount === 0) {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            } else {
+                badge.textContent = doneCount + '/' + totalCount;
+                badge.style.display = 'inline';
+                if (doneCount === totalCount) {
+                    badge.style.background = 'rgba(34,197,94,0.25)';
+                    badge.style.color = '#22c55e';
+                } else {
+                    badge.style.background = 'rgba(59,130,246,0.15)';
+                    badge.style.color = '#60a5fa';
+                }
+            }
+        }
+
+        // Refresh the todo display from patient data (called by external code)
+        function refreshTodoDisplay(patient) {
+            const container = document.getElementById('todoContainer');
+            if (container && patient) {
+                renderTodoList(container, patient);
+            }
+            // Also update hidden field for backward compat
+            const hiddenField = document.getElementById('field_To_do');
+            if (hiddenField && patient) {
+                hiddenField.value = patient['To do'] || '';
+            }
+        }
+
         // ============ DATA MANAGEMENT ============
         function saveToLocalStorage() {
             try {
@@ -4522,19 +5118,12 @@ case 'chartcheck': {
             const todoCard = document.createElement('div');
             todoCard.className = 'chartcheck-section';
             todoCard.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;';
-            todoCard.innerHTML = '<div class="chartcheck-section-header"><span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span></div>';
+            todoCard.innerHTML = '<div class="chartcheck-section-header"><span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span><span id="todoBadge" class="todo-count-badge" style="display:none;"></span></div>';
             const todoBody = document.createElement('div');
             todoBody.className = 'chartcheck-section-body';
-            todoBody.style.cssText = 'flex:1;display:flex;flex-direction:column;padding:0.5rem 0.6rem;';
-            const todoTextarea = document.createElement('textarea');
-            todoTextarea.id = 'field_To_do';
-            todoTextarea.value = patient['To do'] || '';
-            todoTextarea.style.cssText = 'flex:1;margin:0;min-height:0;resize:none;';
-            todoTextarea.addEventListener('input', function() {
-                patient['To do'] = this.value;
-                saveToLocalStorage();
-            });
-            todoBody.appendChild(todoTextarea);
+            todoBody.id = 'todoContainer';
+            todoBody.style.cssText = 'flex:1;display:flex;flex-direction:column;padding:0.5rem 0.6rem;overflow:hidden;';
+            renderTodoList(todoBody, patient);
             todoCard.appendChild(todoBody);
             ccSidebar.appendChild(todoCard);
 
@@ -4757,7 +5346,16 @@ if (currentViewMode !== 'chartcheck') {
                 }
                 
 let input;
-if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
+if (header === 'To do') {
+    // Use interactive todo component instead of plain textarea
+    input = document.createElement('div');
+    input.id = 'todoContainer';
+    input.className = 'todo-container';
+    input.style.cssText = 'min-height:120px;';
+    // Defer rendering until after appended to DOM
+    setTimeout(() => renderTodoList(input, patient), 0);
+}
+else if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
     input = document.createElement('input');
 }
 else if (header === 'VIOLIN') {
@@ -4775,11 +5373,15 @@ else {
                     input.type = 'text';
                 }
                 
-                input.id = `field_${header.replace(/\s+/g, '_')}`;
+                if (header !== 'To do') {
+                    input.id = `field_${header.replace(/\s+/g, '_')}`;
+                }
 
 
 // Set initial content
-if (header === 'VIOLIN') {
+if (header === 'To do') {
+    // Interactive todo handles its own content
+} else if (header === 'VIOLIN') {
     const content = patient[header] || '';
     // If content has HTML spans, use innerHTML to preserve red formatting
     if (content.includes('<span')) {
@@ -4795,18 +5397,20 @@ if (header === 'ORDERS') {
     input.placeholder = 'PAIN:\nAC:\nABX:\nN/F:\nLTD:\nDISPO:';
 }
 
-input.addEventListener('input', function() {
-    patient[header] = this.value;
-    
-    if (header === 'Name') {
-        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
-    }
-    saveToLocalStorage();
-    
-    if (input.tagName === 'TEXTAREA') {
-        autoResizeTextarea(this);
-    }
-});
+if (header !== 'To do') {
+    input.addEventListener('input', function() {
+        patient[header] = this.value;
+
+        if (header === 'Name') {
+            document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+        }
+        saveToLocalStorage();
+
+        if (input.tagName === 'TEXTAREA') {
+            autoResizeTextarea(this);
+        }
+    });
+}
 
 
 
@@ -5745,12 +6349,8 @@ function showImportModal() {
         // Append new suggestions
         patient['To do'] = cleanTodo + suggestionsText;
 
-        // Update the To do textarea if it exists
-        const todoField = document.getElementById('field_To_do');
-        if (todoField) {
-            todoField.value = patient['To do'];
-            autoResizeTextarea(todoField);
-        }
+        // Update the To do display
+        refreshTodoDisplay(patient);
     }
 
     // Update patient data
@@ -6673,11 +7273,7 @@ function toggleMedStatus(event, medId, action, medName) {
                     } else {
                         patient['To do'] = (existingTodo.trimEnd() ? existingTodo.trimEnd() + '\n' : '') + dcText;
                     }
-                    const todoField = document.getElementById('field_To_do');
-                    if (todoField) {
-                        todoField.value = patient['To do'];
-                        if (typeof autoResizeTextarea === 'function') autoResizeTextarea(todoField);
-                    }
+                    refreshTodoDisplay(patient);
                     saveToLocalStorage();
                 }
             }
@@ -12892,11 +13488,7 @@ function updateViolinDisplay(ctx = {}) {
       patient['To do'] = cleanTodo;
     }
 
-    const todoField = document.getElementById('field_To_do');
-    if (todoField) {
-      todoField.value = patient['To do'];
-      if (typeof autoResizeTextarea === 'function') autoResizeTextarea(todoField);
-    }
+    refreshTodoDisplay(patient);
     saveToLocalStorage();
   }
 
