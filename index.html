@@ -992,6 +992,9 @@ const VIOLIN_DASHBOARD_CSS = `
     border-radius: 1rem;
     overflow: hidden;
 }
+.chartcheck-section.violin-section {
+    overflow: visible;
+}
 .chartcheck-section-header {
     display: flex;
     align-items: center;
@@ -1416,7 +1419,7 @@ textarea, input[type="text"] {
 .todo-add-row {
     display: flex;
     gap: 0.4rem;
-    margin-bottom: 0.5rem;
+    margin-top: 0.3rem;
     flex-shrink: 0;
 }
 .todo-add-input {
@@ -1443,19 +1446,19 @@ textarea, input[type="text"] {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
     min-height: 0;
 }
 .todo-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.45rem;
-    padding: 0.3rem 0.35rem;
+    gap: 0.4rem;
+    padding: 0.15rem 0.35rem;
     border-radius: 0.3rem;
     transition: background 0.15s, opacity 0.25s;
     cursor: default;
     position: relative;
-    min-height: 1.6rem;
+    min-height: 1.3rem;
 }
 .todo-item:hover {
     background: rgba(255,255,255,0.04);
@@ -3358,12 +3361,18 @@ const helpContent = {
                 const textarea = document.createElement('textarea');
                 textarea.id = 'field_To_do';
                 textarea.value = todoText;
-                textarea.style.cssText = 'flex:1;margin:0;min-height:0;resize:none;';
+                textarea.style.cssText = 'width:100%;margin:0;min-height:60px;resize:none;overflow:hidden;box-sizing:border-box;word-wrap:break-word;white-space:pre-wrap;';
+                function autoSizeRawTodo() {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }
                 textarea.addEventListener('input', function() {
                     patient['To do'] = this.value;
                     saveToLocalStorage();
+                    autoSizeRawTodo();
                 });
                 container.appendChild(textarea);
+                setTimeout(autoSizeRawTodo, 0);
 
                 // Mode toggle
                 const toggle = buildTodoModeToggle();
@@ -3376,31 +3385,6 @@ const helpContent = {
             // Mode toggle row
             const toggle = buildTodoModeToggle();
             container.appendChild(toggle);
-
-            // Quick-add input row
-            const addRow = document.createElement('div');
-            addRow.className = 'todo-add-row';
-            const addInput = document.createElement('input');
-            addInput.type = 'text';
-            addInput.className = 'todo-add-input';
-            addInput.placeholder = 'Add task... (Enter)';
-            addInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && this.value.trim()) {
-                    e.preventDefault();
-                    const newText = this.value.trim();
-                    this.value = '';
-                    parsed.tasks.push({ type: 'task', text: newText, done: false });
-                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
-                    saveToLocalStorage();
-                    renderTodoList(container, patient);
-                    // Re-focus the input after re-render
-                    const newInput = container.querySelector('.todo-add-input');
-                    if (newInput) newInput.focus();
-                    updateTodoBadge(patient);
-                }
-            });
-            addRow.appendChild(addInput);
-            container.appendChild(addRow);
 
             // Task list
             const listEl = document.createElement('div');
@@ -3505,6 +3489,30 @@ const helpContent = {
             }
 
             container.appendChild(listEl);
+
+            // Quick-add input row (at bottom)
+            const addRow = document.createElement('div');
+            addRow.className = 'todo-add-row';
+            const addInput = document.createElement('input');
+            addInput.type = 'text';
+            addInput.className = 'todo-add-input';
+            addInput.placeholder = 'Add task... (Enter)';
+            addInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && this.value.trim()) {
+                    e.preventDefault();
+                    const newText = this.value.trim();
+                    this.value = '';
+                    parsed.tasks.push({ type: 'task', text: newText, done: false });
+                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                    saveToLocalStorage();
+                    renderTodoList(container, patient);
+                    const newInput = container.querySelector('.todo-add-input');
+                    if (newInput) newInput.focus();
+                    updateTodoBadge(patient);
+                }
+            });
+            addRow.appendChild(addInput);
+            container.appendChild(addRow);
 
             // Hidden field to maintain the field_To_do id for external code
             const hiddenField = document.createElement('input');
@@ -5129,7 +5137,7 @@ case 'chartcheck': {
 
             fieldsToShowChartCheck.forEach(header => {
                 const section = document.createElement('div');
-                section.className = 'chartcheck-section';
+                section.className = 'chartcheck-section' + (header === 'VIOLIN' ? ' violin-section' : '');
 
                 // Section header
                 const secHeader = document.createElement('div');
@@ -13233,11 +13241,14 @@ function toggleViolinMode() {
     const violinTextarea = document.getElementById('field_VIOLIN');
     const violinDisplay = document.getElementById('violinDisplay');
     const btn = document.getElementById('violinToggleBtn');
-    
+
     if (violinEditMode) {
         // Switch to edit mode
         if (violinDisplay) violinDisplay.style.display = 'none';
-        if (violinTextarea) violinTextarea.style.display = 'block';
+        if (violinTextarea) {
+            violinTextarea.style.display = 'block';
+            setTimeout(() => autoResizeTextarea(violinTextarea), 0);
+        }
         btn.textContent = '📝 Back to View';
     } else {
         // Switch to view mode
