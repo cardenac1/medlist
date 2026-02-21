@@ -3559,25 +3559,33 @@ const helpContent = {
             const el = document.createElement('div');
             el.className = 'todo-item' + (item.done ? ' completed' : '');
             el.classList.add('todo-item-enter');
+            el.style.cursor = 'pointer';
 
-            // Checkbox
-            const checkbox = document.createElement('div');
-            checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
-            checkbox.title = item.done ? 'Mark incomplete' : 'Mark complete';
-            checkbox.addEventListener('click', () => {
+            // Toggle done on row click (except buttons/edit)
+            function toggleDone() {
                 item.done = !item.done;
                 patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
                 saveToLocalStorage();
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
+            }
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.todo-edit-btn') || e.target.closest('.todo-delete')) return;
+                toggleDone();
             });
+
+            // Checkbox (visual only, click handled by row)
+            const checkbox = document.createElement('div');
+            checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
+            checkbox.title = item.done ? 'Mark incomplete' : 'Mark complete';
 
             // Text (double-click to edit on desktop)
             const textEl = document.createElement('span');
             textEl.className = 'todo-text';
             textEl.textContent = item.text;
             if (!isTouchDevice) {
-                textEl.addEventListener('dblclick', () => {
+                textEl.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
                     startTodoEdit(item, parsed, container, patient, textEl);
                 });
             }
