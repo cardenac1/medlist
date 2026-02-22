@@ -3614,10 +3614,12 @@ const helpContent = {
         // Inject List/Raw toggle buttons into a header element
         function injectTodoModeButtons(headerEl) {
             const interactiveBtn = document.createElement('button');
+            interactiveBtn.type = 'button';
             interactiveBtn.className = 'todo-mode-btn' + (todoViewMode === 'interactive' ? ' active' : '');
             interactiveBtn.textContent = 'List';
             interactiveBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 todoViewMode = 'interactive';
                 interactiveBtn.classList.add('active');
                 rawBtn.classList.remove('active');
@@ -3628,10 +3630,12 @@ const helpContent = {
             });
 
             const rawBtn = document.createElement('button');
+            rawBtn.type = 'button';
             rawBtn.className = 'todo-mode-btn' + (todoViewMode === 'raw' ? ' active' : '');
             rawBtn.textContent = 'Raw';
             rawBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 todoViewMode = 'raw';
                 rawBtn.classList.add('active');
                 interactiveBtn.classList.remove('active');
