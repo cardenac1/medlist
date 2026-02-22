@@ -1414,7 +1414,7 @@ textarea, input[type="text"] {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow: hidden;
+    overflow: auto;
 }
 .todo-add-row {
     display: flex;
@@ -6463,32 +6463,7 @@ function showImportModal() {
     labData = extractLabValues(importText);
     const fishbone = generateFishbone(labData);
 
-    // Generate suggestions and append to To do
-    // Use imported data to get full medication orders
-    const fullMedsText = extractFullMeds(importText);
-    const suggestions = generateSuggestions(labData, fullMedsText);
-    if (suggestions.length > 0) {
-        const suggestionsText = '\n\n=== AUTO-GENERATED SUGGESTIONS ===\n' +
-                               suggestions.join('\n');
-
-        // Get existing To do content
-        const existingTodo = patient['To do'] || '';
-
-        // Remove old suggestions if they exist
-        let cleanTodo = existingTodo;
-        const suggestionsMarker = '=== AUTO-GENERATED SUGGESTIONS ===';
-        const markerIndex = existingTodo.indexOf(suggestionsMarker);
-        if (markerIndex !== -1) {
-            // Remove everything from the marker onwards
-            cleanTodo = existingTodo.substring(0, markerIndex).trim();
-        }
-
-        // Append new suggestions
-        patient['To do'] = cleanTodo + suggestionsText;
-
-        // Update the To do display
-        refreshTodoDisplay(patient);
-    }
+    // Auto-suggestions disabled per user preference
 
     // Update patient data
     patient.VIOLIN = fishbone;
@@ -13580,62 +13555,16 @@ function updateViolinDisplay(ctx = {}) {
   const fishboneLines = String(patient.VIOLIN).split('\n');
   const output = [];
   
-  // Collect warnings at the top
-  const warningsToAdd = [];
-
-  // Generate clinical suggestions (AKI, vitals, CBC, coags, ABG, metabolic, etc.)
-  if (_labData) {
-    const fullMedsText = _lastImportedData ? extractFullMeds(_lastImportedData) : '';
-    const clinicalWarnings = generateSuggestions(_labData, fullMedsText);
-    warningsToAdd.push(...clinicalWarnings);
-  }
-
-  // Electrolyte-specific warnings (with dosing recommendations)
-  if (_labData?.labs) {
-    const eWarns = electrolyteWarnings(_labData);
-    // Avoid duplicates - only add electrolyte warnings not already covered by generateSuggestions
-    const existingText = warningsToAdd.map(w => w.replace(/\*/g, '').toLowerCase());
-    eWarns.forEach(w => {
-      const cleanW = w.replace(/\*/g, '').toLowerCase();
-      const isDuplicate = existingText.some(e => {
-        // Check if the core lab value is already mentioned
-        if (cleanW.includes('hyponatremic') && e.includes('hyponatremic')) return true;
-        if (cleanW.includes('hypernatremic') && e.includes('hypernatremic')) return true;
-        if (cleanW.includes('hyperkalemic') && e.includes('hyperkalemic')) return true;
-        if (cleanW.includes('meq k') && e.includes('meq k')) return true;
-        if (cleanW.includes('calcium gluconate') && e.includes('calcium gluconate')) return true;
-        if (cleanW.includes('mag sulfate') && e.includes('mag sulfate')) return true;
-        if (cleanW.includes('mmol phos') && e.includes('mmol phos')) return true;
-        return false;
-      });
-      if (!isDuplicate) warningsToAdd.push(w);
-    });
-  }
-
-  if (_ioData?.outputs) {
-    const ioWarns = buildIOWarnings(_ioData, patient);
-    warningsToAdd.push(...ioWarns);
-  }
-
-  // Lab date warnings removed from TO DO per user preference
-
-  // Update the To do textarea with all warnings (replaces red box display)
+  // Auto-suggestions disabled — clean up any leftover auto-generated text
   {
     const suggestionsMarker = '=== AUTO-GENERATED SUGGESTIONS ===';
     const existingTodo = patient['To do'] || '';
     const markerIndex = existingTodo.indexOf(suggestionsMarker);
-    const cleanTodo = markerIndex !== -1 ? existingTodo.substring(0, markerIndex).trim() : existingTodo.trim();
-
-    if (warningsToAdd.length > 0) {
-      const warningsText = '\n\n' + suggestionsMarker + '\n' + warningsToAdd.join('\n');
-      patient['To do'] = cleanTodo ? cleanTodo + warningsText : warningsText.trimStart();
-    } else if (markerIndex !== -1) {
-      // No warnings — clear the old auto-generated section
-      patient['To do'] = cleanTodo;
+    if (markerIndex !== -1) {
+      patient['To do'] = existingTodo.substring(0, markerIndex).trim();
+      refreshTodoDisplay(patient);
+      saveToLocalStorage();
     }
-
-    refreshTodoDisplay(patient);
-    saveToLocalStorage();
   }
 
   // Extract vitals/I/O section (up to and including Fluid Balance line)
