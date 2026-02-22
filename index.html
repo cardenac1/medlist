@@ -9710,35 +9710,25 @@ function generateFishbone(data) {
 
     // ===== VITALS SECTION =====
     if (data.vitals.temp && data.vitals.temp.length > 0) {
+        const tempLatest = data.vitals.temp[0].toFixed(1);
         const tempMin = Math.min(...data.vitals.temp).toFixed(1);
         const tempMax = Math.max(...data.vitals.temp).toFixed(1);
-        const tempAvg = (data.vitals.temp.reduce((a, b) => a + b, 0) / data.vitals.temp.length).toFixed(1);
-        
-        const hadFever = data.vitals.temp.some(t => t > 38);
-        const hadHypothermia = data.vitals.temp.some(t => t < 35);
-        
-        if (hadFever || hadHypothermia) {
-            fishbone += `T ${markAbnormal(`${tempMin}-${tempMax}`)} (${tempAvg}), `;
-        } else {
-            fishbone += `T ${tempMin}-${tempMax} (${tempAvg}), `;
-        }
+        const isAbnormal = parseFloat(tempLatest) > 38 || parseFloat(tempLatest) < 35;
+        const latestDisplay = isAbnormal ? markAbnormal(tempLatest) : tempLatest;
+        const rangeStr = tempMin === tempMax ? '' : ` (${tempMin}-${tempMax})`;
+        fishbone += `T ${latestDisplay}${rangeStr}, `;
     } else {
         fishbone += 'no T, ';
     }
     
     if (data.vitals.hr && data.vitals.hr.length > 0) {
+        const hrLatest = data.vitals.hr[0];
         const hrMin = Math.min(...data.vitals.hr);
         const hrMax = Math.max(...data.vitals.hr);
-        const hrAvg = Math.round(data.vitals.hr.reduce((a, b) => a + b, 0) / data.vitals.hr.length);
-        
-        const hadTachycardia = data.vitals.hr.some(hr => hr > 100);
-        const hadBradycardia = data.vitals.hr.some(hr => hr < 60);
-        
-        if (hadTachycardia || hadBradycardia) {
-            fishbone += `HR ${markAbnormal(`${hrMin}-${hrMax}`)}(${hrAvg}), `;
-        } else {
-            fishbone += `HR ${hrMin}-${hrMax}(${hrAvg}), `;
-        }
+        const isAbnormal = hrLatest > 100 || hrLatest < 60;
+        const latestDisplay = isAbnormal ? markAbnormal(hrLatest) : hrLatest;
+        const rangeStr = hrMin === hrMax ? '' : ` (${hrMin}-${hrMax})`;
+        fishbone += `HR ${latestDisplay}${rangeStr}, `;
     } else {
         fishbone += 'no HR, ';
     }
@@ -9748,35 +9738,25 @@ function generateFishbone(data) {
 
 // Handle SBP and DBP separately
 if (data.vitals.sbp && data.vitals.sbp.length > 0) {
+    const sbpLatest = data.vitals.sbp[0];
     const sbpMin = Math.min(...data.vitals.sbp);
     const sbpMax = Math.max(...data.vitals.sbp);
-    const sbpAvg = Math.round(data.vitals.sbp.reduce((a, b) => a + b, 0) / data.vitals.sbp.length);
-    
-    const hadHypotension = data.vitals.sbp.some(sbp => sbp < 90);
-    const hadHypertension = data.vitals.sbp.some(sbp => sbp > 180);
-    
-    if (hadHypotension || hadHypertension) {
-        fishbone += `SBP ${markAbnormal(`${sbpMin}-${sbpMax}`)} (${sbpAvg}), `;
-    } else {
-        fishbone += `SBP ${sbpMin}-${sbpMax} (${sbpAvg}), `;
-    }
+    const isAbnormal = sbpLatest < 90 || sbpLatest > 180;
+    const latestDisplay = isAbnormal ? markAbnormal(sbpLatest) : sbpLatest;
+    const rangeStr = sbpMin === sbpMax ? '' : ` (${sbpMin}-${sbpMax})`;
+    fishbone += `SBP ${latestDisplay}${rangeStr}, `;
 } else {
     fishbone += 'no SBP, ';
 }
 
 if (data.vitals.dbp && data.vitals.dbp.length > 0) {
+    const dbpLatest = data.vitals.dbp[0];
     const dbpMin = Math.min(...data.vitals.dbp);
     const dbpMax = Math.max(...data.vitals.dbp);
-    const dbpAvg = Math.round(data.vitals.dbp.reduce((a, b) => a + b, 0) / data.vitals.dbp.length);
-    
-    const hadDiastolicHypertension = data.vitals.dbp.some(dbp => dbp > 120);
-    const hadDiastolicHypotension = data.vitals.dbp.some(dbp => dbp < 60);
-    
-    if (hadDiastolicHypertension || hadDiastolicHypotension) {
-        fishbone += `DBP ${markAbnormal(`${dbpMin}-${dbpMax}`)} (${dbpAvg}) `;
-    } else {
-        fishbone += `DBP ${dbpMin}-${dbpMax} (${dbpAvg}) `;
-    }
+    const isAbnormal = dbpLatest > 120 || dbpLatest < 60;
+    const latestDisplay = isAbnormal ? markAbnormal(dbpLatest) : dbpLatest;
+    const rangeStr = dbpMin === dbpMax ? '' : ` (${dbpMin}-${dbpMax})`;
+    fishbone += `DBP ${latestDisplay}${rangeStr} `;
 } else {
     fishbone += 'no DBP ';
 }
@@ -9789,16 +9769,13 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
 
     // O2 saturation with therapy
     if (data.vitals.o2 && data.vitals.o2.length > 0) {
+        const o2Latest = data.vitals.o2[0];
         const o2Min = Math.min(...data.vitals.o2);
         const o2Max = Math.max(...data.vitals.o2);
-        
-        const hadHypoxia = data.vitals.o2.some(o2 => o2 < 94);
-        
-        if (hadHypoxia) {
-            fishbone += `O2 ${markAbnormal(`${o2Min}-${o2Max}`)}`;
-        } else {
-            fishbone += `O2 ${o2Min}-${o2Max}`;
-        }
+        const isAbnormal = o2Latest < 94;
+        const latestDisplay = isAbnormal ? markAbnormal(o2Latest) : o2Latest;
+        const rangeStr = o2Min === o2Max ? '' : ` (${o2Min}-${o2Max})`;
+        fishbone += `O2 ${latestDisplay}${rangeStr}`;
         
         if (data.o2therapyCode && data.o2therapyCode !== 'RA') {
             fishbone += `-${markAbnormal(data.o2therapyCode)}`;
@@ -13684,9 +13661,9 @@ while (i < fishboneLines.length && !foundFluidBalance) {
     violinDisplay.id = 'violinDisplay';
     violinDisplay.style.cssText = `
       background: var(--dark-bg); color: var(--text-primary);
-      border: 1px solid var(--border); padding: 0.75rem; border-radius: 0.25rem;
-      font-family: monospace; font-size: 0.9rem; line-height: 1.6;
-      white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; overflow-x: auto;
+      border: 1px solid var(--border); padding: 0.4rem; border-radius: 0.25rem;
+      font-family: monospace; font-size: 0.9rem; line-height: 1.4;
+      white-space: pre-wrap; word-wrap: break-word; margin-top: 0.25rem; overflow-x: auto;
     `;
     const textarea = document.getElementById('field_VIOLIN');
     if (textarea?.parentNode) textarea.parentNode.insertBefore(violinDisplay, textarea.nextSibling);
@@ -13720,7 +13697,7 @@ if (_ioData) {
   if (_labData && Object.keys(_labData.labs || {}).length > 0) {
     const tableHTML = generateModernLabTable(_labData);
     const tableDiv = document.createElement('div');
-    tableDiv.style.marginTop = '0.5rem'; // Small margin only
+    tableDiv.style.marginTop = '0.25rem';
     tableDiv.innerHTML = tableHTML;
     violinDisplay.appendChild(tableDiv);
     
@@ -13751,50 +13728,43 @@ function createVitalsVisualization(vitalsData) {
   container.style.cssText = `
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    background: rgba(30, 30, 30, 0.5);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--border);
-    margin-bottom: 1rem;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
     max-width: 900px;
   `;
-  
-  // OXYGEN THERAPY SECTION - ADD THIS AT THE TOP
+
+  // OXYGEN THERAPY SECTION
   const o2Section = document.createElement('div');
   o2Section.style.cssText = `
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 1rem;
-    padding: 0.75rem;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
     background: rgba(59, 130, 246, 0.1);
-    border: 2px solid #8b5cf6;
-    border-radius: 0.375rem;
+    border: 1px solid #8b5cf6;
+    border-radius: 0.25rem;
   `;
-  
+
   const o2Label = document.createElement('div');
   o2Label.style.cssText = `
     font-weight: bold;
     color: #8b5cf6;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
   `;
-  o2Label.textContent = '🫁 O2 THERAPY:';
-  
+  o2Label.textContent = 'O2:';
+
   const o2Info = document.createElement('div');
   o2Info.style.cssText = `
     font-family: monospace;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--text-primary);
   `;
-  
-  // Extract O2 therapy info from labData (which should have it from extractLabValues)
+
   if (labData?.o2therapyCode || labData?.o2therapyRaw) {
     const therapyCode = labData.o2therapyCode || 'Unknown';
     const flowRate = labData.o2flowRaw || '';
-    const isAbnormal = therapyCode !== 'RA';
-    
     let o2Text = '';
     if (therapyCode === 'RA') {
       o2Text = `<span style="color: #10b981;">Room Air</span>`;
@@ -13804,302 +13774,188 @@ function createVitalsVisualization(vitalsData) {
         o2Text += ` @ ${flowRate}`;
       }
     }
-    
-    // If on ventilator, show vent settings
     if (therapyCode === 'Vent' && (labData.ventModeRaw || labData.ventFrequencyRaw)) {
       const mode = labData.ventModeRaw ? labData.ventModeRaw.replace(/[\s\/\+]+/g, '') : '';
       const freq = labData.ventFrequencyRaw || '';
       const tv = labData.ventTidalRaw || '';
       const peep = labData.ventPeepRaw || '';
       const fio2 = labData.ventFiO2Raw || '';
-      
       const settings = [
         freq ? `RR:${freq}` : '',
         tv ? `Vt:${tv}mL` : '',
         peep ? `PEEP:${peep}` : '',
         fio2 ? `FiO2:${fio2}%` : ''
       ].filter(x => x).join(' | ');
-      
-      o2Text += `<br><span style="color: #a78bfa; font-size: 0.85rem;">Mode: ${mode}</span>`;
-      if (settings) {
-        o2Text += `<br><span style="color: #a78bfa; font-size: 0.85rem;">${settings}</span>`;
-      }
+      o2Text += ` <span style="color: #a78bfa; font-size: 0.75rem;">Mode:${mode}</span>`;
+      if (settings) o2Text += ` <span style="color: #a78bfa; font-size: 0.75rem;">${settings}</span>`;
     }
-    
     o2Info.innerHTML = o2Text;
   } else {
-    o2Info.innerHTML = '<span style="color: var(--text-secondary); font-style: italic;">No O2 therapy data</span>';
+    o2Info.innerHTML = '<span style="color: var(--text-secondary); font-style: italic;">No O2 data</span>';
   }
-  
+
   o2Section.appendChild(o2Label);
   o2Section.appendChild(o2Info);
   container.appendChild(o2Section);
-  
-  // VITALS GRAPH SECTION
-  const graphSection = document.createElement('div');
-  graphSection.style.cssText = `
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 1rem;
-  `;
-  
-  const vitalsList = document.createElement('div');
-  vitalsList.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  `;
-  
-  const graphContainer = document.createElement('div');
-  graphContainer.style.cssText = `
-    position: relative;
-    height: 300px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 0.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  `;
-  
-  const canvas = document.createElement('canvas');
-  canvas.width = 700;
-  canvas.height = 300;
-  canvas.style.cssText = 'width: 100%; height: 100%;';
-  graphContainer.appendChild(canvas);
-  
-  const vitals = [
-    { key: 'temp', label: 'T', unit: '°C', color: '#ef4444', min: 35, max: 38 },
-    { key: 'hr', label: 'HR', unit: 'bpm', color: '#f59e0b', min: 60, max: 100 },
-    { key: 'sbp', label: 'SBP', unit: 'mmHg', color: '#10b981', min: 90, max: 180 },
-    { key: 'dbp', label: 'DBP', unit: 'mmHg', color: '#3b82f6', min: 60, max: 120 },
-    { key: 'o2', label: 'O2', unit: '%', color: '#8b5cf6', min: 94, max: 100 }
+
+  // VITALS TABLE - Parse timestamped readings from raw data
+  if (!lastImportedData) return container;
+
+  const readings = { temp: [], hr: [], bp: [], map: [], o2: [] };
+  let match;
+
+  // Temperature
+  const tempRegex = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((match = tempRegex.exec(lastImportedData)) !== null) {
+    readings.temp.push({ value: parseFloat(match[1]), date: match[2], time: match[3] });
+  }
+
+  // Heart Rate
+  const hrRegex = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((match = hrRegex.exec(lastImportedData)) !== null) {
+    readings.hr.push({ value: parseInt(match[1]), date: match[2], time: match[3] });
+  }
+
+  // Blood Pressure - collect systolic and diastolic separately then merge
+  const systolicMap = {};
+  const systolicRegex = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((match = systolicRegex.exec(lastImportedData)) !== null) {
+    const timeKey = `${match[2]} ${match[3]}`;
+    systolicMap[timeKey] = parseInt(match[1]);
+  }
+  const diastolicMap = {};
+  const diastolicRegex = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((match = diastolicRegex.exec(lastImportedData)) !== null) {
+    const timeKey = `${match[2]} ${match[3]}`;
+    diastolicMap[timeKey] = parseInt(match[1]);
+  }
+  // Merge BP readings
+  const allBPTimes = new Set([...Object.keys(systolicMap), ...Object.keys(diastolicMap)]);
+  allBPTimes.forEach(timeKey => {
+    const [dateStr, timeStr] = timeKey.split(' ');
+    const sbp = systolicMap[timeKey];
+    const dbp = diastolicMap[timeKey];
+    if (sbp !== undefined) {
+      const mapVal = dbp !== undefined ? Math.round(dbp + (sbp - dbp) / 3) : null;
+      readings.bp.push({
+        sbp: sbp,
+        dbp: dbp || null,
+        display: dbp !== undefined ? `${sbp}/${dbp}` : `${sbp}/-`,
+        date: dateStr,
+        time: timeStr
+      });
+      if (mapVal !== null) {
+        readings.map.push({ value: mapVal, date: dateStr, time: timeStr });
+      }
+    }
+  });
+
+  // O2 Saturation
+  const o2Regex = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((match = o2Regex.exec(lastImportedData)) !== null) {
+    readings.o2.push({ value: parseInt(match[1]), date: match[2], time: match[3] });
+  }
+
+  // Filter to last 24 hours and sort most recent first
+  const now = new Date();
+  const cutoff = new Date(now - 24 * 60 * 60 * 1000);
+
+  const parseTS = (dateStr, timeStr) => {
+    const p = dateStr.split('/');
+    const y = p[2].length === 2 ? '20' + p[2] : p[2];
+    return new Date(`${y}-${p[0]}-${p[1]} ${timeStr}`);
+  };
+
+  const filterAndSort = (arr) => {
+    return arr
+      .filter(r => parseTS(r.date, r.time) >= cutoff && parseTS(r.date, r.time) <= now)
+      .sort((a, b) => parseTS(b.date, b.time) - parseTS(a.date, a.time));
+  };
+
+  readings.temp = filterAndSort(readings.temp);
+  readings.hr = filterAndSort(readings.hr);
+  readings.bp = filterAndSort(readings.bp);
+  readings.map = filterAndSort(readings.map);
+  readings.o2 = filterAndSort(readings.o2);
+
+  // Find max columns across all vitals
+  const maxCols = Math.min(8, Math.max(
+    readings.temp.length, readings.hr.length,
+    readings.bp.length, readings.map.length, readings.o2.length, 1
+  ));
+
+  if (maxCols === 0) return container;
+
+  // Short date/time formatter: "02/21 06:30"
+  const fmtDT = (dateStr, timeStr) => {
+    const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+    const tm = timeStr.match(/(\d{1,2}:\d{2})/);
+    const d = dm ? dm[1] : dateStr;
+    const t = tm ? tm[1] : timeStr;
+    return `${d} ${t}`;
+  };
+
+  // Build vital rows
+  const vitalDefs = [
+    { key: 'temp', label: 'Temp', unit: '°C', min: 35, max: 38, color: '#ef4444' },
+    { key: 'hr', label: 'HR', unit: '', min: 60, max: 100, color: '#f59e0b' },
+    { key: 'bp', label: 'BP', unit: '', min: null, max: null, color: '#10b981' },
+    { key: 'map', label: 'MAP', unit: '', min: 65, max: 110, color: '#06b6d4' },
+    { key: 'o2', label: 'SpO2', unit: '%', min: 92, max: 100, color: '#8b5cf6' }
   ];
-  
-  let selectedVital = 'temp';
-  const buttons = [];
-  
-  vitals.forEach(vital => {
-    const data = vitalsData[vital.key];
-    if (!data || data.length === 0) return;
-    
-    const minVal = Math.min(...data);
-    const maxVal = Math.max(...data);
-    const avgVal = data.reduce((a, b) => a + b, 0) / data.length;
-    
-    // Check if any values are abnormal
-    const hasAbnormal = data.some(v => v < vital.min || v > vital.max);
-    
-    // Format with asterisks if abnormal
-    const formatValue = (val) => {
-      const formatted = val.toFixed(1);
-      return (val < vital.min || val > vital.max) ? `*${formatted}*` : formatted;
-    };
-    
-    const minStr = formatValue(minVal);
-    const maxStr = formatValue(maxVal);
-    const avgStr = formatValue(avgVal);
-    
-    const button = document.createElement('button');
-    button.setAttribute('data-vital', vital.key);
-    button.style.cssText = `
-      padding: 0.5rem 0.65rem;
-      background: ${selectedVital === vital.key ? vital.color : 'rgba(60, 60, 60, 0.5)'};
-      border: 1px solid ${vital.color}50;
-      border-radius: 0.25rem;
-      color: ${selectedVital === vital.key ? 'white' : 'var(--text-primary)'};
-      cursor: pointer;
-      text-align: left;
-      font-size: 0.85rem;
-      font-family: monospace;
-      transition: all 0.2s ease;
-      line-height: 1.4;
-      white-space: nowrap;
-    `;
-    
-    button.innerHTML = `<strong style="color: ${vital.color}; font-size: 0.9rem;">${vital.label}</strong> ${minStr}-${maxStr} ${vital.unit}<br><span style="font-size: 0.75rem; opacity: 0.8;">avg: ${avgStr} ${vital.unit}</span>`;
-    
-    button.onmouseenter = () => {
-      if (button.getAttribute('data-vital') !== selectedVital) {
-        button.style.background = 'rgba(80, 80, 80, 0.6)';
+
+  // Column headers
+  const colHeaders = ['Latest'];
+  for (let i = 1; i < maxCols; i++) colHeaders.push(`-${i}`);
+
+  let tableHTML = `
+    <table class="modern-lab-table" style="margin-top: 0.25rem;">
+      <thead>
+        <tr>
+          <th style="text-align: left;">Vital</th>
+          ${colHeaders.map(h => `<th>${h}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  vitalDefs.forEach(vDef => {
+    const arr = readings[vDef.key];
+    if (!arr || arr.length === 0) return;
+
+    const cells = [];
+    for (let i = 0; i < maxCols; i++) {
+      if (i < arr.length) {
+        const r = arr[i];
+        let displayVal, isAbnormal;
+
+        if (vDef.key === 'bp') {
+          displayVal = r.display;
+          // BP abnormal: SBP <90 or >180, DBP <60 or >120
+          isAbnormal = (r.sbp < 90 || r.sbp > 180) || (r.dbp !== null && (r.dbp < 60 || r.dbp > 120));
+        } else {
+          displayVal = vDef.key === 'temp' ? r.value.toFixed(1) : String(r.value);
+          isAbnormal = r.value < vDef.min || r.value > vDef.max;
+        }
+
+        const dtStr = fmtDT(r.date, r.time);
+        const cls = isAbnormal ? 'abnormal' : 'normal';
+        cells.push(`<td class="${cls}" title="${r.date} ${r.time}">${displayVal}<span class="lab-date-time">${dtStr}</span></td>`);
+      } else {
+        cells.push(`<td>--</td>`);
       }
-    };
-    
-    button.onmouseleave = () => {
-      if (button.getAttribute('data-vital') !== selectedVital) {
-        button.style.background = 'rgba(60, 60, 60, 0.5)';
-      }
-    };
-    
-    button.onclick = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      try {
-        selectedVital = vital.key;
-        
-        // Update all button styles
-        buttons.forEach(btn => {
-          const btnVital = vitals.find(v => v.key === btn.getAttribute('data-vital'));
-          if (btnVital) {
-            btn.style.background = 'rgba(60, 60, 60, 0.5)';
-            btn.style.color = 'var(--text-primary)';
-          }
-        });
-        
-        // Highlight selected button
-        button.style.background = vital.color;
-        button.style.color = 'white';
-        
-        // Draw graph
-        drawVitalGraph(canvas, vitalsData[vital.key], vital);
-      } catch (err) {
-        console.error('Error updating vital graph:', err);
-      }
-    };
-    
-    buttons.push(button);
-    vitalsList.appendChild(button);
-  });
-  
-  graphSection.appendChild(vitalsList);
-  graphSection.appendChild(graphContainer);
-  container.appendChild(graphSection);
-  
-  // Draw initial graph (temperature)
-  const tempVital = vitals.find(v => v.key === 'temp');
-  if (vitalsData.temp && vitalsData.temp.length > 0 && tempVital) {
-    try {
-      drawVitalGraph(canvas, vitalsData.temp, tempVital);
-    } catch (err) {
-      console.error('Error drawing initial graph:', err);
     }
-  }
-  
+
+    tableHTML += `<tr><td><strong style="color:${vDef.color}">${vDef.label}</strong></td>${cells.join('')}</tr>`;
+  });
+
+  tableHTML += `</tbody></table>`;
+
+  const tableDiv = document.createElement('div');
+  tableDiv.innerHTML = tableHTML;
+  container.appendChild(tableDiv);
+
   return container;
-}
-
-
-
-
-function drawVitalGraph(canvas, data, vital) {
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
-  
-  ctx.clearRect(0, 0, width, height);
-  
-  if (!data || data.length === 0) {
-    ctx.fillStyle = '#666';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('No data', width/2, height/2);
-    return;
-  }
-  
-  const min = Math.min(...data, vital.min);
-  const max = Math.max(...data, vital.max);
-  const range = max - min || 1;
-  const padding = 35;
-  
-  const xStep = (width - padding * 2) / (data.length - 1 || 1);
-  const yScale = (height - padding * 2) / range;
-  
-  // Draw grid
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 4; i++) {
-    const y = padding + (height - padding * 2) * i / 4;
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
-    ctx.stroke();
-  }
-  
-  // Draw normal range zone
-  if (vital.min && vital.max) {
-    const normalMinY = height - padding - (vital.min - min) * yScale;
-    const normalMaxY = height - padding - (vital.max - min) * yScale;
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
-    ctx.fillRect(padding, normalMaxY, width - padding * 2, normalMinY - normalMaxY);
-    
-    // Draw normal range lines
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.moveTo(padding, normalMinY);
-    ctx.lineTo(width - padding, normalMinY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(padding, normalMaxY);
-    ctx.lineTo(width - padding, normalMaxY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  
-  // Draw line with gradient
-  ctx.strokeStyle = vital.color;
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  
-  data.forEach((value, i) => {
-    const x = padding + i * xStep;
-    const y = height - padding - (value - min) * yScale;
-    
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  
-  ctx.stroke();
-  
-  // Fill area under curve
-  if (data.length > 1) {
-    ctx.lineTo(padding + (data.length - 1) * xStep, height - padding);
-    ctx.lineTo(padding, height - padding);
-    ctx.closePath();
-    ctx.fillStyle = vital.color + '25';
-    ctx.fill();
-  }
-  
-  // Draw points
-  data.forEach((value, i) => {
-    const x = padding + i * xStep;
-    const y = height - padding - (value - min) * yScale;
-    
-    // Check if abnormal
-    const isAbnormal = value < vital.min || value > vital.max;
-    
-    // Draw point
-    ctx.fillStyle = isAbnormal ? '#ff4444' : vital.color;
-    ctx.beginPath();
-    ctx.arc(x, y, isAbnormal ? 4 : 3, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Add white border for abnormal values
-    if (isAbnormal) {
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-  });
-  
-  // Draw Y-axis labels
-  ctx.fillStyle = '#aaa';
-  ctx.font = 'bold 11px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText(max.toFixed(1), padding - 5, padding + 4);
-  ctx.fillText(min.toFixed(1), padding - 5, height - padding + 4);
-  ctx.fillText(((max + min) / 2).toFixed(1), padding - 5, height / 2 + 4);
-  
-  // Draw title with count
-  ctx.fillStyle = vital.color;
-  ctx.font = 'bold 13px monospace';
-  ctx.textAlign = 'left';
-  const abnormalCount = data.filter(v => v < vital.min || v > vital.max).length;
-  const titleText = abnormalCount > 0 
-    ? `${vital.label} - ${data.length} readings (*${abnormalCount} abnormal*)`
-    : `${vital.label} - ${data.length} readings`;
-  ctx.fillText(titleText, padding, 15);
 }
 
 
@@ -14262,7 +14118,7 @@ function generateModernLabTable(data) {
         padding-left: 0.5rem;
       }
 .modern-lab-table td {
-    padding: 0.35rem 0.3rem;
+    padding: 0.15rem 0.3rem;
     border-bottom: 1px solid #1a1a1a;
     background: #000000;
     text-align: center;
@@ -14270,17 +14126,19 @@ function generateModernLabTable(data) {
     font-weight: 600;
     cursor: help;
     position: relative;
-    pointer-events: auto; /* ADD THIS */
-    z-index: 1; /* ADD THIS */
+    pointer-events: auto;
+    z-index: 1;
+    line-height: 1.15;
 }
       .modern-lab-table .lab-date-time {
         display: block;
-        font-size: 0.55rem;
+        font-size: 0.5rem;
         font-style: italic;
         font-weight: 400;
-        color: #888;
-        margin-top: 1px;
-        line-height: 1.1;
+        color: #777;
+        margin-top: 0px;
+        line-height: 1;
+        letter-spacing: -0.3px;
       }
       .modern-lab-table td:first-child {
         width: 60px;
@@ -14708,12 +14566,12 @@ function buildIOWarnings(ioData, patient) {
 function createIODashboard(ioData, data) {
   const container = document.createElement('div');
   container.style.cssText = `
-    margin: 0.5rem 0;
+    margin: 0.25rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
   `;
-  
+
   const elapsedHours = Math.round(ioData.elapsedHours || 24);
   
   // Get totals from summary
