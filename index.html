@@ -9710,35 +9710,25 @@ function generateFishbone(data) {
 
     // ===== VITALS SECTION =====
     if (data.vitals.temp && data.vitals.temp.length > 0) {
+        const tempLatest = data.vitals.temp[0].toFixed(1);
         const tempMin = Math.min(...data.vitals.temp).toFixed(1);
         const tempMax = Math.max(...data.vitals.temp).toFixed(1);
-        const tempAvg = (data.vitals.temp.reduce((a, b) => a + b, 0) / data.vitals.temp.length).toFixed(1);
-        
-        const hadFever = data.vitals.temp.some(t => t > 38);
-        const hadHypothermia = data.vitals.temp.some(t => t < 35);
-        
-        if (hadFever || hadHypothermia) {
-            fishbone += `T ${markAbnormal(`${tempMin}-${tempMax}`)} (${tempAvg}), `;
-        } else {
-            fishbone += `T ${tempMin}-${tempMax} (${tempAvg}), `;
-        }
+        const isAbnormal = parseFloat(tempLatest) > 38 || parseFloat(tempLatest) < 35;
+        const latestDisplay = isAbnormal ? markAbnormal(tempLatest) : tempLatest;
+        const rangeStr = tempMin === tempMax ? '' : ` (${tempMin}-${tempMax})`;
+        fishbone += `T ${latestDisplay}${rangeStr}, `;
     } else {
         fishbone += 'no T, ';
     }
     
     if (data.vitals.hr && data.vitals.hr.length > 0) {
+        const hrLatest = data.vitals.hr[0];
         const hrMin = Math.min(...data.vitals.hr);
         const hrMax = Math.max(...data.vitals.hr);
-        const hrAvg = Math.round(data.vitals.hr.reduce((a, b) => a + b, 0) / data.vitals.hr.length);
-        
-        const hadTachycardia = data.vitals.hr.some(hr => hr > 100);
-        const hadBradycardia = data.vitals.hr.some(hr => hr < 60);
-        
-        if (hadTachycardia || hadBradycardia) {
-            fishbone += `HR ${markAbnormal(`${hrMin}-${hrMax}`)}(${hrAvg}), `;
-        } else {
-            fishbone += `HR ${hrMin}-${hrMax}(${hrAvg}), `;
-        }
+        const isAbnormal = hrLatest > 100 || hrLatest < 60;
+        const latestDisplay = isAbnormal ? markAbnormal(hrLatest) : hrLatest;
+        const rangeStr = hrMin === hrMax ? '' : ` (${hrMin}-${hrMax})`;
+        fishbone += `HR ${latestDisplay}${rangeStr}, `;
     } else {
         fishbone += 'no HR, ';
     }
@@ -9748,35 +9738,25 @@ function generateFishbone(data) {
 
 // Handle SBP and DBP separately
 if (data.vitals.sbp && data.vitals.sbp.length > 0) {
+    const sbpLatest = data.vitals.sbp[0];
     const sbpMin = Math.min(...data.vitals.sbp);
     const sbpMax = Math.max(...data.vitals.sbp);
-    const sbpAvg = Math.round(data.vitals.sbp.reduce((a, b) => a + b, 0) / data.vitals.sbp.length);
-    
-    const hadHypotension = data.vitals.sbp.some(sbp => sbp < 90);
-    const hadHypertension = data.vitals.sbp.some(sbp => sbp > 180);
-    
-    if (hadHypotension || hadHypertension) {
-        fishbone += `SBP ${markAbnormal(`${sbpMin}-${sbpMax}`)} (${sbpAvg}), `;
-    } else {
-        fishbone += `SBP ${sbpMin}-${sbpMax} (${sbpAvg}), `;
-    }
+    const isAbnormal = sbpLatest < 90 || sbpLatest > 180;
+    const latestDisplay = isAbnormal ? markAbnormal(sbpLatest) : sbpLatest;
+    const rangeStr = sbpMin === sbpMax ? '' : ` (${sbpMin}-${sbpMax})`;
+    fishbone += `SBP ${latestDisplay}${rangeStr}, `;
 } else {
     fishbone += 'no SBP, ';
 }
 
 if (data.vitals.dbp && data.vitals.dbp.length > 0) {
+    const dbpLatest = data.vitals.dbp[0];
     const dbpMin = Math.min(...data.vitals.dbp);
     const dbpMax = Math.max(...data.vitals.dbp);
-    const dbpAvg = Math.round(data.vitals.dbp.reduce((a, b) => a + b, 0) / data.vitals.dbp.length);
-    
-    const hadDiastolicHypertension = data.vitals.dbp.some(dbp => dbp > 120);
-    const hadDiastolicHypotension = data.vitals.dbp.some(dbp => dbp < 60);
-    
-    if (hadDiastolicHypertension || hadDiastolicHypotension) {
-        fishbone += `DBP ${markAbnormal(`${dbpMin}-${dbpMax}`)} (${dbpAvg}) `;
-    } else {
-        fishbone += `DBP ${dbpMin}-${dbpMax} (${dbpAvg}) `;
-    }
+    const isAbnormal = dbpLatest > 120 || dbpLatest < 60;
+    const latestDisplay = isAbnormal ? markAbnormal(dbpLatest) : dbpLatest;
+    const rangeStr = dbpMin === dbpMax ? '' : ` (${dbpMin}-${dbpMax})`;
+    fishbone += `DBP ${latestDisplay}${rangeStr} `;
 } else {
     fishbone += 'no DBP ';
 }
@@ -9789,16 +9769,13 @@ if (data.vitals.dbp && data.vitals.dbp.length > 0) {
 
     // O2 saturation with therapy
     if (data.vitals.o2 && data.vitals.o2.length > 0) {
+        const o2Latest = data.vitals.o2[0];
         const o2Min = Math.min(...data.vitals.o2);
         const o2Max = Math.max(...data.vitals.o2);
-        
-        const hadHypoxia = data.vitals.o2.some(o2 => o2 < 94);
-        
-        if (hadHypoxia) {
-            fishbone += `O2 ${markAbnormal(`${o2Min}-${o2Max}`)}`;
-        } else {
-            fishbone += `O2 ${o2Min}-${o2Max}`;
-        }
+        const isAbnormal = o2Latest < 94;
+        const latestDisplay = isAbnormal ? markAbnormal(o2Latest) : o2Latest;
+        const rangeStr = o2Min === o2Max ? '' : ` (${o2Min}-${o2Max})`;
+        fishbone += `O2 ${latestDisplay}${rangeStr}`;
         
         if (data.o2therapyCode && data.o2therapyCode !== 'RA') {
             fishbone += `-${markAbnormal(data.o2therapyCode)}`;
