@@ -14262,7 +14262,7 @@ function generateModernLabTable(data) {
         padding-left: 0.5rem;
       }
 .modern-lab-table td {
-    padding: 0.35rem 0.3rem;
+    padding: 0.15rem 0.3rem;
     border-bottom: 1px solid #1a1a1a;
     background: #000000;
     text-align: center;
@@ -14270,17 +14270,19 @@ function generateModernLabTable(data) {
     font-weight: 600;
     cursor: help;
     position: relative;
-    pointer-events: auto; /* ADD THIS */
-    z-index: 1; /* ADD THIS */
+    pointer-events: auto;
+    z-index: 1;
+    line-height: 1.15;
 }
       .modern-lab-table .lab-date-time {
         display: block;
-        font-size: 0.55rem;
+        font-size: 0.5rem;
         font-style: italic;
         font-weight: 400;
-        color: #888;
-        margin-top: 1px;
-        line-height: 1.1;
+        color: #777;
+        margin-top: 0px;
+        line-height: 1;
+        letter-spacing: -0.3px;
       }
       .modern-lab-table td:first-child {
         width: 60px;
