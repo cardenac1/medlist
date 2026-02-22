@@ -3546,7 +3546,7 @@ const helpContent = {
             el.classList.add('todo-item-enter');
             el.style.cursor = 'pointer';
 
-            // Toggle done on row click (except buttons/edit)
+            // Toggle done
             function toggleDone() {
                 item.done = !item.done;
                 patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
@@ -3554,26 +3554,24 @@ const helpContent = {
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
             }
-            el.addEventListener('click', (e) => {
-                if (e.target.closest('.todo-edit-btn') || e.target.closest('.todo-delete')) return;
-                toggleDone();
-            });
 
-            // Checkbox (visual only, click handled by row)
+            // Checkbox — click to toggle done
             const checkbox = document.createElement('div');
             checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
             checkbox.title = item.done ? 'Mark incomplete' : 'Mark complete';
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDone();
+            });
 
-            // Text (double-click to edit on desktop)
+            // Text — click to edit on touch, double-click on desktop
             const textEl = document.createElement('span');
             textEl.className = 'todo-text';
             textEl.textContent = item.text;
-            if (!isTouchDevice) {
-                textEl.addEventListener('dblclick', (e) => {
-                    e.stopPropagation();
-                    startTodoEdit(item, parsed, container, patient, textEl);
-                });
-            }
+            textEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                startTodoEdit(item, parsed, container, patient, textEl);
+            });
 
             // Edit button (visible on mobile, hidden on desktop via CSS)
             const editBtn = document.createElement('div');
@@ -3590,7 +3588,8 @@ const helpContent = {
             deleteBtn.className = 'todo-delete';
             deleteBtn.innerHTML = '&times;';
             deleteBtn.title = 'Delete task';
-            deleteBtn.addEventListener('click', () => {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const idx = parsed.tasks.indexOf(item);
                 if (idx !== -1) {
                     el.classList.add('todo-item-remove');
