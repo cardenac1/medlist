@@ -6610,44 +6610,65 @@ saveToLocalStorage();
             }
             tableHTML += '</tr>';
             
+            // Helper to get short date/time string for a lab/vital key at index
+            const getDateTimeStr = (key, idx) => {
+                let dates = labData.datesArray?.[key] || [];
+                let times = labData.timesArray?.[key] || [];
+                if (dates.length === 0 && labData.dates?.[key]) dates = [labData.dates[key]];
+                if (times.length === 0 && labData.times?.[key]) times = [labData.times[key]];
+                const d = dates[idx] || dates[0] || '';
+                const t = times[idx] || times[0] || '';
+                if (!d) return '';
+                const dateMatch = d.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?/);
+                const shortDate = dateMatch ? dateMatch[1] : d;
+                const timeMatch = t.match(/(\d{1,2}:\d{2})/);
+                const shortTime = timeMatch ? timeMatch[1] : '';
+                return shortTime ? `${shortDate} ${shortTime}` : shortDate;
+            };
+
             // Add vitals
             if (labData.vitals) {
                 if (labData.vitals.temp) {
                     tableHTML += '<tr><td>Temperature</td>';
-                    labData.vitals.temp.forEach(val => {
-                        tableHTML += `<td>${val}°C</td>`;
+                    labData.vitals.temp.forEach((val, i) => {
+                        const dt = getDateTimeStr('temp', i);
+                        tableHTML += `<td>${val}°C${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
                     });
                     tableHTML += '</tr>';
                 }
-                
+
                 if (labData.vitals.hr) {
                     tableHTML += '<tr><td>Heart Rate</td>';
-                    labData.vitals.hr.forEach(val => {
-                        tableHTML += `<td>${val}</td>`;
+                    labData.vitals.hr.forEach((val, i) => {
+                        const dt = getDateTimeStr('hr', i);
+                        tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
                     });
                     tableHTML += '</tr>';
                 }
-                
+
                 if (labData.vitals.sbp) {
                     tableHTML += '<tr><td>Systolic BP</td>';
-                    labData.vitals.sbp.forEach(val => {
-                        tableHTML += `<td>${val}</td>`;
+                    labData.vitals.sbp.forEach((val, i) => {
+                        const dt = getDateTimeStr('sbp', i);
+                        tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
                     });
                     tableHTML += '</tr>';
                 }
-                
+
                 if (labData.vitals.dbp) {
                     tableHTML += '<tr><td>Diastolic BP</td>';
-                    labData.vitals.dbp.forEach(val => {
-                        tableHTML += `<td>${val}</td>`;
+                    labData.vitals.dbp.forEach((val, i) => {
+                        const dt = getDateTimeStr('dbp', i);
+                        tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
                     });
                     tableHTML += '</tr>';
                 }
-                
+
                 if (labData.vitals.o2) {
                     tableHTML += '<tr><td>O2 Saturation</td>';
-                    labData.vitals.o2.forEach(val => {
-                        tableHTML += `<td>${val}%</td>`;
+                    labData.vitals.o2.forEach((val, i) => {
+                        const dt = getDateTimeStr('o2', i);
+                        tableHTML += `<td>${val}%${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
                     });
                     tableHTML += '</tr>';
                 }
@@ -6697,8 +6718,16 @@ saveToLocalStorage();
                 for (const [key, name] of Object.entries(labNames)) {
                     if (labData.labs[key]) {
                         tableHTML += `<tr><td>${name}</td>`;
-                        labData.labs[key].forEach(val => {
-                            tableHTML += `<td>${val}</td>`;
+                        labData.labs[key].forEach((val, i) => {
+                            // Try the key itself, then check KEY_ALIASES
+                            let dt = getDateTimeStr(key, i);
+                            if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
+                                for (const alias of KEY_ALIASES[key]) {
+                                    dt = getDateTimeStr(alias, i);
+                                    if (dt) break;
+                                }
+                            }
+                            tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
                         });
                         tableHTML += '</tr>';
                     }
@@ -14244,6 +14273,15 @@ function generateModernLabTable(data) {
     pointer-events: auto; /* ADD THIS */
     z-index: 1; /* ADD THIS */
 }
+      .modern-lab-table .lab-date-time {
+        display: block;
+        font-size: 0.55rem;
+        font-style: italic;
+        font-weight: 400;
+        color: #888;
+        margin-top: 1px;
+        line-height: 1.1;
+      }
       .modern-lab-table td:first-child {
         width: 60px;
         padding-left: 0.5rem;
@@ -14321,9 +14359,28 @@ const generateLabRow = (lab) => {
     // Escape quotes
     const escapedTooltip = String(tooltipText).replace(/"/g, '&quot;');
     
-    return `<td class="${abnormal ? 'abnormal' : normalClass}" title="${escapedTooltip}">${v.value}</td>`;
+    // Build date/time display string
+    let dateTimeDisplay = '';
+    if (v.date && v.value !== '--') {
+      // Format date shorter: "02/21" from "02/21/2026" or similar
+      let shortDate = v.date;
+      const dateMatch = v.date.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?/);
+      if (dateMatch) shortDate = dateMatch[1];
+
+      let shortTime = '';
+      if (v.time) {
+        const timeMatch = v.time.match(/(\d{1,2}:\d{2})/);
+        if (timeMatch) shortTime = timeMatch[1];
+      }
+
+      dateTimeDisplay = shortTime ? `${shortDate} ${shortTime}` : shortDate;
+    }
+
+    const dateTimeHTML = dateTimeDisplay ? `<span class="lab-date-time">${dateTimeDisplay}</span>` : '';
+
+    return `<td class="${abnormal ? 'abnormal' : normalClass}" title="${escapedTooltip}">${v.value}${dateTimeHTML}</td>`;
   }).join('');
-  
+
   return `
     <tr>
       <td><strong>${lab.label}</strong></td>
