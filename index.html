@@ -7617,7 +7617,7 @@ function editLTD() {
     const currentOrders = document.getElementById('field_ORDERS')?.value || '';
     let existingLTD = '';
 
-    const ltdMatch = currentOrders.match(/LTD:\s*([^\n]*)/);
+    const ltdMatch = currentOrders.match(/LTD:\s*(.*?)(?=DISPO:|$)/i);
     if (ltdMatch) existingLTD = ltdMatch[1].trim();
 
     const modalHTML = `
@@ -7659,9 +7659,9 @@ function saveLTD() {
 
     let currentOrders = ordersField.value;
 
-    // Replace LTD line in the multi-line format
-    if (currentOrders.match(/LTD:\s*[^\n]*/)) {
-        currentOrders = currentOrders.replace(/LTD:\s*[^\n]*/, 'LTD: ' + newLTD);
+    // Replace LTD content (stop before DISPO: if on same line)
+    if (currentOrders.match(/LTD:/i)) {
+        currentOrders = currentOrders.replace(/LTD:\s*.*?(?=DISPO:|[\n]|$)/i, 'LTD: ' + newLTD);
     } else if (newLTD) {
         // Append if not present
         currentOrders = currentOrders.trim();
@@ -8371,11 +8371,12 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
 
         if (currentOrders) {
             const labsMiscMatch = currentOrders.match(/LABS\/MISC:\s*([\s\S]*?)(?=\n(?:LTD:|DISPO:)|$)/i);
-            const ltdMatch = currentOrders.match(/LTD:\s*([^\n]*)/);
             const dispoMatch = currentOrders.match(/DISPO:\s*([^\n]*)/i);
-            if (labsMiscMatch) existingLabsMisc = labsMiscMatch[1].trim();
-            if (ltdMatch) existingLTD = ltdMatch[1].trim();
             if (dispoMatch) existingDispo = dispoMatch[1].trim();
+            if (labsMiscMatch) existingLabsMisc = labsMiscMatch[1].trim();
+            // LTD: capture stops before DISPO: on the same line (user may omit newline)
+            const ltdMatch = currentOrders.match(/LTD:\s*(.*?)(?=DISPO:|$)/i);
+            if (ltdMatch) existingLTD = ltdMatch[1].trim();
         }
 
         // LABS/MISC Section
@@ -10583,8 +10584,8 @@ function extractOrders(text) {
     let existingDispo = '';
 
     if (currentOrders) {
-        const ltdMatch = currentOrders.match(/LTD:\s*([^\n]*)/);
         const dispoMatch = currentOrders.match(/DISPO:\s*([^\n]*)/i);
+        const ltdMatch = currentOrders.match(/LTD:\s*(.*?)(?=DISPO:|$)/i);
         if (ltdMatch) existingLTD = ltdMatch[1].trim();
         if (dispoMatch) existingDispo = dispoMatch[1].trim();
     }
