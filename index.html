@@ -14622,7 +14622,9 @@ Object.entries(ioData.intakes).forEach(([intakeType, entries]) => {
       `${icon} ${intakeType}`,
       displayValue,
       `${latest.dateTimeStr}`,
-      color
+      color,
+      false,
+      entries
     ));
   }
 });
@@ -14664,7 +14666,8 @@ detailsSection.appendChild(intakesCard);
       urineValue,
       `${ioData.outputs.lastUrineTimeStr}`,
       isAbnormal ? '#ff4444' : '#fbbf24',
-      isAbnormal
+      isAbnormal,
+      ioData.outputs.urine
     ));
   } else {
     outputsCard.appendChild(createDetailItem(
@@ -14688,7 +14691,8 @@ detailsSection.appendChild(intakesCard);
         `${total} mL`,
         `${latest.dateTimeStr}`,
         isHighOutput ? '#ff4444' : '#f97316',
-        isHighOutput
+        isHighOutput,
+        entries
       ));
     }
   });
@@ -14705,7 +14709,8 @@ detailsSection.appendChild(intakesCard);
         `${total} mL`,
         `${latest.dateTimeStr}`,
         isBloodLoss ? '#ff4444' : '#f97316',
-        isBloodLoss
+        isBloodLoss,
+        entries
       ));
     }
   });
@@ -14724,12 +14729,16 @@ detailsSection.appendChild(intakesCard);
         const isAbnormal = (countType.toLowerCase().includes('stool') && totalCount > 3) ||
                           (countType.toLowerCase().includes('vomit') && totalCount > 0);
         
+        // Map count entries to have volume field for the popup
+        // Map count entries to have volume field for the popup
+        const countEntries = entries.map(e => ({ ...e, volume: e.count }));
         countsCard.appendChild(createDetailItem(
           `📊 ${countType}`,
           `${totalCount}x`,
           `${latest.dateTimeStr}`,
           isAbnormal ? '#ff4444' : '#a78bfa',
-          isAbnormal
+          isAbnormal,
+          countEntries
         ));
       }
     });
@@ -14813,9 +14822,10 @@ function createDetailCard(title, color) {
   return card;
 }
 
-// Helper: Create detail item - COMPACT
-function createDetailItem(label, value, timeInfo, color, isAbnormal = false) {
+// Helper: Create detail item - COMPACT (clickable if entries provided)
+function createDetailItem(label, value, timeInfo, color, isAbnormal = false, entries = null) {
   const item = document.createElement('div');
+  const isClickable = entries && entries.length > 0;
   item.style.cssText = `
     padding: 0.3rem;
     margin-bottom: 0.3rem;
@@ -14823,7 +14833,13 @@ function createDetailItem(label, value, timeInfo, color, isAbnormal = false) {
     border-left: 3px solid ${color};
     border-radius: 0.25rem;
     font-size: 0.75rem;
+    ${isClickable ? 'cursor: pointer; transition: background 0.15s;' : ''}
   `;
+  if (isClickable) {
+    item.addEventListener('mouseenter', () => { item.style.background = isAbnormal ? 'rgba(239, 68, 68, 0.2)' : 'rgba(60, 60, 60, 0.6)'; });
+    item.addEventListener('mouseleave', () => { item.style.background = isAbnormal ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 0, 0, 0.2)'; });
+    item.addEventListener('click', () => { showIOHourlyPopup(label, entries, color); });
+  }
   
   const labelEl = document.createElement('div');
   labelEl.style.cssText = `
@@ -14870,6 +14886,107 @@ function createEmptyState(message) {
   `;
   empty.textContent = message;
   return empty;
+}
+
+// Show hour-by-hour popup table for a specific I/O item
+function showIOHourlyPopup(label, entries, color) {
+  // Remove any existing popup
+  const existing = document.getElementById('ioHourlyPopup');
+  if (existing) existing.remove();
+
+  // Sort entries by time (oldest first)
+  const sorted = [...entries].sort((a, b) => a.dateTime - b.dateTime);
+
+  // Build running total
+  let runningTotal = 0;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'ioHourlyPopup';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center;
+    justify-content: center; z-index: 10000;
+  `;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: var(--card-bg, #1a1a2e); border: 2px solid ${color};
+    border-radius: 0.5rem; max-width: 420px; width: 92%; max-height: 80vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  `;
+
+  // Header
+  const header = document.createElement('div');
+  header.style.cssText = `
+    padding: 0.6rem 0.8rem; border-bottom: 1px solid ${color}40;
+    display: flex; justify-content: space-between; align-items: center;
+  `;
+  const titleEl = document.createElement('span');
+  titleEl.style.cssText = `font-weight: bold; color: ${color}; font-size: 0.85rem;`;
+  titleEl.textContent = label;
+  const closeBtn = document.createElement('span');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'cursor: pointer; color: var(--text-secondary); font-size: 1rem; padding: 0.2rem;';
+  closeBtn.addEventListener('click', () => overlay.remove());
+  header.appendChild(titleEl);
+  header.appendChild(closeBtn);
+  modal.appendChild(header);
+
+  // Table container
+  const tableWrap = document.createElement('div');
+  tableWrap.style.cssText = 'overflow-y: auto; flex: 1;';
+
+  const table = document.createElement('table');
+  table.style.cssText = `
+    width: 100%; border-collapse: collapse; font-size: 0.75rem;
+    font-family: monospace;
+  `;
+
+  // Table header
+  const thead = document.createElement('thead');
+  thead.innerHTML = `
+    <tr style="background: rgba(0,0,0,0.3); position: sticky; top: 0;">
+      <th style="padding: 0.4rem 0.6rem; text-align: left; color: var(--text-secondary); border-bottom: 1px solid ${color}30;">Time</th>
+      <th style="padding: 0.4rem 0.6rem; text-align: right; color: var(--text-secondary); border-bottom: 1px solid ${color}30;">Volume</th>
+      <th style="padding: 0.4rem 0.6rem; text-align: right; color: var(--text-secondary); border-bottom: 1px solid ${color}30;">Total</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  sorted.forEach((entry, idx) => {
+    runningTotal += entry.volume;
+    const tr = document.createElement('tr');
+    tr.style.cssText = `border-bottom: 1px solid rgba(255,255,255,0.05); ${idx % 2 === 0 ? 'background: rgba(0,0,0,0.15);' : ''}`;
+
+    // Format time - show just HH:MM if same day, else full date
+    const timeStr = entry.dateTimeStr || '';
+
+    tr.innerHTML = `
+      <td style="padding: 0.35rem 0.6rem; color: var(--text-secondary);">${timeStr}</td>
+      <td style="padding: 0.35rem 0.6rem; text-align: right; color: ${color}; font-weight: bold;">${entry.volume} mL</td>
+      <td style="padding: 0.35rem 0.6rem; text-align: right; color: var(--text-primary);">${runningTotal} mL</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  // Summary footer
+  const tfoot = document.createElement('tfoot');
+  tfoot.innerHTML = `
+    <tr style="background: rgba(0,0,0,0.3); border-top: 2px solid ${color}40;">
+      <td style="padding: 0.4rem 0.6rem; font-weight: bold; color: var(--text-primary);">Total (${sorted.length} entries)</td>
+      <td style="padding: 0.4rem 0.6rem; text-align: right; font-weight: bold; color: ${color};">${runningTotal} mL</td>
+      <td></td>
+    </tr>
+  `;
+  table.appendChild(tfoot);
+
+  tableWrap.appendChild(table);
+  modal.appendChild(tableWrap);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
 }
 
 
