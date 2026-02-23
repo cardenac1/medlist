@@ -5087,6 +5087,10 @@ function switchView(mode) {
                         fullOrdersDiv.className = 'orders-section hidden';
                         fullOrdersDiv.style.marginTop = '0.5rem';
                         cardBody.appendChild(fullOrdersDiv);
+                        const sugContainer = document.createElement('div');
+                        sugContainer.id = 'clinicalSuggestionsContainer';
+                        sugContainer.style.marginTop = '0.5rem';
+                        cardBody.appendChild(sugContainer);
                     }
 
                     // Only auto-resize now if the body is visible; collapsed cards resize when expanded
@@ -5234,6 +5238,10 @@ case 'chartcheck': {
                     fullOrdersDiv.className = 'orders-section hidden';
                     fullOrdersDiv.style.marginTop = '0.5rem';
                     secBody.appendChild(fullOrdersDiv);
+                    const sugContainer = document.createElement('div');
+                    sugContainer.id = 'clinicalSuggestionsContainer';
+                    sugContainer.style.marginTop = '0.5rem';
+                    secBody.appendChild(sugContainer);
                 }
 
                 section.appendChild(secBody);
@@ -5561,6 +5569,10 @@ if (header !== 'To do') {
                     fullOrdersDiv.id = 'fullOrdersDisplay';
                     fullOrdersDiv.className = 'orders-section hidden';
                     form.appendChild(fullOrdersDiv);
+                    const sugContainer = document.createElement('div');
+                    sugContainer.id = 'clinicalSuggestionsContainer';
+                    sugContainer.style.marginTop = '0.5rem';
+                    form.appendChild(sugContainer);
                 }
                 
                 form.appendChild(input);
@@ -13663,7 +13675,13 @@ if (_ioData) {
 
   if (allSuggestions.length > 0) {
     const sugModule = createSuggestionsModule(allSuggestions);
-    violinDisplay.appendChild(sugModule);
+    const sugContainer = document.getElementById('clinicalSuggestionsContainer');
+    if (sugContainer) {
+      sugContainer.innerHTML = '';
+      sugContainer.appendChild(sugModule);
+    } else {
+      violinDisplay.appendChild(sugModule);
+    }
   }
 }
 
