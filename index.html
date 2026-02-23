@@ -3546,7 +3546,7 @@ const helpContent = {
             el.classList.add('todo-item-enter');
             el.style.cursor = 'pointer';
 
-            // Toggle done on row click (except buttons/edit)
+            // Toggle done
             function toggleDone() {
                 item.done = !item.done;
                 patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
@@ -3554,26 +3554,24 @@ const helpContent = {
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
             }
-            el.addEventListener('click', (e) => {
-                if (e.target.closest('.todo-edit-btn') || e.target.closest('.todo-delete')) return;
-                toggleDone();
-            });
 
-            // Checkbox (visual only, click handled by row)
+            // Checkbox — click to toggle done
             const checkbox = document.createElement('div');
             checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
             checkbox.title = item.done ? 'Mark incomplete' : 'Mark complete';
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDone();
+            });
 
-            // Text (double-click to edit on desktop)
+            // Text — click to edit on touch, double-click on desktop
             const textEl = document.createElement('span');
             textEl.className = 'todo-text';
             textEl.textContent = item.text;
-            if (!isTouchDevice) {
-                textEl.addEventListener('dblclick', (e) => {
-                    e.stopPropagation();
-                    startTodoEdit(item, parsed, container, patient, textEl);
-                });
-            }
+            textEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                startTodoEdit(item, parsed, container, patient, textEl);
+            });
 
             // Edit button (visible on mobile, hidden on desktop via CSS)
             const editBtn = document.createElement('div');
@@ -3590,7 +3588,8 @@ const helpContent = {
             deleteBtn.className = 'todo-delete';
             deleteBtn.innerHTML = '&times;';
             deleteBtn.title = 'Delete task';
-            deleteBtn.addEventListener('click', () => {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const idx = parsed.tasks.indexOf(item);
                 if (idx !== -1) {
                     el.classList.add('todo-item-remove');
@@ -7618,7 +7617,7 @@ function editLTD() {
     const currentOrders = document.getElementById('field_ORDERS')?.value || '';
     let existingLTD = '';
 
-    const ltdMatch = currentOrders.match(/LTD:\s*([^\n]*)/);
+    const ltdMatch = currentOrders.match(/LTD:\s*(.*?)(?=DISPO:|$)/i);
     if (ltdMatch) existingLTD = ltdMatch[1].trim();
 
     const modalHTML = `
@@ -7660,9 +7659,9 @@ function saveLTD() {
 
     let currentOrders = ordersField.value;
 
-    // Replace LTD line in the multi-line format
-    if (currentOrders.match(/LTD:\s*[^\n]*/)) {
-        currentOrders = currentOrders.replace(/LTD:\s*[^\n]*/, 'LTD: ' + newLTD);
+    // Replace LTD content (stop before DISPO: if on same line)
+    if (currentOrders.match(/LTD:/i)) {
+        currentOrders = currentOrders.replace(/LTD:\s*.*?(?=DISPO:|[\n]|$)/i, 'LTD: ' + newLTD);
     } else if (newLTD) {
         // Append if not present
         currentOrders = currentOrders.trim();
@@ -8372,11 +8371,12 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
 
         if (currentOrders) {
             const labsMiscMatch = currentOrders.match(/LABS\/MISC:\s*([\s\S]*?)(?=\n(?:LTD:|DISPO:)|$)/i);
-            const ltdMatch = currentOrders.match(/LTD:\s*([^\n]*)/);
             const dispoMatch = currentOrders.match(/DISPO:\s*([^\n]*)/i);
-            if (labsMiscMatch) existingLabsMisc = labsMiscMatch[1].trim();
-            if (ltdMatch) existingLTD = ltdMatch[1].trim();
             if (dispoMatch) existingDispo = dispoMatch[1].trim();
+            if (labsMiscMatch) existingLabsMisc = labsMiscMatch[1].trim();
+            // LTD: capture stops before DISPO: on the same line (user may omit newline)
+            const ltdMatch = currentOrders.match(/LTD:\s*(.*?)(?=DISPO:|$)/i);
+            if (ltdMatch) existingLTD = ltdMatch[1].trim();
         }
 
         // LABS/MISC Section
@@ -10584,8 +10584,8 @@ function extractOrders(text) {
     let existingDispo = '';
 
     if (currentOrders) {
-        const ltdMatch = currentOrders.match(/LTD:\s*([^\n]*)/);
         const dispoMatch = currentOrders.match(/DISPO:\s*([^\n]*)/i);
+        const ltdMatch = currentOrders.match(/LTD:\s*(.*?)(?=DISPO:|$)/i);
         if (ltdMatch) existingLTD = ltdMatch[1].trim();
         if (dispoMatch) existingDispo = dispoMatch[1].trim();
     }
@@ -13624,7 +13624,48 @@ if (_ioData) {
   violinDisplay.appendChild(ioDashboard);
 }
 
+// ADD CLINICAL SUGGESTIONS MODULE
+{
+  const allSuggestions = [];
 
+  // Clinical suggestions (vitals, labs, meds)
+  if (_labData) {
+    const fullMedsText = _lastImportedData ? extractFullMeds(_lastImportedData) : '';
+    const clinicalSugs = generateSuggestions(_labData, fullMedsText);
+    allSuggestions.push(...clinicalSugs);
+  }
+
+  // Electrolyte-specific warnings (with dosing)
+  if (_labData?.labs) {
+    const eWarns = electrolyteWarnings(_labData);
+    const existingLower = allSuggestions.map(s => s.replace(/\*/g, '').toLowerCase());
+    eWarns.forEach(w => {
+      const clean = w.replace(/\*/g, '').toLowerCase();
+      const isDup = existingLower.some(e => {
+        if (clean.includes('hyponatremic') && e.includes('hyponatremic')) return true;
+        if (clean.includes('hypernatremic') && e.includes('hypernatremic')) return true;
+        if (clean.includes('hyperkalemic') && e.includes('hyperkalemic')) return true;
+        if (clean.includes('meq k') && e.includes('meq k')) return true;
+        if (clean.includes('calcium gluconate') && e.includes('calcium gluconate')) return true;
+        if (clean.includes('mag sulfate') && e.includes('mag sulfate')) return true;
+        if (clean.includes('mmol phos') && e.includes('mmol phos')) return true;
+        return false;
+      });
+      if (!isDup) allSuggestions.push(w);
+    });
+  }
+
+  // I/O warnings (oliguria, high drain output, etc.)
+  if (_ioData?.outputs) {
+    const ioWarns = buildIOWarnings(_ioData, patient);
+    allSuggestions.push(...ioWarns);
+  }
+
+  if (allSuggestions.length > 0) {
+    const sugModule = createSuggestionsModule(allSuggestions);
+    violinDisplay.appendChild(sugModule);
+  }
+}
 
   // Generate and append lab values table
   if (_labData && Object.keys(_labData.labs || {}).length > 0) {
@@ -14496,6 +14537,55 @@ function buildIOWarnings(ioData, patient) {
 
 
 // Create modern I/O Dashboard - COMPACT VERSION
+// Clinical suggestions module for the fishbone display
+function createSuggestionsModule(suggestions) {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    margin: 0.4rem 0;
+    background: rgba(30, 30, 30, 0.5);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+  `;
+
+  const headerRow = document.createElement('div');
+  headerRow.style.cssText = `
+    font-size: 0.75rem; font-weight: bold; color: #fbbf24;
+    margin-bottom: 0.4rem; padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+    letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 0.3rem;
+  `;
+  headerRow.textContent = '⚠ SUGGESTIONS';
+  wrapper.appendChild(headerRow);
+
+  suggestions.forEach(sug => {
+    const item = document.createElement('div');
+    item.style.cssText = `
+      padding: 0.3rem 0.4rem; margin-bottom: 0.25rem;
+      background: rgba(251, 191, 36, 0.08);
+      border-left: 3px solid #fbbf24;
+      border-radius: 0.25rem;
+      font-size: 0.75rem; font-family: monospace;
+      color: var(--text-primary);
+    `;
+    // Strip markdown bold markers for display
+    const cleaned = sug.replace(/\*/g, '');
+    item.textContent = cleaned;
+
+    // Highlight critical items (multiple !)
+    if (sug.includes('!!!') || sug.includes('AKI') || sug.includes('Hypoxic')) {
+      item.style.background = 'rgba(239, 68, 68, 0.12)';
+      item.style.borderLeftColor = '#ef4444';
+      item.style.color = '#fca5a5';
+    }
+
+    wrapper.appendChild(item);
+  });
+
+  return wrapper;
+}
+
 function createIODashboard(ioData, data) {
   const container = document.createElement('div');
   container.style.cssText = `
