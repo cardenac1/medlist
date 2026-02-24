@@ -13624,7 +13624,25 @@ if (_ioData) {
   violinDisplay.appendChild(ioDashboard);
 }
 
-// ADD CLINICAL SUGGESTIONS MODULE
+  // Generate and append lab values table
+  if (_labData && Object.keys(_labData.labs || {}).length > 0) {
+    const tableHTML = generateModernLabTable(_labData);
+    const tableDiv = document.createElement('div');
+    tableDiv.style.marginTop = '0.25rem';
+    tableDiv.innerHTML = tableHTML;
+    violinDisplay.appendChild(tableDiv);
+
+    // Ensure tooltips work
+    const labTable = tableDiv.querySelector('.modern-lab-table');
+    if (labTable) {
+      labTable.style.pointerEvents = 'auto';
+      labTable.querySelectorAll('td').forEach(td => {
+        td.style.pointerEvents = 'auto';
+      });
+    }
+  }
+
+// ADD CLINICAL SUGGESTIONS MODULE (after full orders/lab display)
 {
   const allSuggestions = [];
 
@@ -13666,24 +13684,6 @@ if (_ioData) {
     violinDisplay.appendChild(sugModule);
   }
 }
-
-  // Generate and append lab values table
-  if (_labData && Object.keys(_labData.labs || {}).length > 0) {
-    const tableHTML = generateModernLabTable(_labData);
-    const tableDiv = document.createElement('div');
-    tableDiv.style.marginTop = '0.25rem';
-    tableDiv.innerHTML = tableHTML;
-    violinDisplay.appendChild(tableDiv);
-    
-    // Ensure tooltips work
-    const labTable = tableDiv.querySelector('.modern-lab-table');
-    if (labTable) {
-      labTable.style.pointerEvents = 'auto';
-      labTable.querySelectorAll('td').forEach(td => {
-        td.style.pointerEvents = 'auto';
-      });
-    }
-  }
 
   violinDisplay.style.display = 'block';
 
