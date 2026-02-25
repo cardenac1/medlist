@@ -6655,9 +6655,9 @@ saveToLocalStorage();
                     ? 'background:rgba(239,68,68,0.25);color:#ff6b6b;font-weight:700;'
                     : 'color:#6ee7b7;';
                 const dtLine = dt
-                    ? `<br><span style="font-size:0.62em;color:#999;white-space:nowrap;">${dt}</span>`
+                    ? `<div style="font-size:0.62em;color:#999;white-space:nowrap;text-align:center;">${dt}</div>`
                     : '';
-                return `<td style="padding:3px 6px;font-size:0.78rem;text-align:center;${clr}">${val}${unit}${dtLine}</td>`;
+                return `<td style="padding:3px 6px;font-size:0.78rem;text-align:center;${clr}"><div>${val}${unit}</div>${dtLine}</td>`;
             };
 
             const sectionHeader = (label, color) =>
