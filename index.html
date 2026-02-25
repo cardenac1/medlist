@@ -6575,104 +6575,127 @@ saveToLocalStorage();
                 return;
             }
 
-            // Collect I/O data from raw import text
-            const ioDataTbl = lastImportedData ? extractIntakeOutputData(lastImportedData) : null;
+            // ── EXTRACT VITALS WITH TIMESTAMPS directly from raw import text ──
+            // (stored labData may lack per-reading timestamps)
+            const vitalReadings = {}; // { temp: [{value, date}], hr: [...], ... }
+            if (lastImportedData) {
+                const vitalPatterns = [
+                    { key: 'temp',  regex: /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseFloat },
+                    { key: 'hr',    regex: /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseInt },
+                    { key: 'o2',    regex: /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseInt }
+                ];
+                vitalPatterns.forEach(({ key, regex, parse }) => {
+                    let m;
+                    vitalReadings[key] = [];
+                    while ((m = regex.exec(lastImportedData)) !== null) {
+                        vitalReadings[key].push({ value: parse(m[1]), date: m[2], time: m[3] });
+                    }
+                });
+                // SBP / DBP — separate patterns, match by timestamp
+                const sbpMap = {}, dbpMap = {};
+                const sbpRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                const dbpRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                let m;
+                while ((m = sbpRe.exec(lastImportedData)) !== null) sbpMap[`${m[2]} ${m[3]}`] = { value: parseInt(m[1]), date: m[2], time: m[3] };
+                while ((m = dbpRe.exec(lastImportedData)) !== null) dbpMap[`${m[2]} ${m[3]}`] = { value: parseInt(m[1]), date: m[2], time: m[3] };
+                vitalReadings['sbp'] = Object.values(sbpMap);
+                vitalReadings['dbp'] = Object.values(dbpMap);
+            }
 
-            // Helper to get short date/time string for a lab/vital key at index
-            const getDateTimeStr = (key, idx) => {
+            // ── EXTRACT I/O directly from raw import text ──
+            let ioDataTbl = null;
+            if (lastImportedData) {
+                try { ioDataTbl = extractIntakeOutputData(lastImportedData); } catch (e) { console.error('I/O extraction error:', e); }
+            }
+
+            // ── FORMAT HELPERS ──
+            const shortDT = (dateStr, timeStr) => {
+                if (!dateStr) return '';
+                const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+                const tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
+                const d = dm ? dm[1] : dateStr;
+                const t = tm ? tm[1] : '';
+                return t ? `${d} ${t}` : d;
+            };
+
+            const ioDateShort = (dtStr) => {
+                if (!dtStr) return '';
+                const m2 = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
+                return m2 ? `${m2[1]} ${m2[2]}` : dtStr.substring(0, 11);
+            };
+
+            // Lab date/time helper (uses stored labData dates)
+            const getLabDateTimeStr = (key, idx) => {
                 let dates = labData.datesArray?.[key] || [];
                 let times = labData.timesArray?.[key] || [];
                 if (dates.length === 0 && labData.dates?.[key]) dates = [labData.dates[key]];
                 if (times.length === 0 && labData.times?.[key]) times = [labData.times[key]];
-                const d = dates[idx] || '';
-                const t = times[idx] || times[0] || '';
-                if (!d) return '';
-                const dateMatch = d.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?/);
-                const shortDate = dateMatch ? dateMatch[1] : d;
-                const timeMatch = t.match(/(\d{1,2}:\d{2})/);
-                const shortTime = timeMatch ? timeMatch[1] : '';
-                return shortTime ? `${shortDate} ${shortTime}` : shortDate;
+                return shortDT(dates[idx] || '', times[idx] || times[0] || '');
             };
 
-            // Shorten an I/O dateTimeStr to MM/DD HH:MM format
-            const ioDateShort = (dtStr) => {
-                if (!dtStr) return '';
-                // "02/25/2026 00:48" → "02/25 00:48"
-                const m = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
-                return m ? `${m[1]} ${m[2]}` : dtStr.substring(0, 11);
-            };
-
-            // Compute maxValues for labs and vitals
-            const maxLabVital = Math.max(
-                0,
-                ...Object.values(labData.labs || {}).map(arr => arr ? arr.length : 0),
-                ...Object.values(labData.vitals || {}).map(arr => arr ? arr.length : 0)
-            );
-
-            // Compute max I/O entries across all types
+            // ── COMPUTE MAX COLUMNS ──
+            const maxLabs = Math.max(0, ...Object.values(labData.labs || {}).map(a => a ? a.length : 0));
+            const maxVitals = Math.max(0, ...Object.values(vitalReadings).map(a => a.length));
             let maxIO = 0;
             if (ioDataTbl) {
-                const allIOEntries = [
+                const ioArrays = [
                     ...Object.values(ioDataTbl.intakes),
-                    ioDataTbl.outputs.urine,
-                    ...Object.values(ioDataTbl.outputs.drains),
-                    ...Object.values(ioDataTbl.outputs.other),
+                    ioDataTbl.outputs.urine || [],
+                    ...Object.values(ioDataTbl.outputs.drains || {}),
+                    ...Object.values(ioDataTbl.outputs.other || {}),
                     ...Object.values(ioDataTbl.counts || {})
                 ];
-                maxIO = Math.max(0, ...allIOEntries.map(e => e ? e.length : 0));
+                maxIO = Math.max(0, ...ioArrays.map(a => a ? a.length : 0));
             }
+            const maxValues = Math.max(maxLabs, maxVitals, maxIO, 1);
 
-            const maxValues = Math.max(maxLabVital, maxIO);
-
-            // Build a data cell — value and date on one line, no wrapping
+            // ── CELL BUILDER — value on top, date below on its own line ──
             const dataCell = (val, dt, abnormal = false, unit = '') => {
-                const bgStyle = abnormal
+                const clr = abnormal
                     ? 'background:rgba(239,68,68,0.25);color:#ff6b6b;font-weight:700;'
                     : 'color:#6ee7b7;';
-                const dtSpan = dt
-                    ? ` <span style="font-size:0.65em;color:#aaa;font-style:italic;">${dt}</span>`
+                const dtLine = dt
+                    ? `<br><span style="font-size:0.62em;color:#999;white-space:nowrap;">${dt}</span>`
                     : '';
-                return `<td style="padding:2px 6px;font-size:0.76rem;white-space:nowrap;${bgStyle}">${val}${unit}${dtSpan}</td>`;
+                return `<td style="padding:3px 6px;font-size:0.78rem;text-align:center;${clr}">${val}${unit}${dtLine}</td>`;
             };
 
-            // Section header spanning all columns
             const sectionHeader = (label, color) =>
                 `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:3px 8px;text-transform:uppercase;">${label}</td></tr>`;
 
+            // ── TABLE SHELL ──
             let tableHTML = `<style>
-              #tableContainer { overflow-x: auto; }
-              #tableContainer table { border-collapse: collapse; font-family: monospace; white-space: nowrap; }
-              #tableContainer th { background: #1e293b; color: #94a3b8; font-size: 0.68rem; padding: 3px 8px; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
-              #tableContainer td:first-child { color: #cbd5e1; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; white-space: nowrap; min-width: 72px; position: sticky; left: 0; background: #0a0a14; z-index: 1; }
+              #tableContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+              #tableContainer table { border-collapse: collapse; font-family: 'JetBrains Mono', monospace; }
+              #tableContainer th { background: #1e293b; color: #94a3b8; font-size: 0.66rem; padding: 3px 8px; text-align: center; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+              #tableContainer td:first-child { color: #cbd5e1; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; white-space: nowrap; min-width: 68px; position: sticky; left: 0; background: #0a0a14; z-index: 1; border-right: 1px solid #222; }
               #tableContainer tr:hover td { background-color: rgba(255,255,255,0.04); }
               #tableContainer tr:hover td:first-child { background: #0f0f1e; }
             </style>`;
-            tableHTML += `<table>`;
-            tableHTML += `<tr><th>Parameter</th>`;
-            for (let i = 0; i < maxValues; i++) {
-                tableHTML += `<th>#${i + 1}</th>`;
-            }
+            tableHTML += `<table><tr><th style="text-align:left;position:sticky;left:0;z-index:3;background:#1e293b;">Parameter</th>`;
+            for (let i = 0; i < maxValues; i++) tableHTML += `<th>#${i + 1}</th>`;
             tableHTML += `</tr>`;
 
-            // ── VITALS ──────────────────────────────────────────────
-            if (labData.vitals) {
+            // ── VITALS (extracted from raw text with timestamps) ──
+            const vitalDefs = [
+                { key: 'temp', label: 'Temp', unit: '°C', lo: 35, hi: 38 },
+                { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60, hi: 100 },
+                { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90, hi: 180 },
+                { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60, hi: 120 },
+                { key: 'o2',   label: 'O2',   unit: '%',    lo: 94, hi: 100 }
+            ];
+            const hasAnyVitals = vitalDefs.some(d => vitalReadings[d.key] && vitalReadings[d.key].length > 0);
+            if (hasAnyVitals) {
                 tableHTML += sectionHeader('Vitals', '#0f4c81');
-                const vitalDefs = [
-                    { key: 'temp', label: 'Temp', unit: '°C', lo: 35, hi: 38 },
-                    { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60, hi: 100 },
-                    { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90, hi: 180 },
-                    { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60, hi: 120 },
-                    { key: 'o2',   label: 'O2',   unit: '%',    lo: 94, hi: 100 }
-                ];
                 vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
-                    const arr = labData.vitals[key];
-                    if (!arr || arr.length === 0) return;
+                    const readings = vitalReadings[key];
+                    if (!readings || readings.length === 0) return;
                     tableHTML += `<tr><td>${label}</td>`;
                     for (let i = 0; i < maxValues; i++) {
-                        if (i < arr.length) {
-                            const v = arr[i];
-                            const dt = getDateTimeStr(key, i);
-                            tableHTML += dataCell(v, dt, v < lo || v > hi, unit);
+                        if (i < readings.length) {
+                            const r = readings[i];
+                            const dt = shortDT(r.date, r.time);
+                            tableHTML += dataCell(r.value, dt, r.value < lo || r.value > hi, unit);
                         } else {
                             tableHTML += `<td></td>`;
                         }
@@ -6681,81 +6704,60 @@ saveToLocalStorage();
                 });
             }
 
-            // ── LABS ─────────────────────────────────────────────────
+            // ── LABS ──
             const labSections = [
-                {
-                    color: '#1a5c2b', label: 'CBC',
-                    labs: [
-                        { key: 'wbc',   label: 'WBC',    lo: 4.5,  hi: 11 },
-                        { key: 'hgb',   label: 'Hgb',    lo: 7,    hi: 16 },
-                        { key: 'hct',   label: 'Hct',    lo: 21,   hi: 51 },
-                        { key: 'plt',   label: 'Plt',    lo: 150,  hi: 400 },
-                        { key: 'neut',  label: 'Neut%',  lo: 40,   hi: 80 },
-                        { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40 }
-                    ]
-                },
-                {
-                    color: '#1e3a5f', label: 'BMP',
-                    labs: [
-                        { key: 'na',  label: 'Na',  lo: 135,  hi: 145 },
-                        { key: 'k',   label: 'K',   lo: 4.0,  hi: 5.0 },
-                        { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106 },
-                        { key: 'co2', label: 'CO2', lo: 23,   hi: 29 },
-                        { key: 'bun', label: 'BUN', lo: 7,    hi: 20 },
-                        { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0 },
-                        { key: 'glu', label: 'Glu', lo: 70,   hi: 100 }
-                    ]
-                },
-                {
-                    color: '#4a1d72', label: 'Electrolytes',
-                    labs: [
-                        { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3 },
-                        { key: 'totalCa', label: 'tCa',  lo: 8.5, hi: 10.2 },
-                        { key: 'mg',      label: 'Mg',   lo: 1.7, hi: 2.2 },
-                        { key: 'phos',    label: 'Phos', lo: 2.5, hi: 4.5 }
-                    ]
-                },
-                {
-                    color: '#7c3009', label: 'LFTs',
-                    labs: [
-                        { key: 'ast',     label: 'AST',    lo: 10,  hi: 40 },
-                        { key: 'alt',     label: 'ALT',    lo: 10,  hi: 40 },
-                        { key: 'tbil',    label: 'TBil',   lo: 0.1, hi: 1.2 },
-                        { key: 'dbil',    label: 'DBil',   lo: 0,   hi: 0.3 },
-                        { key: 'alk',     label: 'Alk',    lo: 30,  hi: 120 },
-                        { key: 'ggt',     label: 'GGT',    lo: 9,   hi: 48 },
-                        { key: 'albumin', label: 'Albumin',lo: 3.5, hi: 5.5 }
-                    ]
-                },
-                {
-                    color: '#5c1a1a', label: 'Coags',
-                    labs: [
-                        { key: 'pt',  label: 'PT',  lo: 11,  hi: 13.5 },
-                        { key: 'ptt', label: 'PTT', lo: 25,  hi: 35 },
-                        { key: 'inr', label: 'INR', lo: 0.8, hi: 1.1 },
-                        { key: 'fib', label: 'Fib', lo: 200, hi: 400 }
-                    ]
-                },
-                {
-                    color: '#1a4a4a', label: 'ABG',
-                    labs: [
-                        { key: 'ph',      label: 'pH',     lo: 7.35, hi: 7.45 },
-                        { key: 'pco2',    label: 'pCO2',   lo: 35,   hi: 45 },
-                        { key: 'po2',     label: 'pO2',    lo: 80,   hi: 100 },
-                        { key: 'bicarb',  label: 'HCO3',   lo: 22,   hi: 28 },
-                        { key: 'lactate', label: 'Lactate',lo: 0.5,  hi: 2.0 }
-                    ]
-                },
-                {
-                    color: '#3d3000', label: 'Misc',
-                    labs: [
-                        { key: 'trop',         label: 'Trop',    lo: 0,  hi: 0.04 },
-                        { key: 'procalcitonin',label: 'PCT',     lo: 0,  hi: 0.25 },
-                        { key: 'amylase',      label: 'Amylase', lo: 30, hi: 110 },
-                        { key: 'lipase',       label: 'Lipase',  lo: 30, hi: 140 },
-                        { key: 'prealbumin',   label: 'PreAlb',  lo: 15, hi: 36 }
-                    ]
-                }
+                { color: '#1a5c2b', label: 'CBC', labs: [
+                    { key: 'wbc',   label: 'WBC',    lo: 4.5,  hi: 11 },
+                    { key: 'hgb',   label: 'Hgb',    lo: 7,    hi: 16 },
+                    { key: 'hct',   label: 'Hct',    lo: 21,   hi: 51 },
+                    { key: 'plt',   label: 'Plt',    lo: 150,  hi: 400 },
+                    { key: 'neut',  label: 'Neut%',  lo: 40,   hi: 80 },
+                    { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40 }
+                ]},
+                { color: '#1e3a5f', label: 'BMP', labs: [
+                    { key: 'na',  label: 'Na',  lo: 135,  hi: 145 },
+                    { key: 'k',   label: 'K',   lo: 4.0,  hi: 5.0 },
+                    { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106 },
+                    { key: 'co2', label: 'CO2', lo: 23,   hi: 29 },
+                    { key: 'bun', label: 'BUN', lo: 7,    hi: 20 },
+                    { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0 },
+                    { key: 'glu', label: 'Glu', lo: 70,   hi: 100 }
+                ]},
+                { color: '#4a1d72', label: 'Electrolytes', labs: [
+                    { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3 },
+                    { key: 'totalCa', label: 'tCa',  lo: 8.5, hi: 10.2 },
+                    { key: 'mg',      label: 'Mg',   lo: 1.7, hi: 2.2 },
+                    { key: 'phos',    label: 'Phos', lo: 2.5, hi: 4.5 }
+                ]},
+                { color: '#7c3009', label: 'LFTs', labs: [
+                    { key: 'ast',     label: 'AST',     lo: 10,  hi: 40 },
+                    { key: 'alt',     label: 'ALT',     lo: 10,  hi: 40 },
+                    { key: 'tbil',    label: 'TBil',    lo: 0.1, hi: 1.2 },
+                    { key: 'dbil',    label: 'DBil',    lo: 0,   hi: 0.3 },
+                    { key: 'alk',     label: 'Alk',     lo: 30,  hi: 120 },
+                    { key: 'ggt',     label: 'GGT',     lo: 9,   hi: 48 },
+                    { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5 }
+                ]},
+                { color: '#5c1a1a', label: 'Coags', labs: [
+                    { key: 'pt',  label: 'PT',  lo: 11,  hi: 13.5 },
+                    { key: 'ptt', label: 'PTT', lo: 25,  hi: 35 },
+                    { key: 'inr', label: 'INR', lo: 0.8, hi: 1.1 },
+                    { key: 'fib', label: 'Fib', lo: 200, hi: 400 }
+                ]},
+                { color: '#1a4a4a', label: 'ABG', labs: [
+                    { key: 'ph',      label: 'pH',      lo: 7.35, hi: 7.45 },
+                    { key: 'pco2',    label: 'pCO2',    lo: 35,   hi: 45 },
+                    { key: 'po2',     label: 'pO2',     lo: 80,   hi: 100 },
+                    { key: 'bicarb',  label: 'HCO3',    lo: 22,   hi: 28 },
+                    { key: 'lactate', label: 'Lactate', lo: 0.5,  hi: 2.0 }
+                ]},
+                { color: '#3d3000', label: 'Misc', labs: [
+                    { key: 'trop',          label: 'Trop',    lo: 0,  hi: 0.04 },
+                    { key: 'procalcitonin', label: 'PCT',     lo: 0,  hi: 0.25 },
+                    { key: 'amylase',       label: 'Amylase', lo: 30, hi: 110 },
+                    { key: 'lipase',        label: 'Lipase',  lo: 30, hi: 140 },
+                    { key: 'prealbumin',    label: 'PreAlb',  lo: 15, hi: 36 }
+                ]}
             ];
 
             if (labData.labs) {
@@ -6770,9 +6772,9 @@ saveToLocalStorage();
                         for (let i = 0; i < maxValues; i++) {
                             if (i < arr.length) {
                                 const v = arr[i];
-                                let dt = getDateTimeStr(key, i);
+                                let dt = getLabDateTimeStr(key, i);
                                 if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
-                                    for (const alias of KEY_ALIASES[key]) { dt = getDateTimeStr(alias, i); if (dt) break; }
+                                    for (const alias of KEY_ALIASES[key]) { dt = getLabDateTimeStr(alias, i); if (dt) break; }
                                 }
                                 tableHTML += dataCell(v, dt, !isNaN(v) && (v < lo || v > hi));
                             } else {
@@ -6784,19 +6786,18 @@ saveToLocalStorage();
                 });
             }
 
-            // ── INTAKE / OUTPUT ──────────────────────────────────────
+            // ── INTAKE / OUTPUT (extracted from raw text) ──
             if (ioDataTbl) {
-                // Build an I/O row: each individual entry as its own column, sorted newest first
                 const ioRow = (label, entries, unit, abnormalFn) => {
                     if (!entries || entries.length === 0) return '';
-                    const sorted = [...entries].sort((a, b) => b.dateTime - a.dateTime);
+                    const sorted = [...entries].sort((a, b) => (b.dateTime || 0) - (a.dateTime || 0));
                     let row = `<tr><td>${label}</td>`;
                     for (let i = 0; i < maxValues; i++) {
                         if (i < sorted.length) {
                             const entry = sorted[i];
                             const val = entry.volume !== undefined ? entry.volume : entry.count;
                             const abn = abnormalFn ? abnormalFn(val) : false;
-                            const dt = ioDateShort(entry.dateTimeStr);
+                            const dt = ioDateShort(entry.dateTimeStr || '');
                             row += dataCell(val, dt, abn, unit);
                         } else {
                             row += `<td></td>`;
@@ -6806,35 +6807,51 @@ saveToLocalStorage();
                     return row;
                 };
 
-                const hasIntakes = Object.values(ioDataTbl.intakes).some(e => e && e.length > 0);
-                const hasOutputs = ioDataTbl.outputs.urine.length > 0 ||
-                    Object.values(ioDataTbl.outputs.drains).some(e => e && e.length > 0) ||
-                    Object.values(ioDataTbl.outputs.other).some(e => e && e.length > 0);
-                const hasCounts = Object.values(ioDataTbl.counts || {}).some(e => e && e.length > 0);
+                const hasIntakes = Object.values(ioDataTbl.intakes || {}).some(e => e && e.length > 0);
+                const hasUrine = ioDataTbl.outputs && ioDataTbl.outputs.urine && ioDataTbl.outputs.urine.length > 0;
+                const hasDrains = ioDataTbl.outputs && ioDataTbl.outputs.drains && Object.values(ioDataTbl.outputs.drains).some(e => e && e.length > 0);
+                const hasOther = ioDataTbl.outputs && ioDataTbl.outputs.other && Object.values(ioDataTbl.outputs.other).some(e => e && e.length > 0);
+                const hasOutputs = hasUrine || hasDrains || hasOther;
+                const hasCounts = ioDataTbl.counts && Object.values(ioDataTbl.counts).some(e => e && e.length > 0);
 
                 if (hasIntakes) {
                     tableHTML += sectionHeader('Intake', '#155724');
                     Object.entries(ioDataTbl.intakes).forEach(([type, entries]) => {
-                        tableHTML += ioRow(type.length > 24 ? type.substring(0, 24) + '…' : type, entries, ' mL', null);
+                        if (entries && entries.length > 0) {
+                            const lbl = type.length > 28 ? type.substring(0, 28) + '…' : type;
+                            tableHTML += ioRow(lbl, entries, ' mL', null);
+                        }
                     });
                 }
 
                 if (hasOutputs) {
                     tableHTML += sectionHeader('Output', '#6b1a0f');
-                    tableHTML += ioRow('Urine', ioDataTbl.outputs.urine, ' mL', null);
-                    Object.entries(ioDataTbl.outputs.drains).forEach(([type, entries]) => {
-                        const cleanType = type.replace(/^Other:\s*/i, '');
-                        tableHTML += ioRow(cleanType.length > 24 ? cleanType.substring(0, 24) + '…' : cleanType, entries, ' mL', v => v > 100);
-                    });
-                    Object.entries(ioDataTbl.outputs.other).forEach(([type, entries]) => {
-                        tableHTML += ioRow(type.length > 24 ? type.substring(0, 24) + '…' : type, entries, ' mL', null);
-                    });
+                    if (hasUrine) tableHTML += ioRow('Urine', ioDataTbl.outputs.urine, ' mL', null);
+                    if (hasDrains) {
+                        Object.entries(ioDataTbl.outputs.drains).forEach(([type, entries]) => {
+                            if (entries && entries.length > 0) {
+                                const cleanType = type.replace(/^Other:\s*/i, '');
+                                const lbl = cleanType.length > 28 ? cleanType.substring(0, 28) + '…' : cleanType;
+                                tableHTML += ioRow(lbl, entries, ' mL', v => v > 100);
+                            }
+                        });
+                    }
+                    if (hasOther) {
+                        Object.entries(ioDataTbl.outputs.other).forEach(([type, entries]) => {
+                            if (entries && entries.length > 0) {
+                                const lbl = type.length > 28 ? type.substring(0, 28) + '…' : type;
+                                tableHTML += ioRow(lbl, entries, ' mL', null);
+                            }
+                        });
+                    }
                 }
 
                 if (hasCounts) {
                     tableHTML += sectionHeader('Counts', '#4a3500');
-                    Object.entries(ioDataTbl.counts || {}).forEach(([type, entries]) => {
-                        tableHTML += ioRow(type, entries, '', v => type.toLowerCase().includes('stool') && v > 3);
+                    Object.entries(ioDataTbl.counts).forEach(([type, entries]) => {
+                        if (entries && entries.length > 0) {
+                            tableHTML += ioRow(type, entries, '', v => type.toLowerCase().includes('stool') && v > 3);
+                        }
                     });
                 }
             }
