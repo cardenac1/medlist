@@ -5030,12 +5030,8 @@ function switchView(mode) {
                 const cardBody = document.createElement('div');
                 cardBody.className = 'dashboard-card-body';
 
-                // Collapse all cards by default except To do and Priority
-                const startExpanded = (header === 'To do' || header === 'Priority');
-                if (!startExpanded) {
-                    cardBody.style.display = 'none';
-                    collapseIcon.style.transform = 'rotate(-90deg)';
-                }
+                // All cards start expanded
+                const startExpanded = true;
 
                 if (header === 'Priority') {
                     // Visual priority selector button
