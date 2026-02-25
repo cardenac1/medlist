@@ -6578,18 +6578,13 @@ saveToLocalStorage();
             // Collect I/O data from raw import text
             const ioDataTbl = lastImportedData ? extractIntakeOutputData(lastImportedData) : null;
 
-            const maxValues = Math.max(
-                ...Object.values(labData.labs || {}).map(arr => arr ? arr.length : 0),
-                ...Object.values(labData.vitals || {}).map(arr => arr ? arr.length : 0)
-            );
-
             // Helper to get short date/time string for a lab/vital key at index
             const getDateTimeStr = (key, idx) => {
                 let dates = labData.datesArray?.[key] || [];
                 let times = labData.timesArray?.[key] || [];
                 if (dates.length === 0 && labData.dates?.[key]) dates = [labData.dates[key]];
                 if (times.length === 0 && labData.times?.[key]) times = [labData.times[key]];
-                const d = dates[idx] || dates[0] || '';
+                const d = dates[idx] || '';
                 const t = times[idx] || times[0] || '';
                 if (!d) return '';
                 const dateMatch = d.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?/);
@@ -6599,31 +6594,61 @@ saveToLocalStorage();
                 return shortTime ? `${shortDate} ${shortTime}` : shortDate;
             };
 
-            // Helper to build a data cell with optional date stamp
-            const dataCell = (val, dt, abnormal = false, unit = '') => {
-                const style = abnormal
-                    ? 'background:rgba(239,68,68,0.25);color:#ff6b6b;font-weight:700;'
-                    : 'color:#6ee7b7;';
-                const dtHtml = dt ? `<br><i style="font-size:0.6em;color:#999;">${dt}</i>` : '';
-                return `<td style="padding:2px 5px;font-size:0.78rem;text-align:center;${style}">${val}${unit}${dtHtml}</td>`;
+            // Shorten an I/O dateTimeStr to MM/DD HH:MM format
+            const ioDateShort = (dtStr) => {
+                if (!dtStr) return '';
+                // "02/25/2026 00:48" → "02/25 00:48"
+                const m = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
+                return m ? `${m[1]} ${m[2]}` : dtStr.substring(0, 11);
             };
 
-            // Helper for empty filler cells
-            const emptyCells = (n) => `<td style="padding:2px 5px;" colspan="${n}"></td>`;
+            // Compute maxValues for labs and vitals
+            const maxLabVital = Math.max(
+                0,
+                ...Object.values(labData.labs || {}).map(arr => arr ? arr.length : 0),
+                ...Object.values(labData.vitals || {}).map(arr => arr ? arr.length : 0)
+            );
 
-            // Section header row
+            // Compute max I/O entries across all types
+            let maxIO = 0;
+            if (ioDataTbl) {
+                const allIOEntries = [
+                    ...Object.values(ioDataTbl.intakes),
+                    ioDataTbl.outputs.urine,
+                    ...Object.values(ioDataTbl.outputs.drains),
+                    ...Object.values(ioDataTbl.outputs.other),
+                    ...Object.values(ioDataTbl.counts || {})
+                ];
+                maxIO = Math.max(0, ...allIOEntries.map(e => e ? e.length : 0));
+            }
+
+            const maxValues = Math.max(maxLabVital, maxIO);
+
+            // Build a data cell — value and date on one line, no wrapping
+            const dataCell = (val, dt, abnormal = false, unit = '') => {
+                const bgStyle = abnormal
+                    ? 'background:rgba(239,68,68,0.25);color:#ff6b6b;font-weight:700;'
+                    : 'color:#6ee7b7;';
+                const dtSpan = dt
+                    ? ` <span style="font-size:0.65em;color:#aaa;font-style:italic;">${dt}</span>`
+                    : '';
+                return `<td style="padding:2px 6px;font-size:0.76rem;white-space:nowrap;${bgStyle}">${val}${unit}${dtSpan}</td>`;
+            };
+
+            // Section header spanning all columns
             const sectionHeader = (label, color) =>
-                `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;padding:3px 6px;text-transform:uppercase;">${label}</td></tr>`;
+                `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:3px 8px;text-transform:uppercase;">${label}</td></tr>`;
 
             let tableHTML = `<style>
-              #tableContainer table { border-collapse: collapse; width: 100%; font-family: monospace; }
-              #tableContainer th { background: #1e293b; color: #94a3b8; font-size: 0.68rem; padding: 3px 5px; text-align: center; position: sticky; top: 0; z-index: 2; }
-              #tableContainer th:first-child { text-align: left; }
-              #tableContainer td:first-child { color: #cbd5e1; font-size: 0.72rem; font-weight: 600; padding: 2px 6px; white-space: nowrap; }
+              #tableContainer { overflow-x: auto; }
+              #tableContainer table { border-collapse: collapse; font-family: monospace; white-space: nowrap; }
+              #tableContainer th { background: #1e293b; color: #94a3b8; font-size: 0.68rem; padding: 3px 8px; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+              #tableContainer td:first-child { color: #cbd5e1; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; white-space: nowrap; min-width: 72px; position: sticky; left: 0; background: #0a0a14; z-index: 1; }
               #tableContainer tr:hover td { background-color: rgba(255,255,255,0.04); }
+              #tableContainer tr:hover td:first-child { background: #0f0f1e; }
             </style>`;
             tableHTML += `<table>`;
-            tableHTML += `<tr><th style="text-align:left;">Parameter</th>`;
+            tableHTML += `<tr><th>Parameter</th>`;
             for (let i = 0; i < maxValues; i++) {
                 tableHTML += `<th>#${i + 1}</th>`;
             }
@@ -6634,10 +6659,10 @@ saveToLocalStorage();
                 tableHTML += sectionHeader('Vitals', '#0f4c81');
                 const vitalDefs = [
                     { key: 'temp', label: 'Temp', unit: '°C', lo: 35, hi: 38 },
-                    { key: 'hr',   label: 'HR',   unit: '',   lo: 60, hi: 100 },
-                    { key: 'sbp',  label: 'SBP',  unit: '',   lo: 90, hi: 180 },
-                    { key: 'dbp',  label: 'DBP',  unit: '',   lo: 60, hi: 120 },
-                    { key: 'o2',   label: 'O2%',  unit: '%',  lo: 94, hi: 100 }
+                    { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60, hi: 100 },
+                    { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90, hi: 180 },
+                    { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60, hi: 120 },
+                    { key: 'o2',   label: 'O2',   unit: '%',    lo: 94, hi: 100 }
                 ];
                 vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
                     const arr = labData.vitals[key];
@@ -6647,8 +6672,7 @@ saveToLocalStorage();
                         if (i < arr.length) {
                             const v = arr[i];
                             const dt = getDateTimeStr(key, i);
-                            const abn = v < lo || v > hi;
-                            tableHTML += dataCell(v, dt, abn, unit);
+                            tableHTML += dataCell(v, dt, v < lo || v > hi, unit);
                         } else {
                             tableHTML += `<td></td>`;
                         }
@@ -6662,52 +6686,52 @@ saveToLocalStorage();
                 {
                     color: '#1a5c2b', label: 'CBC',
                     labs: [
-                        { key: 'wbc', label: 'WBC', lo: 4.5, hi: 11 },
-                        { key: 'hgb', label: 'Hgb', lo: 7, hi: 16 },
-                        { key: 'hct', label: 'Hct', lo: 21, hi: 51 },
-                        { key: 'plt', label: 'Plt', lo: 150, hi: 400 },
-                        { key: 'neut', label: 'Neut%', lo: 40, hi: 80 },
-                        { key: 'lymph', label: 'Lymph%', lo: 20, hi: 40 }
+                        { key: 'wbc',   label: 'WBC',    lo: 4.5,  hi: 11 },
+                        { key: 'hgb',   label: 'Hgb',    lo: 7,    hi: 16 },
+                        { key: 'hct',   label: 'Hct',    lo: 21,   hi: 51 },
+                        { key: 'plt',   label: 'Plt',    lo: 150,  hi: 400 },
+                        { key: 'neut',  label: 'Neut%',  lo: 40,   hi: 80 },
+                        { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40 }
                     ]
                 },
                 {
                     color: '#1e3a5f', label: 'BMP',
                     labs: [
-                        { key: 'na', label: 'Na', lo: 135, hi: 145 },
-                        { key: 'k', label: 'K', lo: 4.0, hi: 5.0 },
-                        { key: 'cl', label: 'Cl', lo: 96, hi: 106 },
-                        { key: 'co2', label: 'CO2', lo: 23, hi: 29 },
-                        { key: 'bun', label: 'BUN', lo: 7, hi: 20 },
-                        { key: 'cr', label: 'Cr', lo: 0.4, hi: 1.0 },
-                        { key: 'glu', label: 'Glu', lo: 70, hi: 100 }
+                        { key: 'na',  label: 'Na',  lo: 135,  hi: 145 },
+                        { key: 'k',   label: 'K',   lo: 4.0,  hi: 5.0 },
+                        { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106 },
+                        { key: 'co2', label: 'CO2', lo: 23,   hi: 29 },
+                        { key: 'bun', label: 'BUN', lo: 7,    hi: 20 },
+                        { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0 },
+                        { key: 'glu', label: 'Glu', lo: 70,   hi: 100 }
                     ]
                 },
                 {
                     color: '#4a1d72', label: 'Electrolytes',
                     labs: [
-                        { key: 'ca', label: 'iCa', lo: 4.5, hi: 5.3 },
-                        { key: 'totalCa', label: 'tCa', lo: 8.5, hi: 10.2 },
-                        { key: 'mg', label: 'Mg', lo: 1.7, hi: 2.2 },
-                        { key: 'phos', label: 'Phos', lo: 2.5, hi: 4.5 }
+                        { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3 },
+                        { key: 'totalCa', label: 'tCa',  lo: 8.5, hi: 10.2 },
+                        { key: 'mg',      label: 'Mg',   lo: 1.7, hi: 2.2 },
+                        { key: 'phos',    label: 'Phos', lo: 2.5, hi: 4.5 }
                     ]
                 },
                 {
                     color: '#7c3009', label: 'LFTs',
                     labs: [
-                        { key: 'ast', label: 'AST', lo: 10, hi: 40 },
-                        { key: 'alt', label: 'ALT', lo: 10, hi: 40 },
-                        { key: 'tbil', label: 'TBil', lo: 0.1, hi: 1.2 },
-                        { key: 'dbil', label: 'DBil', lo: 0, hi: 0.3 },
-                        { key: 'alk', label: 'Alk', lo: 30, hi: 120 },
-                        { key: 'ggt', label: 'GGT', lo: 9, hi: 48 },
-                        { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5 }
+                        { key: 'ast',     label: 'AST',    lo: 10,  hi: 40 },
+                        { key: 'alt',     label: 'ALT',    lo: 10,  hi: 40 },
+                        { key: 'tbil',    label: 'TBil',   lo: 0.1, hi: 1.2 },
+                        { key: 'dbil',    label: 'DBil',   lo: 0,   hi: 0.3 },
+                        { key: 'alk',     label: 'Alk',    lo: 30,  hi: 120 },
+                        { key: 'ggt',     label: 'GGT',    lo: 9,   hi: 48 },
+                        { key: 'albumin', label: 'Albumin',lo: 3.5, hi: 5.5 }
                     ]
                 },
                 {
                     color: '#5c1a1a', label: 'Coags',
                     labs: [
-                        { key: 'pt', label: 'PT', lo: 11, hi: 13.5 },
-                        { key: 'ptt', label: 'PTT', lo: 25, hi: 35 },
+                        { key: 'pt',  label: 'PT',  lo: 11,  hi: 13.5 },
+                        { key: 'ptt', label: 'PTT', lo: 25,  hi: 35 },
                         { key: 'inr', label: 'INR', lo: 0.8, hi: 1.1 },
                         { key: 'fib', label: 'Fib', lo: 200, hi: 400 }
                     ]
@@ -6715,21 +6739,21 @@ saveToLocalStorage();
                 {
                     color: '#1a4a4a', label: 'ABG',
                     labs: [
-                        { key: 'ph', label: 'pH', lo: 7.35, hi: 7.45 },
-                        { key: 'pco2', label: 'pCO2', lo: 35, hi: 45 },
-                        { key: 'po2', label: 'pO2', lo: 80, hi: 100 },
-                        { key: 'bicarb', label: 'HCO3', lo: 22, hi: 28 },
-                        { key: 'lactate', label: 'Lactate', lo: 0.5, hi: 2.0 }
+                        { key: 'ph',      label: 'pH',     lo: 7.35, hi: 7.45 },
+                        { key: 'pco2',    label: 'pCO2',   lo: 35,   hi: 45 },
+                        { key: 'po2',     label: 'pO2',    lo: 80,   hi: 100 },
+                        { key: 'bicarb',  label: 'HCO3',   lo: 22,   hi: 28 },
+                        { key: 'lactate', label: 'Lactate',lo: 0.5,  hi: 2.0 }
                     ]
                 },
                 {
                     color: '#3d3000', label: 'Misc',
                     labs: [
-                        { key: 'trop', label: 'Trop', lo: 0, hi: 0.04 },
-                        { key: 'procalcitonin', label: 'PCT', lo: 0, hi: 0.25 },
-                        { key: 'amylase', label: 'Amylase', lo: 30, hi: 110 },
-                        { key: 'lipase', label: 'Lipase', lo: 30, hi: 140 },
-                        { key: 'prealbumin', label: 'PreAlb', lo: 15, hi: 36 }
+                        { key: 'trop',         label: 'Trop',    lo: 0,  hi: 0.04 },
+                        { key: 'procalcitonin',label: 'PCT',     lo: 0,  hi: 0.25 },
+                        { key: 'amylase',      label: 'Amylase', lo: 30, hi: 110 },
+                        { key: 'lipase',       label: 'Lipase',  lo: 30, hi: 140 },
+                        { key: 'prealbumin',   label: 'PreAlb',  lo: 15, hi: 36 }
                     ]
                 }
             ];
@@ -6750,8 +6774,7 @@ saveToLocalStorage();
                                 if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
                                     for (const alias of KEY_ALIASES[key]) { dt = getDateTimeStr(alias, i); if (dt) break; }
                                 }
-                                const abn = !isNaN(v) && (v < lo || v > hi);
-                                tableHTML += dataCell(v, dt, abn);
+                                tableHTML += dataCell(v, dt, !isNaN(v) && (v < lo || v > hi));
                             } else {
                                 tableHTML += `<td></td>`;
                             }
@@ -6763,56 +6786,56 @@ saveToLocalStorage();
 
             // ── INTAKE / OUTPUT ──────────────────────────────────────
             if (ioDataTbl) {
-                const elapsedHours = ioDataTbl.elapsedHours || 24;
-
-                // Helper: build an I/O row from an array of entries
+                // Build an I/O row: each individual entry as its own column, sorted newest first
                 const ioRow = (label, entries, unit, abnormalFn) => {
                     if (!entries || entries.length === 0) return '';
                     const sorted = [...entries].sort((a, b) => b.dateTime - a.dateTime);
                     let row = `<tr><td>${label}</td>`;
-                    sorted.forEach(entry => {
-                        const val = entry.volume !== undefined ? entry.volume : entry.count;
-                        const abn = abnormalFn ? abnormalFn(val) : false;
-                        const dt = entry.dateTimeStr || '';
-                        const dtShort = dt.replace(/\/\d{4}/, '').replace(/:\d{2}\s/, ' ');
-                        row += dataCell(val, dtShort, abn, unit);
-                    });
-                    // pad remaining columns
-                    const padCount = maxValues - sorted.length;
-                    if (padCount > 0) row += `<td colspan="${padCount}"></td>`;
+                    for (let i = 0; i < maxValues; i++) {
+                        if (i < sorted.length) {
+                            const entry = sorted[i];
+                            const val = entry.volume !== undefined ? entry.volume : entry.count;
+                            const abn = abnormalFn ? abnormalFn(val) : false;
+                            const dt = ioDateShort(entry.dateTimeStr);
+                            row += dataCell(val, dt, abn, unit);
+                        } else {
+                            row += `<td></td>`;
+                        }
+                    }
                     row += `</tr>`;
                     return row;
                 };
 
-                // Check if there's any I/O data
                 const hasIntakes = Object.values(ioDataTbl.intakes).some(e => e && e.length > 0);
                 const hasOutputs = ioDataTbl.outputs.urine.length > 0 ||
                     Object.values(ioDataTbl.outputs.drains).some(e => e && e.length > 0) ||
                     Object.values(ioDataTbl.outputs.other).some(e => e && e.length > 0);
                 const hasCounts = Object.values(ioDataTbl.counts || {}).some(e => e && e.length > 0);
 
-                if (hasIntakes || hasOutputs || hasCounts) {
+                if (hasIntakes) {
                     tableHTML += sectionHeader('Intake', '#155724');
                     Object.entries(ioDataTbl.intakes).forEach(([type, entries]) => {
-                        tableHTML += ioRow(type.length > 20 ? type.substring(0, 20) + '…' : type, entries, ' mL', null);
+                        tableHTML += ioRow(type.length > 24 ? type.substring(0, 24) + '…' : type, entries, ' mL', null);
                     });
+                }
 
+                if (hasOutputs) {
                     tableHTML += sectionHeader('Output', '#6b1a0f');
-                    tableHTML += ioRow('Urine', ioDataTbl.outputs.urine, ' mL', v => false);
+                    tableHTML += ioRow('Urine', ioDataTbl.outputs.urine, ' mL', null);
                     Object.entries(ioDataTbl.outputs.drains).forEach(([type, entries]) => {
                         const cleanType = type.replace(/^Other:\s*/i, '');
-                        tableHTML += ioRow(cleanType.length > 20 ? cleanType.substring(0, 20) + '…' : cleanType, entries, ' mL', v => v > 100);
+                        tableHTML += ioRow(cleanType.length > 24 ? cleanType.substring(0, 24) + '…' : cleanType, entries, ' mL', v => v > 100);
                     });
                     Object.entries(ioDataTbl.outputs.other).forEach(([type, entries]) => {
-                        tableHTML += ioRow(type.length > 20 ? type.substring(0, 20) + '…' : type, entries, ' mL', null);
+                        tableHTML += ioRow(type.length > 24 ? type.substring(0, 24) + '…' : type, entries, ' mL', null);
                     });
+                }
 
-                    if (hasCounts) {
-                        tableHTML += sectionHeader('Counts', '#4a3500');
-                        Object.entries(ioDataTbl.counts || {}).forEach(([type, entries]) => {
-                            tableHTML += ioRow(type, entries, '', v => type.toLowerCase().includes('stool') && v > 3);
-                        });
-                    }
+                if (hasCounts) {
+                    tableHTML += sectionHeader('Counts', '#4a3500');
+                    Object.entries(ioDataTbl.counts || {}).forEach(([type, entries]) => {
+                        tableHTML += ioRow(type, entries, '', v => type.toLowerCase().includes('stool') && v > 3);
+                    });
                 }
             }
 
