@@ -6574,20 +6574,15 @@ saveToLocalStorage();
                 document.getElementById('tableContainer').innerHTML = '<p>No lab data available. Please import data first.</p>';
                 return;
             }
-            
-            let tableHTML = '<table class="data-table">';
-            tableHTML += '<tr><th>Parameter</th>';
-            
+
+            // Collect I/O data from raw import text
+            const ioDataTbl = lastImportedData ? extractIntakeOutputData(lastImportedData) : null;
+
             const maxValues = Math.max(
                 ...Object.values(labData.labs || {}).map(arr => arr ? arr.length : 0),
                 ...Object.values(labData.vitals || {}).map(arr => arr ? arr.length : 0)
             );
-            
-            for (let i = 0; i < maxValues; i++) {
-                tableHTML += `<th>Value ${i + 1}</th>`;
-            }
-            tableHTML += '</tr>';
-            
+
             // Helper to get short date/time string for a lab/vital key at index
             const getDateTimeStr = (key, idx) => {
                 let dates = labData.datesArray?.[key] || [];
@@ -6604,115 +6599,224 @@ saveToLocalStorage();
                 return shortTime ? `${shortDate} ${shortTime}` : shortDate;
             };
 
-            // Add vitals
-            if (labData.vitals) {
-                if (labData.vitals.temp) {
-                    tableHTML += '<tr><td>Temperature</td>';
-                    labData.vitals.temp.forEach((val, i) => {
-                        const dt = getDateTimeStr('temp', i);
-                        tableHTML += `<td>${val}°C${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
-                    });
-                    tableHTML += '</tr>';
-                }
-
-                if (labData.vitals.hr) {
-                    tableHTML += '<tr><td>Heart Rate</td>';
-                    labData.vitals.hr.forEach((val, i) => {
-                        const dt = getDateTimeStr('hr', i);
-                        tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
-                    });
-                    tableHTML += '</tr>';
-                }
-
-                if (labData.vitals.sbp) {
-                    tableHTML += '<tr><td>Systolic BP</td>';
-                    labData.vitals.sbp.forEach((val, i) => {
-                        const dt = getDateTimeStr('sbp', i);
-                        tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
-                    });
-                    tableHTML += '</tr>';
-                }
-
-                if (labData.vitals.dbp) {
-                    tableHTML += '<tr><td>Diastolic BP</td>';
-                    labData.vitals.dbp.forEach((val, i) => {
-                        const dt = getDateTimeStr('dbp', i);
-                        tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
-                    });
-                    tableHTML += '</tr>';
-                }
-
-                if (labData.vitals.o2) {
-                    tableHTML += '<tr><td>O2 Saturation</td>';
-                    labData.vitals.o2.forEach((val, i) => {
-                        const dt = getDateTimeStr('o2', i);
-                        tableHTML += `<td>${val}%${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
-                    });
-                    tableHTML += '</tr>';
-                }
-            }
-            
-            // Add labs
-            const labNames = {
-                'wbc': 'WBC',
-                'hgb': 'Hemoglobin',
-                'hct': 'Hematocrit',
-                'plt': 'Platelets',
-                'na': 'Sodium',
-                'k': 'Potassium',
-                'cl': 'Chloride',
-                'co2': 'CO2',
-                'bun': 'BUN',
-                'cr': 'Creatinine',
-                'glu': 'Glucose',
-                'glucose': 'Glucose',
-                'ca': 'Calcium',
-                'mg': 'Magnesium',
-                'phos': 'Phosphorus',
-                'ph': 'pH',
-                'pco2': 'pCO2',
-                'po2': 'pO2',
-                'bicarb': 'Bicarbonate',
-                'lactate': 'Lactic Acid',
-                'ast': 'AST',
-                'alt': 'ALT',
-                'tbil': 'Total Bilirubin',
-                'dbil': 'Direct Bilirubin',
-                'alk': 'Alk Phos',
-                'ggt': 'GGT',
-                'inr': 'INR',
-                'pt': 'PT',
-                'ptt': 'PTT/APTT',
-                'fib': 'Fibrinogen',
-                'trop': 'Troponin',
-                'procalcitonin': 'Procalcitonin',
-                'albumin': 'Albumin',
-                'prealbumin': 'Prealbumin',
-                'amylase': 'Amylase',
-                'lipase': 'Lipase'
+            // Helper to build a data cell with optional date stamp
+            const dataCell = (val, dt, abnormal = false, unit = '') => {
+                const style = abnormal
+                    ? 'background:rgba(239,68,68,0.25);color:#ff6b6b;font-weight:700;'
+                    : 'color:#6ee7b7;';
+                const dtHtml = dt ? `<br><i style="font-size:0.6em;color:#999;">${dt}</i>` : '';
+                return `<td style="padding:2px 5px;font-size:0.78rem;text-align:center;${style}">${val}${unit}${dtHtml}</td>`;
             };
-            
+
+            // Helper for empty filler cells
+            const emptyCells = (n) => `<td style="padding:2px 5px;" colspan="${n}"></td>`;
+
+            // Section header row
+            const sectionHeader = (label, color) =>
+                `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;padding:3px 6px;text-transform:uppercase;">${label}</td></tr>`;
+
+            let tableHTML = `<style>
+              #tableContainer table { border-collapse: collapse; width: 100%; font-family: monospace; }
+              #tableContainer th { background: #1e293b; color: #94a3b8; font-size: 0.68rem; padding: 3px 5px; text-align: center; position: sticky; top: 0; z-index: 2; }
+              #tableContainer th:first-child { text-align: left; }
+              #tableContainer td:first-child { color: #cbd5e1; font-size: 0.72rem; font-weight: 600; padding: 2px 6px; white-space: nowrap; }
+              #tableContainer tr:hover td { background-color: rgba(255,255,255,0.04); }
+            </style>`;
+            tableHTML += `<table>`;
+            tableHTML += `<tr><th style="text-align:left;">Parameter</th>`;
+            for (let i = 0; i < maxValues; i++) {
+                tableHTML += `<th>#${i + 1}</th>`;
+            }
+            tableHTML += `</tr>`;
+
+            // ── VITALS ──────────────────────────────────────────────
+            if (labData.vitals) {
+                tableHTML += sectionHeader('Vitals', '#0f4c81');
+                const vitalDefs = [
+                    { key: 'temp', label: 'Temp', unit: '°C', lo: 35, hi: 38 },
+                    { key: 'hr',   label: 'HR',   unit: '',   lo: 60, hi: 100 },
+                    { key: 'sbp',  label: 'SBP',  unit: '',   lo: 90, hi: 180 },
+                    { key: 'dbp',  label: 'DBP',  unit: '',   lo: 60, hi: 120 },
+                    { key: 'o2',   label: 'O2%',  unit: '%',  lo: 94, hi: 100 }
+                ];
+                vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
+                    const arr = labData.vitals[key];
+                    if (!arr || arr.length === 0) return;
+                    tableHTML += `<tr><td>${label}</td>`;
+                    for (let i = 0; i < maxValues; i++) {
+                        if (i < arr.length) {
+                            const v = arr[i];
+                            const dt = getDateTimeStr(key, i);
+                            const abn = v < lo || v > hi;
+                            tableHTML += dataCell(v, dt, abn, unit);
+                        } else {
+                            tableHTML += `<td></td>`;
+                        }
+                    }
+                    tableHTML += `</tr>`;
+                });
+            }
+
+            // ── LABS ─────────────────────────────────────────────────
+            const labSections = [
+                {
+                    color: '#1a5c2b', label: 'CBC',
+                    labs: [
+                        { key: 'wbc', label: 'WBC', lo: 4.5, hi: 11 },
+                        { key: 'hgb', label: 'Hgb', lo: 7, hi: 16 },
+                        { key: 'hct', label: 'Hct', lo: 21, hi: 51 },
+                        { key: 'plt', label: 'Plt', lo: 150, hi: 400 },
+                        { key: 'neut', label: 'Neut%', lo: 40, hi: 80 },
+                        { key: 'lymph', label: 'Lymph%', lo: 20, hi: 40 }
+                    ]
+                },
+                {
+                    color: '#1e3a5f', label: 'BMP',
+                    labs: [
+                        { key: 'na', label: 'Na', lo: 135, hi: 145 },
+                        { key: 'k', label: 'K', lo: 4.0, hi: 5.0 },
+                        { key: 'cl', label: 'Cl', lo: 96, hi: 106 },
+                        { key: 'co2', label: 'CO2', lo: 23, hi: 29 },
+                        { key: 'bun', label: 'BUN', lo: 7, hi: 20 },
+                        { key: 'cr', label: 'Cr', lo: 0.4, hi: 1.0 },
+                        { key: 'glu', label: 'Glu', lo: 70, hi: 100 }
+                    ]
+                },
+                {
+                    color: '#4a1d72', label: 'Electrolytes',
+                    labs: [
+                        { key: 'ca', label: 'iCa', lo: 4.5, hi: 5.3 },
+                        { key: 'totalCa', label: 'tCa', lo: 8.5, hi: 10.2 },
+                        { key: 'mg', label: 'Mg', lo: 1.7, hi: 2.2 },
+                        { key: 'phos', label: 'Phos', lo: 2.5, hi: 4.5 }
+                    ]
+                },
+                {
+                    color: '#7c3009', label: 'LFTs',
+                    labs: [
+                        { key: 'ast', label: 'AST', lo: 10, hi: 40 },
+                        { key: 'alt', label: 'ALT', lo: 10, hi: 40 },
+                        { key: 'tbil', label: 'TBil', lo: 0.1, hi: 1.2 },
+                        { key: 'dbil', label: 'DBil', lo: 0, hi: 0.3 },
+                        { key: 'alk', label: 'Alk', lo: 30, hi: 120 },
+                        { key: 'ggt', label: 'GGT', lo: 9, hi: 48 },
+                        { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5 }
+                    ]
+                },
+                {
+                    color: '#5c1a1a', label: 'Coags',
+                    labs: [
+                        { key: 'pt', label: 'PT', lo: 11, hi: 13.5 },
+                        { key: 'ptt', label: 'PTT', lo: 25, hi: 35 },
+                        { key: 'inr', label: 'INR', lo: 0.8, hi: 1.1 },
+                        { key: 'fib', label: 'Fib', lo: 200, hi: 400 }
+                    ]
+                },
+                {
+                    color: '#1a4a4a', label: 'ABG',
+                    labs: [
+                        { key: 'ph', label: 'pH', lo: 7.35, hi: 7.45 },
+                        { key: 'pco2', label: 'pCO2', lo: 35, hi: 45 },
+                        { key: 'po2', label: 'pO2', lo: 80, hi: 100 },
+                        { key: 'bicarb', label: 'HCO3', lo: 22, hi: 28 },
+                        { key: 'lactate', label: 'Lactate', lo: 0.5, hi: 2.0 }
+                    ]
+                },
+                {
+                    color: '#3d3000', label: 'Misc',
+                    labs: [
+                        { key: 'trop', label: 'Trop', lo: 0, hi: 0.04 },
+                        { key: 'procalcitonin', label: 'PCT', lo: 0, hi: 0.25 },
+                        { key: 'amylase', label: 'Amylase', lo: 30, hi: 110 },
+                        { key: 'lipase', label: 'Lipase', lo: 30, hi: 140 },
+                        { key: 'prealbumin', label: 'PreAlb', lo: 15, hi: 36 }
+                    ]
+                }
+            ];
+
             if (labData.labs) {
-                for (const [key, name] of Object.entries(labNames)) {
-                    if (labData.labs[key]) {
-                        tableHTML += `<tr><td>${name}</td>`;
-                        labData.labs[key].forEach((val, i) => {
-                            // Try the key itself, then check KEY_ALIASES
-                            let dt = getDateTimeStr(key, i);
-                            if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
-                                for (const alias of KEY_ALIASES[key]) {
-                                    dt = getDateTimeStr(alias, i);
-                                    if (dt) break;
+                labSections.forEach(({ color, label, labs }) => {
+                    const hasAny = labs.some(l => labData.labs[l.key] && labData.labs[l.key].length > 0);
+                    if (!hasAny) return;
+                    tableHTML += sectionHeader(label, color);
+                    labs.forEach(({ key, label: lbl, lo, hi }) => {
+                        const arr = labData.labs[key];
+                        if (!arr || arr.length === 0) return;
+                        tableHTML += `<tr><td>${lbl}</td>`;
+                        for (let i = 0; i < maxValues; i++) {
+                            if (i < arr.length) {
+                                const v = arr[i];
+                                let dt = getDateTimeStr(key, i);
+                                if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
+                                    for (const alias of KEY_ALIASES[key]) { dt = getDateTimeStr(alias, i); if (dt) break; }
                                 }
+                                const abn = !isNaN(v) && (v < lo || v > hi);
+                                tableHTML += dataCell(v, dt, abn);
+                            } else {
+                                tableHTML += `<td></td>`;
                             }
-                            tableHTML += `<td>${val}${dt ? `<br><i style="font-size:0.6em;color:#888;">${dt}</i>` : ''}</td>`;
+                        }
+                        tableHTML += `</tr>`;
+                    });
+                });
+            }
+
+            // ── INTAKE / OUTPUT ──────────────────────────────────────
+            if (ioDataTbl) {
+                const elapsedHours = ioDataTbl.elapsedHours || 24;
+
+                // Helper: build an I/O row from an array of entries
+                const ioRow = (label, entries, unit, abnormalFn) => {
+                    if (!entries || entries.length === 0) return '';
+                    const sorted = [...entries].sort((a, b) => b.dateTime - a.dateTime);
+                    let row = `<tr><td>${label}</td>`;
+                    sorted.forEach(entry => {
+                        const val = entry.volume !== undefined ? entry.volume : entry.count;
+                        const abn = abnormalFn ? abnormalFn(val) : false;
+                        const dt = entry.dateTimeStr || '';
+                        const dtShort = dt.replace(/\/\d{4}/, '').replace(/:\d{2}\s/, ' ');
+                        row += dataCell(val, dtShort, abn, unit);
+                    });
+                    // pad remaining columns
+                    const padCount = maxValues - sorted.length;
+                    if (padCount > 0) row += `<td colspan="${padCount}"></td>`;
+                    row += `</tr>`;
+                    return row;
+                };
+
+                // Check if there's any I/O data
+                const hasIntakes = Object.values(ioDataTbl.intakes).some(e => e && e.length > 0);
+                const hasOutputs = ioDataTbl.outputs.urine.length > 0 ||
+                    Object.values(ioDataTbl.outputs.drains).some(e => e && e.length > 0) ||
+                    Object.values(ioDataTbl.outputs.other).some(e => e && e.length > 0);
+                const hasCounts = Object.values(ioDataTbl.counts || {}).some(e => e && e.length > 0);
+
+                if (hasIntakes || hasOutputs || hasCounts) {
+                    tableHTML += sectionHeader('Intake', '#155724');
+                    Object.entries(ioDataTbl.intakes).forEach(([type, entries]) => {
+                        tableHTML += ioRow(type.length > 20 ? type.substring(0, 20) + '…' : type, entries, ' mL', null);
+                    });
+
+                    tableHTML += sectionHeader('Output', '#6b1a0f');
+                    tableHTML += ioRow('Urine', ioDataTbl.outputs.urine, ' mL', v => false);
+                    Object.entries(ioDataTbl.outputs.drains).forEach(([type, entries]) => {
+                        const cleanType = type.replace(/^Other:\s*/i, '');
+                        tableHTML += ioRow(cleanType.length > 20 ? cleanType.substring(0, 20) + '…' : cleanType, entries, ' mL', v => v > 100);
+                    });
+                    Object.entries(ioDataTbl.outputs.other).forEach(([type, entries]) => {
+                        tableHTML += ioRow(type.length > 20 ? type.substring(0, 20) + '…' : type, entries, ' mL', null);
+                    });
+
+                    if (hasCounts) {
+                        tableHTML += sectionHeader('Counts', '#4a3500');
+                        Object.entries(ioDataTbl.counts || {}).forEach(([type, entries]) => {
+                            tableHTML += ioRow(type, entries, '', v => type.toLowerCase().includes('stool') && v > 3);
                         });
-                        tableHTML += '</tr>';
                     }
                 }
             }
-            
-            tableHTML += '</table>';
+
+            tableHTML += `</table>`;
             document.getElementById('tableContainer').innerHTML = tableHTML;
         }
 
@@ -8666,74 +8770,107 @@ if ((data.ventModeRaw || data.ventFiO2Raw || data.ventFrequencyRaw || data.ventT
                 return dt >= fortyEightHoursAgo && dt <= now;
             }
             
+            if (!data.datesArray) data.datesArray = {};
+            if (!data.timesArray) data.timesArray = {};
+
             // Extract temperature with timestamps
             const tempRegex = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-            const tempValues = [];
+            const tempValues = [], tempDates = [], tempTimes = [];
             let tempMatch;
             while ((tempMatch = tempRegex.exec(text)) !== null) {
                 const timeKey = `${tempMatch[2]} ${tempMatch[3]}`;
                 if (isWithin24Hours(timeKey)) {
                     tempValues.push(parseFloat(tempMatch[1]));
+                    tempDates.push(tempMatch[2]);
+                    tempTimes.push(tempMatch[3]);
                 }
             }
             if (tempValues.length > 0) {
                 data.vitals.temp = tempValues;
+                data.datesArray['temp'] = tempDates;
+                data.timesArray['temp'] = tempTimes;
+                data.dates['temp'] = tempDates[0];
+                data.times['temp'] = tempTimes[0];
             }
-            
+
             // Extract heart rate with timestamps
             const hrRegex = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-            const hrValues = [];
+            const hrValues = [], hrDates = [], hrTimes = [];
             let hrMatch;
             while ((hrMatch = hrRegex.exec(text)) !== null) {
                 const timeKey = `${hrMatch[2]} ${hrMatch[3]}`;
                 if (isWithin24Hours(timeKey)) {
                     hrValues.push(parseInt(hrMatch[1]));
+                    hrDates.push(hrMatch[2]);
+                    hrTimes.push(hrMatch[3]);
                 }
             }
             if (hrValues.length > 0) {
                 data.vitals.hr = hrValues;
+                data.datesArray['hr'] = hrDates;
+                data.timesArray['hr'] = hrTimes;
+                data.dates['hr'] = hrDates[0];
+                data.times['hr'] = hrTimes[0];
             }
-            
+
             // Extract systolic BP with timestamps
             const sbpRegex = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-            const sbpValues = [];
+            const sbpValues = [], sbpDates = [], sbpTimes = [];
             let sbpMatch;
             while ((sbpMatch = sbpRegex.exec(text)) !== null) {
                 const timeKey = `${sbpMatch[2]} ${sbpMatch[3]}`;
                 if (isWithin24Hours(timeKey)) {
                     sbpValues.push(parseInt(sbpMatch[1]));
+                    sbpDates.push(sbpMatch[2]);
+                    sbpTimes.push(sbpMatch[3]);
                 }
             }
             if (sbpValues.length > 0) {
                 data.vitals.sbp = sbpValues;
+                data.datesArray['sbp'] = sbpDates;
+                data.timesArray['sbp'] = sbpTimes;
+                data.dates['sbp'] = sbpDates[0];
+                data.times['sbp'] = sbpTimes[0];
             }
-            
+
             // Extract diastolic BP with timestamps
             const dbpRegex = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-            const dbpValues = [];
+            const dbpValues = [], dbpDates = [], dbpTimes = [];
             let dbpMatch;
             while ((dbpMatch = dbpRegex.exec(text)) !== null) {
                 const timeKey = `${dbpMatch[2]} ${dbpMatch[3]}`;
                 if (isWithin24Hours(timeKey)) {
                     dbpValues.push(parseInt(dbpMatch[1]));
+                    dbpDates.push(dbpMatch[2]);
+                    dbpTimes.push(dbpMatch[3]);
                 }
             }
             if (dbpValues.length > 0) {
                 data.vitals.dbp = dbpValues;
+                data.datesArray['dbp'] = dbpDates;
+                data.timesArray['dbp'] = dbpTimes;
+                data.dates['dbp'] = dbpDates[0];
+                data.times['dbp'] = dbpTimes[0];
             }
-            
+
             // Extract O2 saturation with timestamps
             const o2SatRegex = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-            const o2Values = [];
+            const o2Values = [], o2Dates = [], o2Times = [];
             let o2Match;
             while ((o2Match = o2SatRegex.exec(text)) !== null) {
                 const timeKey = `${o2Match[2]} ${o2Match[3]}`;
                 if (isWithin24Hours(timeKey)) {
                     o2Values.push(parseInt(o2Match[1]));
+                    o2Dates.push(o2Match[2]);
+                    o2Times.push(o2Match[3]);
                 }
             }
             if (o2Values.length > 0) {
                 data.vitals.o2 = o2Values;
+                data.datesArray['o2'] = o2Dates;
+                data.timesArray['o2'] = o2Times;
+                data.dates['o2'] = o2Dates[0];
+                data.times['o2'] = o2Times[0];
             }
 
 
@@ -8805,19 +8942,28 @@ const extractLabValue = (pattern, name) => {
             extractLabValue('Glucose:', 'glu');
             extractLabValue('Calcium, Ionized:', 'ca');
             extractLabValue('Ionized Calcium:', 'ca');
-            
-            // If no ionized calcium, try total calcium
+
+            // Always extract total calcium separately so both can be displayed
+            extractLabValue('Calcium:', 'totalCa');
+
+            // If no ionized calcium, fall back to total calcium (with albumin correction if possible)
             if (!data.labs.ca || data.labs.ca.length === 0) {
-                extractLabValue('Calcium:', 'totalCa');
                 extractLabValue('Albumin:', 'albumin');
-                
-                if (data.labs.totalCa && data.labs.totalCa.length > 0 && 
+
+                if (data.labs.totalCa && data.labs.totalCa.length > 0 &&
                     data.labs.albumin && data.labs.albumin.length > 0) {
                     const totalCa = data.labs.totalCa[0];
                     const albumin = data.labs.albumin[0];
                     const correctedCa = totalCa + 0.8 * (4.0 - albumin);
                     data.labs.ca = [parseFloat(correctedCa.toFixed(2))];
                     data.labs.caType = 'corrected';
+                    if (data.dates.totalCa) {
+                        data.dates.ca = data.dates.totalCa;
+                        data.times.ca = data.times.totalCa;
+                    }
+                } else if (data.labs.totalCa && data.labs.totalCa.length > 0) {
+                    data.labs.ca = [...data.labs.totalCa];
+                    data.labs.caType = 'total';
                     if (data.dates.totalCa) {
                         data.dates.ca = data.dates.totalCa;
                         data.times.ca = data.times.totalCa;
@@ -10205,6 +10351,8 @@ fishbone += bmpBottomLine + '\n';
 // ===== ELECTROLYTES (Ca/Mg/Phos) SECTION =====
 const ca = data.labs.ca?.[0];
 const caPrev = data.labs.ca?.[1];
+const totalCaFb = data.labs.totalCa?.[0];
+const totalCaPrevFb = data.labs.totalCa?.[1];
 const mg = data.labs.mg?.[0];
 const mgPrev = data.labs.mg?.[1];
 const phos = data.labs.phos?.[0];
@@ -10212,10 +10360,19 @@ const phosPrev = data.labs.phos?.[1];
 
 let caStr = '--';
 if (ca !== undefined) {
-    if (ca < 8.5 || ca > 10.2) {
+    if (ca < 4.5 || ca > 5.3) {
         caStr = caPrev !== undefined ? `${markAbnormal(ca)}(${caPrev})` : markAbnormal(ca);
     } else {
         caStr = ca.toString();
+    }
+}
+
+let totalCaFbStr = '--';
+if (totalCaFb !== undefined) {
+    if (totalCaFb < 8.5 || totalCaFb > 10.2) {
+        totalCaFbStr = totalCaPrevFb !== undefined ? `${markAbnormal(totalCaFb)}(${totalCaPrevFb})` : markAbnormal(totalCaFb);
+    } else {
+        totalCaFbStr = totalCaFb.toString();
     }
 }
 
@@ -10237,7 +10394,21 @@ if (phos !== undefined) {
     }
 }
 
-fishbone += `Ca:${caStr}, Mg:${mgStr}, P:${phosStr}\n`;
+// Build calcium display showing both ionized and total when available
+let caDisplay = '';
+const hasIonized = ca !== undefined;
+const hasTotal = totalCaFb !== undefined;
+if (hasIonized && hasTotal) {
+    caDisplay = `iCa:${caStr}/tCa:${totalCaFbStr}`;
+} else if (hasIonized) {
+    caDisplay = `iCa:${caStr}`;
+} else if (hasTotal) {
+    caDisplay = `tCa:${totalCaFbStr}`;
+} else {
+    caDisplay = `Ca:--`;
+}
+
+fishbone += `${caDisplay}, Mg:${mgStr}, P:${phosStr}\n`;
 
 
 
@@ -14248,7 +14419,8 @@ const generateLabRow = (lab) => {
   ];
 
   const electrolyteLabs = [
-    { label: 'Ca', key: 'ca', min: 4, max: 10.2 },
+    { label: 'iCa', key: 'ca', min: 4.5, max: 5.3 },
+    { label: 'tCa', key: 'totalCa', min: 8.5, max: 10.2 },
     { label: 'Mg', key: 'mg', min: 2, max: 3 },
     { label: 'Phos', key: 'phos', min: 2.5, max: 4.5 }
   ];
