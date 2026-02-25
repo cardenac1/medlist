@@ -6571,9 +6571,28 @@ saveToLocalStorage();
                 return;
             }
 
-            // ── EXTRACT VITALS WITH TIMESTAMPS directly from raw import text ──
-            // (stored labData may lack per-reading timestamps)
-            const vitalReadings = {}; // { temp: [{value, date}], hr: [...], ... }
+            // ── TIME BOUNDARIES ──────────────────────────────────────────────────
+            const _now = new Date();
+            const cutoff7am = new Date(_now);
+            if (_now.getHours() < 7) cutoff7am.setDate(cutoff7am.getDate() - 1);
+            cutoff7am.setHours(7, 0, 0, 0);
+            const cutoff7amDay1Start = new Date(cutoff7am);
+            cutoff7amDay1Start.setDate(cutoff7amDay1Start.getDate() - 1);
+
+            // ── PARSE VITAL DATETIME ─────────────────────────────────────────────
+            const parseDTStr = (dateStr, timeStr) => {
+                const p = dateStr.split('/');
+                const yr = p[2] && p[2].length === 2 ? '20' + p[2] : (p[2] || '2025');
+                try { return new Date(`${yr}-${p[0]}-${p[1]}T${timeStr}`); } catch(e) { return null; }
+            };
+            const fmtShortDT = (dateStr, timeStr) => {
+                const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+                const tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
+                return [dm ? dm[1] : dateStr, tm ? tm[1] : ''].filter(Boolean).join(' ');
+            };
+
+            // ── EXTRACT VITALS FROM RAW TEXT (split today vs day-1) ─────────────
+            const vitalReadings = {}; // kept for compat below but not actually used in old path
             if (lastImportedData) {
                 const vitalPatterns = [
                     { key: 'temp',  regex: /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseFloat },
@@ -6587,172 +6606,335 @@ saveToLocalStorage();
                         vitalReadings[key].push({ value: parse(m[1]), date: m[2], time: m[3] });
                     }
                 });
-                // SBP / DBP — separate patterns, match by timestamp
-                const sbpMap = {}, dbpMap = {};
-                const sbpRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                const dbpRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                let m;
-                while ((m = sbpRe.exec(lastImportedData)) !== null) sbpMap[`${m[2]} ${m[3]}`] = { value: parseInt(m[1]), date: m[2], time: m[3] };
-                while ((m = dbpRe.exec(lastImportedData)) !== null) dbpMap[`${m[2]} ${m[3]}`] = { value: parseInt(m[1]), date: m[2], time: m[3] };
-                vitalReadings['sbp'] = Object.values(sbpMap);
-                vitalReadings['dbp'] = Object.values(dbpMap);
-            }
-
-            // ── EXTRACT I/O directly from raw import text ──
-            let ioDataTbl = null;
-            if (lastImportedData) {
-                try { ioDataTbl = extractIntakeOutputData(lastImportedData); } catch (e) { console.error('I/O extraction error:', e); }
-            }
-
-            // ── FORMAT HELPERS ──
-            const shortDT = (dateStr, timeStr) => {
-                if (!dateStr) return '';
-                const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
-                const tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
-                const d = dm ? dm[1] : dateStr;
-                const t = tm ? tm[1] : '';
-                return t ? `${d} ${t}` : d;
-            };
-
-            const ioDateShort = (dtStr) => {
-                if (!dtStr) return '';
-                const m2 = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
-                return m2 ? `${m2[1]} ${m2[2]}` : dtStr.substring(0, 11);
-            };
-
-            // Lab date/time helper (uses stored labData dates)
-            const getLabDateTimeStr = (key, idx) => {
-                let dates = labData.datesArray?.[key] || [];
-                let times = labData.timesArray?.[key] || [];
-                if (dates.length === 0 && labData.dates?.[key]) dates = [labData.dates[key]];
-                if (times.length === 0 && labData.times?.[key]) times = [labData.times[key]];
-                return shortDT(dates[idx] || '', times[idx] || times[0] || '');
-            };
-
-            // ── COMPUTE MAX COLUMNS ──
-            const maxLabs = Math.max(0, ...Object.values(labData.labs || {}).map(a => a ? a.length : 0));
-            const maxVitals = Math.max(0, ...Object.values(vitalReadings).map(a => a.length));
-            let maxIO = 0;
-            if (ioDataTbl) {
-                const ioArrays = [
-                    ...Object.values(ioDataTbl.intakes),
-                    ioDataTbl.outputs.urine || [],
-                    ...Object.values(ioDataTbl.outputs.drains || {}),
-                    ...Object.values(ioDataTbl.outputs.other || {}),
-                    ...Object.values(ioDataTbl.counts || {})
-                ];
-                maxIO = Math.max(0, ...ioArrays.map(a => a ? a.length : 0));
-            }
-            const maxValues = Math.max(maxLabs, maxVitals, maxIO, 1);
-
-            // ── CELL BUILDER — value on top, date below on its own line ──
-            const dataCell = (val, dt, abnormal = false, unit = '') => {
-                const clr = abnormal
-                    ? 'background:rgba(239,68,68,0.25);color:#ff6b6b;font-weight:700;'
-                    : 'color:#6ee7b7;';
-                const dtLine = dt
-                    ? `<div style="font-size:0.62em;color:#999;white-space:nowrap;text-align:center;">${dt}</div>`
-                    : '';
-                return `<td style="padding:3px 6px;font-size:0.78rem;text-align:center;${clr}"><div>${val}${unit}</div>${dtLine}</td>`;
-            };
-
-            const sectionHeader = (label, color) =>
-                `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:3px 8px;text-transform:uppercase;">${label}</td></tr>`;
-
-            // ── TABLE SHELL ──
-            let tableHTML = `<style>
-              #tableContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-              #tableContainer table { border-collapse: collapse; font-family: 'JetBrains Mono', monospace; }
-              #tableContainer th { background: #1e293b; color: #94a3b8; font-size: 0.66rem; padding: 3px 8px; text-align: center; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
-              #tableContainer td:first-child { color: #cbd5e1; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; white-space: nowrap; min-width: 68px; position: sticky; left: 0; background: #0a0a14; z-index: 1; border-right: 1px solid #222; }
-              #tableContainer tr:hover td { background-color: rgba(255,255,255,0.04); }
-              #tableContainer tr:hover td:first-child { background: #0f0f1e; }
-            </style>`;
-            tableHTML += `<table><tr><th style="text-align:left;position:sticky;left:0;z-index:3;background:#1e293b;">Parameter</th>`;
-            for (let i = 0; i < maxValues; i++) tableHTML += `<th>#${i + 1}</th>`;
-            tableHTML += `</tr>`;
-
-            // ── VITALS (extracted from raw text with timestamps) ──
+            // ── EXTRACT VITALS split into today vs day-1 ────────────────────────
             const vitalDefs = [
-                { key: 'temp', label: 'Temp', unit: '°C', lo: 35, hi: 38 },
-                { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60, hi: 100 },
-                { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90, hi: 180 },
-                { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60, hi: 120 },
-                { key: 'o2',   label: 'O2',   unit: '%',    lo: 94, hi: 100 }
+                { key: 'temp', label: 'Temp', unit: '°C',   lo: 35,  hi: 38  },
+                { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60,  hi: 100 },
+                { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90,  hi: 180 },
+                { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60,  hi: 120 },
+                { key: 'o2',   label: 'O2',   unit: '%',    lo: 94,  hi: 100 }
             ];
-            const hasAnyVitals = vitalDefs.some(d => vitalReadings[d.key] && vitalReadings[d.key].length > 0);
-            if (hasAnyVitals) {
-                tableHTML += sectionHeader('Vitals', '#0f4c81');
-                vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
-                    const readings = vitalReadings[key];
-                    if (!readings || readings.length === 0) return;
-                    tableHTML += `<tr><td>${label}</td>`;
-                    for (let i = 0; i < maxValues; i++) {
-                        if (i < readings.length) {
-                            const r = readings[i];
-                            const dt = shortDT(r.date, r.time);
-                            tableHTML += dataCell(r.value, dt, r.value < lo || r.value > hi, unit);
-                        } else {
-                            tableHTML += `<td></td>`;
-                        }
-                    }
-                    tableHTML += `</tr>`;
+            const vitals = {};
+            vitalDefs.forEach(d => { vitals[d.key] = { today: [], day1: [] }; });
+
+            if (lastImportedData) {
+                const pushVital = (key, value, dateStr, timeStr) => {
+                    const dt = parseDTStr(dateStr, timeStr);
+                    if (!dt) return;
+                    const entry = { value, label: fmtShortDT(dateStr, timeStr) };
+                    if (dt >= cutoff7am && dt <= _now) vitals[key].today.push(entry);
+                    else if (dt >= cutoff7amDay1Start && dt < cutoff7am) vitals[key].day1.push(entry);
+                };
+                let _m;
+                const _tempRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_m = _tempRe.exec(lastImportedData))) pushVital('temp', parseFloat(_m[1]), _m[2], _m[3]);
+                const _hrRe = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_m = _hrRe.exec(lastImportedData))) pushVital('hr', parseInt(_m[1]), _m[2], _m[3]);
+                const _sbpRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_m = _sbpRe.exec(lastImportedData))) pushVital('sbp', parseInt(_m[1]), _m[2], _m[3]);
+                const _dbpRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_m = _dbpRe.exec(lastImportedData))) pushVital('dbp', parseInt(_m[1]), _m[2], _m[3]);
+                const _o2Re = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_m = _o2Re.exec(lastImportedData))) pushVital('o2', parseInt(_m[1]), _m[2], _m[3]);
+                // newest first
+                Object.values(vitals).forEach(v => {
+                    v.today.sort((a, b) => b.dt - a.dt);
+                    v.day1.sort((a, b) => b.dt - a.dt);
                 });
             }
 
-            // ── LABS ──
+            // ── EXTRACT I/O for today and day-1 ──────────────────────────────────
+            let ioToday = null, ioDay1 = null;
+            if (lastImportedData) {
+                try { ioToday = extractIntakeOutputData(lastImportedData); } catch(e) { console.error('I/O today:', e); }
+                try { ioDay1 = extractIntakeOutputData(lastImportedData, cutoff7amDay1Start, cutoff7am); } catch(e) { console.error('I/O day1:', e); }
+            }
+
+            // ── COMPUTE MAX COLUMNS (across today + day-1 + labs) ───────────────
+            const ioMaxEntries = (io) => {
+                if (!io) return 0;
+                return Math.max(0,
+                    ...Object.values(io.intakes || {}).map(a => a ? a.length : 0),
+                    (io.outputs && io.outputs.urine) ? io.outputs.urine.length : 0,
+                    ...Object.values((io.outputs && io.outputs.drains) || {}).map(a => a ? a.length : 0),
+                    ...Object.values((io.outputs && io.outputs.other)  || {}).map(a => a ? a.length : 0),
+                    ...Object.values(io.counts || {}).map(a => a ? a.length : 0)
+                );
+            };
+            const maxLabs    = Math.max(0, ...Object.values(labData.labs || {}).map(a => a ? a.length : 0));
+            const maxVitCols = Math.max(0, ...vitalDefs.map(d => Math.max(vitals[d.key].today.length, vitals[d.key].day1.length)));
+            const maxIOCols  = Math.max(ioMaxEntries(ioToday), ioMaxEntries(ioDay1));
+            const maxValues  = Math.max(maxLabs, maxVitCols, maxIOCols, 1);
+
+            // ── CELL BUILDERS ─────────────────────────────────────────────────────
+            const dataCell = (val, dt, abnormal = false, unit = '') => {
+                const clr = abnormal
+                    ? 'background:rgba(239,68,68,0.2);color:#ff6b6b;font-weight:700;'
+                    : 'color:#6ee7b7;';
+                const dtLine = dt ? `<div style="font-size:0.6em;color:#999;white-space:nowrap;text-align:center;">${dt}</div>` : '';
+                return `<td style="padding:3px 6px;font-size:0.78rem;text-align:center;${clr}"><div>${val}${unit}</div>${dtLine}</td>`;
+            };
+            const emptyCell = () => `<td></td>`;
+
+            const sectionHeader = (label, color) =>
+                `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">${label}</td></tr>`;
+
+            // Toggle row — clicking shows/hides all rows with matching CSS class
+            const toggleRow = (label, cssClass, color) =>
+                `<tr onclick="[...document.querySelectorAll('.${cssClass}')].forEach(r=>{r.style.display=r.style.display===''?'none':''})" style="cursor:pointer;user-select:none;">
+                  <td colspan="${maxValues + 1}" style="background:${color}22;color:${color};font-size:0.64rem;font-weight:600;padding:3px 10px;text-align:center;border:1px solid ${color}44;letter-spacing:0.05em;">▼ SHOW / HIDE DAY −1</td>
+                </tr>`;
+
+            // I/O row: label col shows name + total, data cols show each entry timestamped
+            const ioDateShort = (dtStr) => {
+                if (!dtStr) return '';
+                const _dm = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
+                return _dm ? `${_dm[1]} ${_dm[2]}` : dtStr.substring(0, 11);
+            };
+            const ioRow = (name, entries, unit, rowCls = '', abnFn = null) => {
+                if (!entries || entries.length === 0) return '';
+                const sorted = [...entries].sort((a, b) => (b.dateTime || 0) - (a.dateTime || 0));
+                const total  = sorted.reduce((s, e) => s + (e.volume !== undefined ? (e.volume || 0) : (e.count || 0)), 0);
+                const totalStr = total > 0 ? ` <span style="font-size:0.65em;color:#94a3b8;font-weight:400;display:block;line-height:1.3;white-space:normal;">Total: ${total}${unit.trim() || ''}</span>` : '';
+                const trAttr = rowCls ? `class="${rowCls}" style="display:none"` : '';
+                let row = `<tr ${trAttr}><td style="max-width:160px;white-space:normal;line-height:1.3;">${name}${totalStr}</td>`;
+                for (let i = 0; i < maxValues; i++) {
+                    if (i < sorted.length) {
+                        const e = sorted[i];
+                        const val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '—');
+                        const dt  = ioDateShort(e.dateTimeStr || '');
+                        row += dataCell(val, dt, abnFn ? abnFn(val) : false, unit);
+                    } else { row += emptyCell(); }
+                }
+                row += `</tr>`;
+                return row;
+            };
+
+            // I/O total+balance summary row
+            const ioSumVol = (entries) => (entries || []).reduce((s, e) => s + (e.volume || 0), 0);
+            const ioBalance = (io) => {
+                if (!io) return null;
+                let totalIn = 0, totalOut = 0;
+                Object.values(io.intakes || {}).forEach(a => { totalIn += ioSumVol(a); });
+                totalOut += ioSumVol(io.outputs && io.outputs.urine);
+                Object.values((io.outputs && io.outputs.drains) || {}).forEach(a => { totalOut += ioSumVol(a); });
+                Object.values((io.outputs && io.outputs.other)  || {}).forEach(a => { totalOut += ioSumVol(a); });
+                return { totalIn, totalOut, bal: totalIn - totalOut };
+            };
+
+            const balanceRow = (io, rowCls = '') => {
+                const b = ioBalance(io);
+                if (!b || (b.totalIn === 0 && b.totalOut === 0)) return '';
+                const balColor = b.bal >= 0 ? '#10b981' : '#f59e0b';
+                const trAttr = rowCls ? `class="${rowCls}" style="display:none"` : '';
+                return `<tr ${trAttr}>
+                  <td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>
+                  <td style="background:#1a2035;padding:4px 10px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ${b.totalIn} mL</span></td>
+                  <td style="background:#1a2035;padding:4px 10px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ${b.totalOut} mL</span></td>
+                  <td colspan="${Math.max(1, maxValues - 2)}" style="background:#1a2035;padding:4px 10px;white-space:nowrap;"><span style="color:${balColor};font-weight:700;">= BAL: ${b.bal >= 0 ? '+' : ''}${b.bal} mL</span></td>
+                </tr>`;
+            };
+
+            // Lab date/time helper
+            const getLabDT = (key, idx) => {
+                let dates = labData.datesArray?.[key] || [];
+                let times = labData.timesArray?.[key] || [];
+                if (!dates[idx] && labData.dates?.[key]) dates = [labData.dates[key]];
+                if (!times[idx] && labData.times?.[key]) times = [labData.times[key]];
+                const d = dates[idx] || '', t = times[idx] || times[0] || '';
+                if (!d) return '';
+                const dm = d.match(/(\d{1,2}\/\d{1,2})/);
+                const tm = t.match(/(\d{1,2}:\d{2})/);
+                return [dm ? dm[1] : d, tm ? tm[1] : ''].filter(Boolean).join(' ');
+            };
+
+            // ── TABLE SHELL ──────────────────────────────────────────────────────
+            let tableHTML = `<style>
+              #tableContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+              #tableContainer table { border-collapse: collapse; font-family: 'JetBrains Mono', monospace; min-width: 100%; }
+              #tableContainer th { background:#1e293b; color:#94a3b8; font-size:0.65rem; padding:3px 8px; text-align:center; position:sticky; top:0; z-index:2; white-space:nowrap; }
+              #tableContainer th:first-child { text-align:left; position:sticky; left:0; z-index:3; background:#1e293b; }
+              #tableContainer td:first-child { color:#cbd5e1; font-size:0.72rem; font-weight:600; padding:3px 8px; position:sticky; left:0; background:#0a0a14; z-index:1; border-right:1px solid #1e293b; vertical-align:top; }
+              #tableContainer tr:hover td { background-color:rgba(255,255,255,0.04); }
+              #tableContainer tr:hover td:first-child { background:#0f0f1e; }
+            </style><table>`;
+            tableHTML += `<tr><th>Parameter / Total</th>`;
+            for (let i = 0; i < maxValues; i++) tableHTML += `<th>#${i + 1}</th>`;
+            tableHTML += `</tr>`;
+
+            // ════════════════════════════════════════════════════════════════════
+            // SECTION 1: VITALS (since 7 AM)
+            // ════════════════════════════════════════════════════════════════════
+            const hasVitalsToday = vitalDefs.some(d => vitals[d.key].today.length > 0);
+            const hasVitalsDay1  = vitalDefs.some(d => vitals[d.key].day1.length  > 0);
+
+            if (hasVitalsToday || hasVitalsDay1) {
+                tableHTML += sectionHeader('Vitals — Since 7 AM', '#0f4c81');
+                if (hasVitalsToday) {
+                    vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
+                        const arr = vitals[key].today;
+                        if (!arr.length) return;
+                        let row = `<tr><td>${label}</td>`;
+                        for (let i = 0; i < maxValues; i++) {
+                            if (i < arr.length) {
+                                const r = arr[i];
+                                row += dataCell(r.value, r.label, r.value < lo || r.value > hi, unit);
+                            } else { row += emptyCell(); }
+                        }
+                        tableHTML += row + `</tr>`;
+                    });
+                }
+                if (hasVitalsDay1) {
+                    tableHTML += toggleRow('', 'tbl-d1-vitals', '#4a90d9');
+                    vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
+                        const arr = vitals[key].day1;
+                        if (!arr.length) return;
+                        let row = `<tr class="tbl-d1-vitals" style="display:none"><td>${label} <span style="font-size:0.65em;color:#64748b;">Day−1</span></td>`;
+                        for (let i = 0; i < maxValues; i++) {
+                            if (i < arr.length) {
+                                const r = arr[i];
+                                row += dataCell(r.value, r.label, r.value < lo || r.value > hi, unit);
+                            } else { row += emptyCell(); }
+                        }
+                        tableHTML += row + `</tr>`;
+                    });
+                }
+            }
+
+            // ════════════════════════════════════════════════════════════════════
+            // SECTION 2: INTAKE (since 7 AM) + day-1
+            // ════════════════════════════════════════════════════════════════════
+            const hasIntakeToday = ioToday && Object.values(ioToday.intakes || {}).some(e => e && e.length > 0);
+            const hasIntakeDay1  = ioDay1  && Object.values(ioDay1.intakes  || {}).some(e => e && e.length > 0);
+
+            if (hasIntakeToday || hasIntakeDay1) {
+                tableHTML += sectionHeader('Intake — Since 7 AM', '#155724');
+                if (hasIntakeToday) {
+                    Object.entries(ioToday.intakes).forEach(([type, entries]) => {
+                        if (entries && entries.length > 0)
+                            tableHTML += ioRow(type.length > 36 ? type.substring(0, 36) + '…' : type, entries, ' mL');
+                    });
+                }
+                if (hasIntakeDay1) {
+                    tableHTML += toggleRow('', 'tbl-d1-intake', '#22c55e');
+                    Object.entries(ioDay1.intakes).forEach(([type, entries]) => {
+                        if (entries && entries.length > 0)
+                            tableHTML += ioRow(type.length > 36 ? type.substring(0, 36) + '…' : type, entries, ' mL', 'tbl-d1-intake');
+                    });
+                }
+            }
+
+            // ════════════════════════════════════════════════════════════════════
+            // SECTION 3: OUTPUT (since 7 AM) + day-1
+            // ════════════════════════════════════════════════════════════════════
+            const hasUrineToday  = ioToday && ioToday.outputs && ioToday.outputs.urine  && ioToday.outputs.urine.length > 0;
+            const hasDrainsToday = ioToday && ioToday.outputs && ioToday.outputs.drains && Object.values(ioToday.outputs.drains).some(e => e && e.length > 0);
+            const hasOtherToday  = ioToday && ioToday.outputs && ioToday.outputs.other  && Object.values(ioToday.outputs.other).some(e => e && e.length > 0);
+            const hasUrineDay1   = ioDay1  && ioDay1.outputs  && ioDay1.outputs.urine   && ioDay1.outputs.urine.length > 0;
+            const hasDrainsDay1  = ioDay1  && ioDay1.outputs  && ioDay1.outputs.drains  && Object.values(ioDay1.outputs.drains).some(e => e && e.length > 0);
+            const hasOtherDay1   = ioDay1  && ioDay1.outputs  && ioDay1.outputs.other   && Object.values(ioDay1.outputs.other).some(e => e && e.length > 0);
+            const hasOutputToday = hasUrineToday || hasDrainsToday || hasOtherToday;
+            const hasOutputDay1  = hasUrineDay1  || hasDrainsDay1  || hasOtherDay1;
+
+            if (hasOutputToday || hasOutputDay1) {
+                tableHTML += sectionHeader('Output — Since 7 AM', '#6b1a0f');
+                if (hasUrineToday)  tableHTML += ioRow('Urine', ioToday.outputs.urine, ' mL');
+                if (hasDrainsToday) Object.entries(ioToday.outputs.drains).forEach(([type, entries]) => {
+                    if (entries && entries.length > 0) tableHTML += ioRow(type.replace(/^Other:\s*/i, '').substring(0, 36), entries, ' mL', '', v => v > 100);
+                });
+                if (hasOtherToday)  Object.entries(ioToday.outputs.other).forEach(([type, entries]) => {
+                    if (entries && entries.length > 0) tableHTML += ioRow(type.substring(0, 36), entries, ' mL');
+                });
+
+                if (hasOutputDay1) {
+                    tableHTML += toggleRow('', 'tbl-d1-output', '#ef4444');
+                    if (hasUrineDay1)  tableHTML += ioRow('Urine Day−1', ioDay1.outputs.urine, ' mL', 'tbl-d1-output');
+                    if (hasDrainsDay1) Object.entries(ioDay1.outputs.drains).forEach(([type, entries]) => {
+                        if (entries && entries.length > 0) tableHTML += ioRow(type.replace(/^Other:\s*/i, '').substring(0, 36) + ' Day−1', entries, ' mL', 'tbl-d1-output', v => v > 100);
+                    });
+                    if (hasOtherDay1)  Object.entries(ioDay1.outputs.other).forEach(([type, entries]) => {
+                        if (entries && entries.length > 0) tableHTML += ioRow(type.substring(0, 36) + ' Day−1', entries, ' mL', 'tbl-d1-output');
+                    });
+                }
+            }
+
+            // Counts (stool, emesis, etc.)
+            const hasCountsToday = ioToday && ioToday.counts && Object.values(ioToday.counts).some(e => e && e.length > 0);
+            if (hasCountsToday) {
+                tableHTML += sectionHeader('Counts — Since 7 AM', '#4a3500');
+                Object.entries(ioToday.counts).forEach(([type, entries]) => {
+                    if (entries && entries.length > 0)
+                        tableHTML += ioRow(type.substring(0, 36), entries, '', '', v => type.toLowerCase().includes('stool') && v > 3);
+                });
+            }
+
+            // ════════════════════════════════════════════════════════════════════
+            // SECTION 4: I/O BALANCE SUMMARY ROW
+            // ════════════════════════════════════════════════════════════════════
+            tableHTML += balanceRow(ioToday);
+            if (ioDay1) {
+                const d1b = ioBalance(ioDay1);
+                if (d1b && (d1b.totalIn > 0 || d1b.totalOut > 0)) {
+                    tableHTML += toggleRow('', 'tbl-d1-balance', '#a855f7');
+                    tableHTML += balanceRow(ioDay1, 'tbl-d1-balance');
+                }
+            }
+
+            // ════════════════════════════════════════════════════════════════════
+            // SECTION 5: LABS
+            // ════════════════════════════════════════════════════════════════════
             const labSections = [
                 { color: '#1a5c2b', label: 'CBC', labs: [
-                    { key: 'wbc',   label: 'WBC',    lo: 4.5,  hi: 11 },
-                    { key: 'hgb',   label: 'Hgb',    lo: 7,    hi: 16 },
-                    { key: 'hct',   label: 'Hct',    lo: 21,   hi: 51 },
-                    { key: 'plt',   label: 'Plt',    lo: 150,  hi: 400 },
-                    { key: 'neut',  label: 'Neut%',  lo: 40,   hi: 80 },
-                    { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40 }
+                    { key: 'wbc',   label: 'WBC',    lo: 4.5,  hi: 11   },
+                    { key: 'hgb',   label: 'Hgb',    lo: 7,    hi: 16   },
+                    { key: 'hct',   label: 'Hct',    lo: 21,   hi: 51   },
+                    { key: 'plt',   label: 'Plt',    lo: 150,  hi: 400  },
+                    { key: 'neut',  label: 'Neut%',  lo: 40,   hi: 80   },
+                    { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40   }
                 ]},
                 { color: '#1e3a5f', label: 'BMP', labs: [
-                    { key: 'na',  label: 'Na',  lo: 135,  hi: 145 },
-                    { key: 'k',   label: 'K',   lo: 4.0,  hi: 5.0 },
-                    { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106 },
-                    { key: 'co2', label: 'CO2', lo: 23,   hi: 29 },
-                    { key: 'bun', label: 'BUN', lo: 7,    hi: 20 },
-                    { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0 },
-                    { key: 'glu', label: 'Glu', lo: 70,   hi: 100 }
+                    { key: 'na',  label: 'Na',  lo: 135,  hi: 145  },
+                    { key: 'k',   label: 'K',   lo: 3.5,  hi: 5.0  },
+                    { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106  },
+                    { key: 'co2', label: 'CO2', lo: 23,   hi: 29   },
+                    { key: 'bun', label: 'BUN', lo: 7,    hi: 20   },
+                    { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0  },
+                    { key: 'glu', label: 'Glu', lo: 70,   hi: 100  }
                 ]},
                 { color: '#4a1d72', label: 'Electrolytes', labs: [
-                    { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3 },
+                    { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3  },
                     { key: 'totalCa', label: 'tCa',  lo: 8.5, hi: 10.2 },
-                    { key: 'mg',      label: 'Mg',   lo: 1.7, hi: 2.2 },
-                    { key: 'phos',    label: 'Phos', lo: 2.5, hi: 4.5 }
+                    { key: 'mg',      label: 'Mg',   lo: 1.7, hi: 2.2  },
+                    { key: 'phos',    label: 'Phos', lo: 2.5, hi: 4.5  }
                 ]},
                 { color: '#7c3009', label: 'LFTs', labs: [
-                    { key: 'ast',     label: 'AST',     lo: 10,  hi: 40 },
-                    { key: 'alt',     label: 'ALT',     lo: 10,  hi: 40 },
-                    { key: 'tbil',    label: 'TBil',    lo: 0.1, hi: 1.2 },
-                    { key: 'dbil',    label: 'DBil',    lo: 0,   hi: 0.3 },
-                    { key: 'alk',     label: 'Alk',     lo: 30,  hi: 120 },
-                    { key: 'ggt',     label: 'GGT',     lo: 9,   hi: 48 },
-                    { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5 }
+                    { key: 'ast',     label: 'AST',     lo: 10,  hi: 40   },
+                    { key: 'alt',     label: 'ALT',     lo: 10,  hi: 40   },
+                    { key: 'tbil',    label: 'TBil',    lo: 0.1, hi: 1.2  },
+                    { key: 'dbil',    label: 'DBil',    lo: 0,   hi: 0.3  },
+                    { key: 'alk',     label: 'Alk',     lo: 30,  hi: 120  },
+                    { key: 'ggt',     label: 'GGT',     lo: 9,   hi: 48   },
+                    { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5  }
                 ]},
                 { color: '#5c1a1a', label: 'Coags', labs: [
                     { key: 'pt',  label: 'PT',  lo: 11,  hi: 13.5 },
-                    { key: 'ptt', label: 'PTT', lo: 25,  hi: 35 },
-                    { key: 'inr', label: 'INR', lo: 0.8, hi: 1.1 },
-                    { key: 'fib', label: 'Fib', lo: 200, hi: 400 }
+                    { key: 'ptt', label: 'PTT', lo: 25,  hi: 35   },
+                    { key: 'inr', label: 'INR', lo: 0.8, hi: 1.1  },
+                    { key: 'fib', label: 'Fib', lo: 200, hi: 400  }
                 ]},
-                { color: '#1a4a4a', label: 'ABG', labs: [
+                { color: '#1a4a4a', label: 'ABG / VBG', labs: [
                     { key: 'ph',      label: 'pH',      lo: 7.35, hi: 7.45 },
-                    { key: 'pco2',    label: 'pCO2',    lo: 35,   hi: 45 },
-                    { key: 'po2',     label: 'pO2',     lo: 80,   hi: 100 },
-                    { key: 'bicarb',  label: 'HCO3',    lo: 22,   hi: 28 },
-                    { key: 'lactate', label: 'Lactate', lo: 0.5,  hi: 2.0 }
+                    { key: 'pco2',    label: 'pCO2',    lo: 35,   hi: 45   },
+                    { key: 'po2',     label: 'pO2',     lo: 80,   hi: 100  },
+                    { key: 'bicarb',  label: 'HCO3',    lo: 22,   hi: 28   },
+                    { key: 'lactate', label: 'Lactate', lo: 0.5,  hi: 2.0  }
                 ]},
                 { color: '#3d3000', label: 'Misc', labs: [
                     { key: 'trop',          label: 'Trop',    lo: 0,  hi: 0.04 },
                     { key: 'procalcitonin', label: 'PCT',     lo: 0,  hi: 0.25 },
-                    { key: 'amylase',       label: 'Amylase', lo: 30, hi: 110 },
-                    { key: 'lipase',        label: 'Lipase',  lo: 30, hi: 140 },
-                    { key: 'prealbumin',    label: 'PreAlb',  lo: 15, hi: 36 }
+                    { key: 'amylase',       label: 'Amylase', lo: 30, hi: 110  },
+                    { key: 'lipase',        label: 'Lipase',  lo: 30, hi: 140  },
+                    { key: 'prealbumin',    label: 'PreAlb',  lo: 15, hi: 36   }
                 ]}
             ];
 
@@ -6764,92 +6946,20 @@ saveToLocalStorage();
                     labs.forEach(({ key, label: lbl, lo, hi }) => {
                         const arr = labData.labs[key];
                         if (!arr || arr.length === 0) return;
-                        tableHTML += `<tr><td>${lbl}</td>`;
+                        let row = `<tr><td>${lbl}</td>`;
                         for (let i = 0; i < maxValues; i++) {
                             if (i < arr.length) {
                                 const v = arr[i];
-                                let dt = getLabDateTimeStr(key, i);
+                                let dt = getLabDT(key, i);
                                 if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
-                                    for (const alias of KEY_ALIASES[key]) { dt = getLabDateTimeStr(alias, i); if (dt) break; }
+                                    for (const alias of KEY_ALIASES[key]) { dt = getLabDT(alias, i); if (dt) break; }
                                 }
-                                tableHTML += dataCell(v, dt, !isNaN(v) && (v < lo || v > hi));
-                            } else {
-                                tableHTML += `<td></td>`;
-                            }
+                                row += dataCell(v, dt, !isNaN(v) && (v < lo || v > hi));
+                            } else { row += emptyCell(); }
                         }
-                        tableHTML += `</tr>`;
+                        tableHTML += row + `</tr>`;
                     });
                 });
-            }
-
-            // ── INTAKE / OUTPUT (extracted from raw text) ──
-            if (ioDataTbl) {
-                const ioRow = (label, entries, unit, abnormalFn) => {
-                    if (!entries || entries.length === 0) return '';
-                    const sorted = [...entries].sort((a, b) => (b.dateTime || 0) - (a.dateTime || 0));
-                    let row = `<tr><td>${label}</td>`;
-                    for (let i = 0; i < maxValues; i++) {
-                        if (i < sorted.length) {
-                            const entry = sorted[i];
-                            const val = entry.volume !== undefined ? entry.volume : entry.count;
-                            const abn = abnormalFn ? abnormalFn(val) : false;
-                            const dt = ioDateShort(entry.dateTimeStr || '');
-                            row += dataCell(val, dt, abn, unit);
-                        } else {
-                            row += `<td></td>`;
-                        }
-                    }
-                    row += `</tr>`;
-                    return row;
-                };
-
-                const hasIntakes = Object.values(ioDataTbl.intakes || {}).some(e => e && e.length > 0);
-                const hasUrine = ioDataTbl.outputs && ioDataTbl.outputs.urine && ioDataTbl.outputs.urine.length > 0;
-                const hasDrains = ioDataTbl.outputs && ioDataTbl.outputs.drains && Object.values(ioDataTbl.outputs.drains).some(e => e && e.length > 0);
-                const hasOther = ioDataTbl.outputs && ioDataTbl.outputs.other && Object.values(ioDataTbl.outputs.other).some(e => e && e.length > 0);
-                const hasOutputs = hasUrine || hasDrains || hasOther;
-                const hasCounts = ioDataTbl.counts && Object.values(ioDataTbl.counts).some(e => e && e.length > 0);
-
-                if (hasIntakes) {
-                    tableHTML += sectionHeader('Intake', '#155724');
-                    Object.entries(ioDataTbl.intakes).forEach(([type, entries]) => {
-                        if (entries && entries.length > 0) {
-                            const lbl = type.length > 28 ? type.substring(0, 28) + '…' : type;
-                            tableHTML += ioRow(lbl, entries, ' mL', null);
-                        }
-                    });
-                }
-
-                if (hasOutputs) {
-                    tableHTML += sectionHeader('Output', '#6b1a0f');
-                    if (hasUrine) tableHTML += ioRow('Urine', ioDataTbl.outputs.urine, ' mL', null);
-                    if (hasDrains) {
-                        Object.entries(ioDataTbl.outputs.drains).forEach(([type, entries]) => {
-                            if (entries && entries.length > 0) {
-                                const cleanType = type.replace(/^Other:\s*/i, '');
-                                const lbl = cleanType.length > 28 ? cleanType.substring(0, 28) + '…' : cleanType;
-                                tableHTML += ioRow(lbl, entries, ' mL', v => v > 100);
-                            }
-                        });
-                    }
-                    if (hasOther) {
-                        Object.entries(ioDataTbl.outputs.other).forEach(([type, entries]) => {
-                            if (entries && entries.length > 0) {
-                                const lbl = type.length > 28 ? type.substring(0, 28) + '…' : type;
-                                tableHTML += ioRow(lbl, entries, ' mL', null);
-                            }
-                        });
-                    }
-                }
-
-                if (hasCounts) {
-                    tableHTML += sectionHeader('Counts', '#4a3500');
-                    Object.entries(ioDataTbl.counts).forEach(([type, entries]) => {
-                        if (entries && entries.length > 0) {
-                            tableHTML += ioRow(type, entries, '', v => type.toLowerCase().includes('stool') && v > 3);
-                        }
-                    });
-                }
             }
 
             tableHTML += `</table>`;
@@ -9474,7 +9584,7 @@ extractLabValue('Procalcitonin:', 'procalcitonin');
 
 
 
-function extractIntakeOutputData(text) {
+function extractIntakeOutputData(text, overrideFrom = null, overrideTo = null) {
     console.log('extractIntakeOutputData called with text length:', text ? text.length : 0);
 
 const ioData = {
@@ -9511,16 +9621,14 @@ const ioData = {
     const intakeSection = intakeMatch ? intakeMatch[1] : '';
     const outputSection = outputMatch ? outputMatch[1] : '';
 
-    // Get current time and calculate 7 AM cutoff
-    const now = new Date();
-    const currentHour = now.getHours();
-    const cutoffDate = new Date(now);
-
-    if (currentHour < 7) {
-        // If before 7 AM, go back to 7 AM yesterday
-        cutoffDate.setDate(cutoffDate.getDate() - 1);
-    }
-    cutoffDate.setHours(7, 0, 0, 0);
+    // Get current time and calculate 7 AM cutoff (supports optional overrides for day-1 extraction)
+    const now = overrideTo || new Date();
+    const cutoffDate = overrideFrom || (() => {
+        const cd = new Date(now);
+        if (cd.getHours() < 7) cd.setDate(cd.getDate() - 1);
+        cd.setHours(7, 0, 0, 0);
+        return cd;
+    })();
 
     console.log('Current time:', now);
     console.log('Cutoff date:', cutoffDate);
