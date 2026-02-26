@@ -4966,7 +4966,7 @@ function switchView(mode) {
             dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
-            const cardIcons = { 'Problems': '🩺', 'ICS': '📋', 'VIOLIN': '🎻', 'ORDERS': '💊', 'To do': '✅', 'Priority': '⚡' };
+            const cardIcons = { 'Problems': '', 'ICS': '', 'VIOLIN': '', 'ORDERS': '', 'To do': '', 'Priority': '' };
             const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'To do': '#22c55e', 'Priority': '#ef4444' };
             const textFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do', 'Priority'];
 
@@ -5127,7 +5127,7 @@ case 'chartcheck': {
 
             const checkboxFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do'];
             const fieldsToShowChartCheck = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
-            const ccSectionIcons = { 'Name': '\u{1F464}', 'RM': '\u{1F3E5}', 'MRN': '\u{1F522}', 'Att': '\u{1F468}\u{200D}\u{2695}\u{FE0F}', 'Problems': '\u{1FA7A}', 'ICS': '\u{1F4CB}', 'VIOLIN': '\u{1F3BB}', 'ORDERS': '\u{1F48A}', 'Priority': '\u{26A1}' };
+            const ccSectionIcons = { 'Name': '', 'RM': '', 'MRN': '', 'Att': '', 'Problems': '', 'ICS': '', 'VIOLIN': '', 'ORDERS': '', 'Priority': '' };
             const ccSectionColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'Priority': '#ef4444' };
 
             fieldsToShowChartCheck.forEach(header => {
@@ -8467,6 +8467,53 @@ else {
             });
         });
 
+        // ── Category color map ─────────────────────────────────────────────────
+        const categoryColors = {
+            'NEURO/PAIN/SEDATION': '#c084fc', // purple
+            'PULM':                '#38bdf8', // sky blue
+            'CV/PRESSORS':         '#f87171', // red/coral
+            'GI/DIET':             '#fb923c', // orange
+            'RENAL/FLUIDS':        '#34d399', // emerald
+            'HEME/AC':             '#f472b6', // pink
+            'INFECTION/ABX':       '#a3e635', // lime/green
+            'ENDOCRINE/INSULIN':   '#fbbf24', // amber
+            'SKIN/OTHER':          '#94a3b8'  // slate
+        };
+
+        // ── Home med matching helpers ──────────────────────────────────────────
+        // Extract home meds once here so we can use them for matching
+        const _homeMedsRawForMatch = lastImportedData ? extractHomeMeds(lastImportedData) : '';
+        const homeMedLinesForMatch = _homeMedsRawForMatch
+            ? _homeMedsRawForMatch.split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0 && !l.match(/^(PRN|Scheduled|Continuous|Active|Active\s+PRN|Active\s+Scheduled|Active\s+Continuous|Medications?\s*\(\d+\))$/i))
+            : [];
+
+        function _mfw(s) { return (s || '').trim().split(/\s+/)[0].toLowerCase(); }
+
+        // Returns true if an inpatient med text matches any home med line
+        function isInpatMedAHomeMed(medText) {
+            if (!homeMedLinesForMatch.length) return false;
+            const fw = _mfw(medText);
+            const tl = medText.toLowerCase();
+            return homeMedLinesForMatch.some(hl => {
+                const hfw = _mfw(hl);
+                return hfw === fw || tl.includes(hfw) || hl.toLowerCase().includes(fw);
+            });
+        }
+
+        // Returns true if a home med line matches any active inpatient ordered med
+        function isHomeMedOrdered(homeLine) {
+            const hfw = _mfw(homeLine);
+            const hl = homeLine.toLowerCase();
+            return Object.values(categorizedMeds).some(medList =>
+                medList.some(med => {
+                    const fw = _mfw(med.text);
+                    return fw === hfw || med.text.toLowerCase().includes(hfw) || hl.includes(fw);
+                })
+            );
+        }
+
         // Medication abbreviation database
         const MED_ABBREVIATIONS = {
             'hydromorphone': 'D', 'oxycodone': 'O', 'morphine': 'M', 'fentanyl': 'F',
@@ -8543,9 +8590,10 @@ else {
 
             let html = '';
 
-            // Category header
+            // Category header with per-category color
+            const catColor = categoryColors[categoryName] || 'var(--primary)';
             html += `<div style="margin-bottom: 0.05rem;">`;
-            html += `<div style="color: var(--primary); font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}:</div>`;
+            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}:</div>`;
 
             // PO medications
             if (poMeds.length > 0) {
@@ -8573,7 +8621,8 @@ else {
                     const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
                     const manualIndicator = med.isManual ? '✏️ ' : '';
                     const editedIndicator = isEdited ? '📝 ' : '';
-                    const displayText = editedIndicator + manualIndicator + '💊 ' + baseText + (medIsPRN ? ' PRN' : '');
+                    const homeMedIndicator = isInpatMedAHomeMed(medText) ? '🏠 ' : '';
+                    const displayText = editedIndicator + manualIndicator + homeMedIndicator + '💊 ' + baseText + (medIsPRN ? ' PRN' : '');
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
@@ -8621,7 +8670,8 @@ else {
                     const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
                     const manualIndicator = med.isManual ? '✏️ ' : '';
                     const editedIndicator = isEdited ? '📝 ' : '';
-                    const displayText = editedIndicator + manualIndicator + '💉 ' + baseText + (medIsPRN ? ' PRN' : '');
+                    const homeMedIndicator = isInpatMedAHomeMed(medText) ? '🏠 ' : '';
+                    const displayText = editedIndicator + manualIndicator + homeMedIndicator + '💉 ' + baseText + (medIsPRN ? ' PRN' : '');
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
@@ -8783,8 +8833,12 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
                 if (deletedOrders.has(medId)) return;
                 const displayLine = showAbbreviatedTable ? abbreviateMedText(line) : line;
                 const medName = line.split(/\s+/)[0].toLowerCase();
-                tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
-                tableHTML += `<span>💊 ${displayLine}</span>`;
+                const homeOrdered = isHomeMedOrdered(line);
+                // ⚠️ = not yet ordered inpatient (needs to be started); 💊 = already ordered
+                const homePrefix = homeOrdered ? '💊 ' : '⚠️ ';
+                const homeColor = homeOrdered ? '#FFFFFF' : '#fbbf24'; // amber tint for unordered
+                tableHTML += `<div style="color: ${homeColor}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
+                tableHTML += `<span title="${homeOrdered ? 'Ordered inpatient' : 'NOT yet ordered inpatient \u2014 consider restarting'}">${homePrefix}${displayLine}</span>`;
                 tableHTML += `<div style="display: flex; gap: 4px;">`;
                 tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
                         class="med-status-btn"
