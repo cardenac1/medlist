@@ -3574,6 +3574,7 @@ const helpContent = {
                 saveToLocalStorage();
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
+                updatePriorityLightFromTodos(patient);
             }
 
             // Checkbox — click to toggle done
@@ -3691,6 +3692,20 @@ const helpContent = {
                     badge.style.color = '#60a5fa';
                 }
             }
+        }
+
+        // Sync priority indicator lights when todos change (e.g. all checked = green)
+        function updatePriorityLightFromTodos(patient) {
+            const { color } = getPriorityStatus(patient);
+            const idx = patientData.indexOf(patient);
+            if (idx !== -1) {
+                const sidebar = document.getElementById('prioritySidebar_' + idx);
+                if (sidebar) sidebar.style.background = color;
+            }
+            const btn = document.getElementById('detailPriorityBtn');
+            if (btn) btn.style.background = color;
+            const colorBox = document.getElementById('detailPriorityColorBox');
+            if (colorBox) colorBox.style.background = color;
         }
 
         // Refresh the todo display from patient data (called by external code)
@@ -3998,6 +4013,13 @@ function getChecklistStatus(patient, patientIndex) {
 
 
 	function getPriorityStatus(patient) {
+    // If ALL todo tasks are checked off → override to green regardless of priority
+    const _todoParsed = parseTodoText(patient['To do'] || '');
+    const _todoTasks = _todoParsed.tasks.filter(t => t.type === 'task');
+    if (_todoTasks.length > 0 && _todoTasks.every(t => t.done)) {
+        return { color: '#23CC72', title: 'All tasks complete \u2713' };
+    }
+
     // Normalize priority: handle undefined, null, or non-string values
     const priority = (patient.Priority || '').toString().trim().toLowerCase();
     console.log('getPriorityStatus: Normalized priority:', priority); // Debug log
@@ -6725,10 +6747,10 @@ saveToLocalStorage();
                     '</td>';
             }
             function totalCell(content) {
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#fbbf24;font-weight:700;background:rgba(251,191,36,0.1);border-left:1px solid #374151;">' + content + '</td>';
+                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#fbbf24;font-weight:700;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;">' + content + '</td>';
             }
             function emptyTotalCell() {
-                return '<td style="border-left:1px solid #374151;background:rgba(251,191,36,0.05);"></td>';
+                return '<td style="background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:0;"></td>';
             }
             // Combined I/O row: today values in main cols, history as extra cols, 24hr total at end
             function ioRowHTMLCombined(name, todayEntries, histEntries, total24Entries, unit) {
@@ -6742,11 +6764,11 @@ saveToLocalStorage();
                 var totalToday  = ioSumVol(sortedToday);
                 var total24     = ioSumVol(total24Entries);
                 // Truncate long drain/intake names; show full name in tooltip
-                var dispName = name.length > 35 ? name.substring(0, 33) + '\u2026' : name;
+                var dispName = name.length > 50 ? name.substring(0, 48) + '\u2026' : name;
                 var todayStr = (totalToday > 0 && todayTimeLabel)
                     ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Today: ' + totalToday + (unit.trim()||'') + ' / ' + todayTimeLabel + '</span>'
                     : '';
-                var row = '<tr><td style="white-space:normal;line-height:1.5;word-break:break-word;min-width:110px;max-width:150px;" title="' +
+                var row = '<tr><td style="white-space:normal;line-height:1.25;word-break:break-word;max-width:120px;" title="' +
                     name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + dispName + todayStr + '</td>';
                 // Today columns (shared with labs)
                 for (var i = 0; i < maxMainCols; i++) {
@@ -6755,6 +6777,10 @@ saveToLocalStorage();
                         var val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '\u2014');
                         row += dataCell(val, ioDateShort(e.dateTimeStr || ''), false, unit);
                     } else { row += emptyCell(); }
+                }
+                // 24hr total column — before Pre-7AM separator
+                if (has24hrTotal) {
+                    row += total24 > 0 ? totalCell(total24 + (unit.trim()||'')) : emptyTotalCell();
                 }
                 // Separator + history columns
                 if (hasSeparator) {
@@ -6766,10 +6792,6 @@ saveToLocalStorage();
                             row += histDataCell(valh, ioDateShort(eh.dateTimeStr || ''), unit);
                         } else { row += emptyCell(); }
                     }
-                }
-                // 24hr total column
-                if (has24hrTotal) {
-                    row += total24 > 0 ? totalCell(total24 + (unit.trim()||'')) : emptyTotalCell();
                 }
                 return row + '</tr>';
             }
@@ -6815,6 +6837,14 @@ saveToLocalStorage();
                 } else {
                     row += '<td colspan="' + maxMainCols + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
                 }
+                // 24hr total balance — before Pre-7AM separator
+                if (has24hrTotal) {
+                    if (in24 > 0 || out24 > 0) {
+                        row += '<td style="padding:3px 6px;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;white-space:nowrap;">' +
+                            '<span style="color:' + bal24Color + ';font-weight:700;font-size:0.78rem;">' + (bal24 >= 0 ? '+' : '') + bal24 + ' mL</span>' +
+                            '<div style="font-size:0.6em;color:#94a3b8;">\u2191' + in24 + ' \u2193' + out24 + '</div></td>';
+                    } else { row += emptyTotalCell(); }
+                }
                 // History balance
                 if (hasSeparator) {
                     row += sepCell();
@@ -6828,14 +6858,6 @@ saveToLocalStorage();
                     } else if (maxHistCols === 1) {
                         row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
                     }
-                }
-                // 24hr total balance
-                if (has24hrTotal) {
-                    if (in24 > 0 || out24 > 0) {
-                        row += '<td style="padding:3px 6px;background:rgba(251,191,36,0.1);border-left:1px solid #374151;white-space:nowrap;">' +
-                            '<span style="color:' + bal24Color + ';font-weight:700;font-size:0.78rem;">' + (bal24 >= 0 ? '+' : '') + bal24 + ' mL</span>' +
-                            '<div style="font-size:0.6em;color:#94a3b8;">\u2191' + in24 + ' \u2193' + out24 + '</div></td>';
-                    } else { row += emptyTotalCell(); }
                 }
                 return row + '</tr>';
             }
@@ -6860,16 +6882,16 @@ saveToLocalStorage();
                 '#tableContainer table{border-collapse:collapse;font-family:monospace;min-width:100%;}' +
                 '#tableContainer th{background:#1e293b;color:#94a3b8;font-size:0.65rem;padding:3px 8px;text-align:center;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
                 '#tableContainer th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:#1e293b;}' +
-                '#tableContainer td:first-child{color:#cbd5e1;font-size:0.72rem;font-weight:600;padding:3px 8px;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;}' +
+                '#tableContainer td:first-child{color:#cbd5e1;font-size:0.6rem;font-weight:600;padding:2px 5px;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
                 '#tableContainer tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '#tableContainer tr:hover td:first-child{background:#0f0f1e;}' +
                 '</style><table><tr><th>Parameter / Total</th>';
             for (var _ci = 0; _ci < maxMainCols; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
+            if (has24hrTotal) tableHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.6rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;">24h\u00a0Total</th>';
             if (hasSeparator) {
                 tableHTML += '<th style="background:#2d1f00;color:#fbbf24;border-left:2px solid #f59e0b;font-size:0.6rem;white-space:nowrap;padding:3px 5px;">\u25c4 Pre-7AM \u25ba</th>';
                 for (var _hi = 0; _hi < maxHistCols; _hi++) tableHTML += '<th style="background:#1a1a2e;color:#a78bfa;">#' + (_hi + 1) + '</th>';
             }
-            if (has24hrTotal) tableHTML += '<th style="background:#1a2035;color:#fbbf24;white-space:nowrap;font-size:0.6rem;border-left:1px solid #374151;padding:3px 5px;">24h Total</th>';
             tableHTML += '</tr>';
 
             // ── VITALS (today in main cols, pre-7AM history in extra right cols) ──
@@ -6887,6 +6909,8 @@ saveToLocalStorage();
                             ? dataCell(todayArr[i].value, todayArr[i].label, todayArr[i].value < vd.lo || todayArr[i].value > vd.hi, vd.unit)
                             : emptyCell();
                     }
+                    // Empty 24hr total cell (vitals don't have a daily total) — before Pre-7AM
+                    if (has24hrTotal) row += emptyTotalCell();
                     // Separator + history columns
                     if (hasSeparator) {
                         row += sepCell();
@@ -6896,8 +6920,6 @@ saveToLocalStorage();
                                 : emptyCell();
                         }
                     }
-                    // Empty 24hr total cell (vitals don't have a daily total)
-                    if (has24hrTotal) row += emptyTotalCell();
                     tableHTML += row + '</tr>';
                 });
             }
@@ -7045,13 +7067,13 @@ saveToLocalStorage();
                                 row += dataCell(v, dt, !isNaN(v) && (v < ld.lo || v > ld.hi), '');
                             } else { row += emptyCell(); }
                         }
+                        // Empty 24hr total cell — before Pre-7AM separator
+                        if (has24hrTotal) row += emptyTotalCell();
                         // Visual separator + empty history cells (for column alignment)
                         if (hasSeparator) {
                             row += sepCell();
                             for (var j = 0; j < maxHistCols; j++) row += emptyCell();
                         }
-                        // Empty 24hr total cell
-                        if (has24hrTotal) row += emptyTotalCell();
                         tableHTML += row + '</tr>';
                     });
                 });
