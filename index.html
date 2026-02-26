@@ -6543,10 +6543,12 @@ saveToLocalStorage();
 
 
 
-        function generateTableView() {
+        // Returns the unified table HTML string; usable both inline and in modal.
+        function buildUnifiedTableHTML(labDataArg, lastImportedDataArg) {
+            var labData = labDataArg;
+            var lastImportedData = lastImportedDataArg;
             if (!labData || Object.keys(labData).length === 0) {
-                document.getElementById('tableContainer').innerHTML = '<p>No lab data available. Please import data first.</p>';
-                return;
+                return '<p style="color:#94a3b8;padding:1rem;">No lab data available.</p>';
             }
 
             // ── TIME BOUNDARY: since last 7 AM ───────────────────────────────────
@@ -6823,7 +6825,15 @@ saveToLocalStorage();
             }
 
             tableHTML += '</table>';
-            document.getElementById('tableContainer').innerHTML = tableHTML;
+            return tableHTML;
+        }
+
+        function generateTableView() {
+            if (!labData || Object.keys(labData).length === 0) {
+                document.getElementById('tableContainer').innerHTML = '<p>No lab data available. Please import data first.</p>';
+                return;
+            }
+            document.getElementById('tableContainer').innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
         }
 
 
@@ -13785,36 +13795,12 @@ while (i < fishboneLines.length && !foundFluidBalance) {
 
 	
 
-  // ADD VITALS VISUALIZATION FIRST (before fishbone text)
-  if (_labData?.vitals && Object.keys(_labData.vitals).length > 0) {
-    const vitalsViz = createVitalsVisualization(_labData.vitals);
-    violinDisplay.appendChild(vitalsViz);
-  }
-
-  
-
-// ADD I/O DASHBOARD (replaces fishbone text)
-if (_ioData) {
-  const ioDashboard = createIODashboard(_ioData, _labData);
-  violinDisplay.appendChild(ioDashboard);
-}
-
-  // Generate and append lab values table
-  if (_labData && Object.keys(_labData.labs || {}).length > 0) {
-    const tableHTML = generateModernLabTable(_labData);
-    const tableDiv = document.createElement('div');
-    tableDiv.style.marginTop = '0.25rem';
-    tableDiv.innerHTML = tableHTML;
-    violinDisplay.appendChild(tableDiv);
-
-    // Ensure tooltips work
-    const labTable = tableDiv.querySelector('.modern-lab-table');
-    if (labTable) {
-      labTable.style.pointerEvents = 'auto';
-      labTable.querySelectorAll('td').forEach(td => {
-        td.style.pointerEvents = 'auto';
-      });
-    }
+  // ── UNIFIED TABLE: Vitals + I/O + Labs (inline) ─────────────────────────
+  {
+    var unifiedDiv = document.createElement('div');
+    unifiedDiv.style.cssText = 'white-space:normal;overflow-x:auto;margin-bottom:0.5rem;';
+    unifiedDiv.innerHTML = buildUnifiedTableHTML(_labData, _lastImportedData);
+    violinDisplay.appendChild(unifiedDiv);
   }
 
 // ADD CLINICAL SUGGESTIONS MODULE (after full orders/lab display)
