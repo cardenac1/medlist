@@ -6572,303 +6572,256 @@ saveToLocalStorage();
             }
 
             // ── TIME BOUNDARIES ──────────────────────────────────────────────────
-            const _now = new Date();
-            const cutoff7am = new Date(_now);
+            var _now = new Date();
+            var cutoff7am = new Date(_now);
             if (_now.getHours() < 7) cutoff7am.setDate(cutoff7am.getDate() - 1);
             cutoff7am.setHours(7, 0, 0, 0);
-            const cutoff7amDay1Start = new Date(cutoff7am);
-            cutoff7amDay1Start.setDate(cutoff7amDay1Start.getDate() - 1);
+            var cutoff7amD1 = new Date(cutoff7am);
+            cutoff7amD1.setDate(cutoff7amD1.getDate() - 1); // yesterday 7AM
 
-            // ── PARSE VITAL DATETIME ─────────────────────────────────────────────
-            const parseDTStr = (dateStr, timeStr) => {
-                const p = dateStr.split('/');
-                const yr = p[2] && p[2].length === 2 ? '20' + p[2] : (p[2] || '2025');
-                try { return new Date(`${yr}-${p[0]}-${p[1]}T${timeStr}`); } catch(e) { return null; }
-            };
-            const fmtShortDT = (dateStr, timeStr) => {
-                const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
-                const tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
-                return [dm ? dm[1] : dateStr, tm ? tm[1] : ''].filter(Boolean).join(' ');
-            };
-
-            // ── EXTRACT VITALS split into today vs day-1 ────────────────────────
-            const vitalDefs = [
+            // ── VITAL DEFS ───────────────────────────────────────────────────────
+            var vitalDefs = [
                 { key: 'temp', label: 'Temp', unit: '°C',   lo: 35,  hi: 38  },
                 { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60,  hi: 100 },
                 { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90,  hi: 180 },
                 { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60,  hi: 120 },
                 { key: 'o2',   label: 'O2',   unit: '%',    lo: 94,  hi: 100 }
             ];
-            const vitals = {};
-            vitalDefs.forEach(d => { vitals[d.key] = { today: [], day1: [] }; });
+
+            // ── EXTRACT VITALS FROM RAW TEXT, split today vs day-1 ──────────────
+            var vitals = {};
+            vitalDefs.forEach(function(d) { vitals[d.key] = { today: [], day1: [] }; });
 
             if (lastImportedData) {
-                const pushVital = (key, value, dateStr, timeStr) => {
-                    const dt = parseDTStr(dateStr, timeStr);
-                    if (!dt) return;
-                    const entry = { value, label: fmtShortDT(dateStr, timeStr) };
+                function pushVital(key, value, dateStr, timeStr) {
+                    var p = dateStr.split('/');
+                    var yr = (p[2] && p[2].length === 2) ? ('20' + p[2]) : (p[2] || '2025');
+                    var dt;
+                    try { dt = new Date(yr + '-' + p[0] + '-' + p[1] + 'T' + timeStr); } catch(e) { return; }
+                    if (!dt || isNaN(dt.getTime())) return;
+                    var dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+                    var tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
+                    var lbl = (dm ? dm[1] : dateStr) + (tm ? ' ' + tm[1] : '');
+                    var entry = { value: value, label: lbl };
                     if (dt >= cutoff7am && dt <= _now) vitals[key].today.push(entry);
-                    else if (dt >= cutoff7amDay1Start && dt < cutoff7am) vitals[key].day1.push(entry);
-                };
-                let _m;
-                const _tempRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_m = _tempRe.exec(lastImportedData))) pushVital('temp', parseFloat(_m[1]), _m[2], _m[3]);
-                const _hrRe = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_m = _hrRe.exec(lastImportedData))) pushVital('hr', parseInt(_m[1]), _m[2], _m[3]);
-                const _sbpRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_m = _sbpRe.exec(lastImportedData))) pushVital('sbp', parseInt(_m[1]), _m[2], _m[3]);
-                const _dbpRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_m = _dbpRe.exec(lastImportedData))) pushVital('dbp', parseInt(_m[1]), _m[2], _m[3]);
-                const _o2Re = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_m = _o2Re.exec(lastImportedData))) pushVital('o2', parseInt(_m[1]), _m[2], _m[3]);
-                // newest first
-                Object.values(vitals).forEach(v => {
-                    v.today.sort((a, b) => b.dt - a.dt);
-                    v.day1.sort((a, b) => b.dt - a.dt);
-                });
+                    else if (dt >= cutoff7amD1 && dt < cutoff7am) vitals[key].day1.push(entry);
+                }
+                var _vm;
+                var _tRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _tRe.exec(lastImportedData))) pushVital('temp', parseFloat(_vm[1]), _vm[2], _vm[3]);
+                var _hRe = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _hRe.exec(lastImportedData))) pushVital('hr', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _sRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _sRe.exec(lastImportedData))) pushVital('sbp', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _dRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _dRe.exec(lastImportedData))) pushVital('dbp', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _oRe = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _oRe.exec(lastImportedData))) pushVital('o2', parseInt(_vm[1]), _vm[2], _vm[3]);
             }
 
-            // ── EXTRACT I/O for today and day-1 ──────────────────────────────────
-            let ioToday = null, ioDay1 = null;
+            // ── EXTRACT I/O (today + day-1) ──────────────────────────────────────
+            var ioToday = null, ioDay1 = null;
             if (lastImportedData) {
-                try { ioToday = extractIntakeOutputData(lastImportedData); } catch(e) { console.error('I/O today:', e); }
-                try { ioDay1 = extractIntakeOutputData(lastImportedData, cutoff7amDay1Start, cutoff7am); } catch(e) { console.error('I/O day1:', e); }
+                try { ioToday = extractIntakeOutputData(lastImportedData); } catch(e) {}
+                try { ioDay1  = extractIntakeOutputData(lastImportedData, cutoff7amD1, cutoff7am); } catch(e) {}
             }
 
-            // ── COMPUTE MAX COLUMNS (across today + day-1 + labs) ───────────────
-            const ioMaxEntries = (io) => {
+            // ── COMPUTE COLUMN COUNT ─────────────────────────────────────────────
+            function ioMaxCols(io) {
                 if (!io) return 0;
-                return Math.max(0,
-                    ...Object.values(io.intakes || {}).map(a => a ? a.length : 0),
-                    (io.outputs && io.outputs.urine) ? io.outputs.urine.length : 0,
-                    ...Object.values((io.outputs && io.outputs.drains) || {}).map(a => a ? a.length : 0),
-                    ...Object.values((io.outputs && io.outputs.other)  || {}).map(a => a ? a.length : 0),
-                    ...Object.values(io.counts || {}).map(a => a ? a.length : 0)
-                );
-            };
-            const maxLabs    = Math.max(0, ...Object.values(labData.labs || {}).map(a => a ? a.length : 0));
-            const maxVitCols = Math.max(0, ...vitalDefs.map(d => Math.max(vitals[d.key].today.length, vitals[d.key].day1.length)));
-            const maxIOCols  = Math.max(ioMaxEntries(ioToday), ioMaxEntries(ioDay1));
-            const maxValues  = Math.max(maxLabs, maxVitCols, maxIOCols, 1);
+                var arrs = Object.values(io.intakes || {})
+                    .concat([(io.outputs && io.outputs.urine) || []])
+                    .concat(Object.values((io.outputs && io.outputs.drains) || {}))
+                    .concat(Object.values((io.outputs && io.outputs.other)  || {}))
+                    .concat(Object.values(io.counts || {}));
+                return Math.max.apply(null, [0].concat(arrs.map(function(a){ return a ? a.length : 0; })));
+            }
+            var maxLabs = Math.max.apply(null, [0].concat(Object.values(labData.labs || {}).map(function(a){ return a ? a.length : 0; })));
+            var maxVit  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return Math.max(vitals[d.key].today.length, vitals[d.key].day1.length); })));
+            var maxValues = Math.max(maxLabs, maxVit, ioMaxCols(ioToday), ioMaxCols(ioDay1), 1);
 
-            // ── CELL BUILDERS ─────────────────────────────────────────────────────
-            const dataCell = (val, dt, abnormal = false, unit = '') => {
-                const clr = abnormal
+            // ── CELL / ROW HELPERS ───────────────────────────────────────────────
+            function dataCell(val, dt, abnormal, unit) {
+                unit = unit || '';
+                var clr = abnormal
                     ? 'background:rgba(239,68,68,0.2);color:#ff6b6b;font-weight:700;'
                     : 'color:#6ee7b7;';
-                const dtLine = dt ? `<div style="font-size:0.6em;color:#999;white-space:nowrap;text-align:center;">${dt}</div>` : '';
-                return `<td style="padding:3px 6px;font-size:0.78rem;text-align:center;${clr}"><div>${val}${unit}</div>${dtLine}</td>`;
-            };
-            const emptyCell = () => `<td></td>`;
+                var dtLine = dt ? '<div style="font-size:0.6em;color:#999;white-space:nowrap;text-align:center;">' + dt + '</div>' : '';
+                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
+            }
+            function emptyCell() { return '<td></td>'; }
 
-            const sectionHeader = (label, color) =>
-                `<tr><td colspan="${maxValues + 1}" style="background:${color};color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">${label}</td></tr>`;
-
-            // Toggle row — clicking shows/hides all rows with matching CSS class
-            const toggleRow = (label, cssClass, color) =>
-                `<tr onclick="[...document.querySelectorAll('.${cssClass}')].forEach(r=>{r.style.display=r.style.display===''?'none':''})" style="cursor:pointer;user-select:none;">
-                  <td colspan="${maxValues + 1}" style="background:${color}22;color:${color};font-size:0.64rem;font-weight:600;padding:3px 10px;text-align:center;border:1px solid ${color}44;letter-spacing:0.05em;">▼ SHOW / HIDE DAY −1</td>
-                </tr>`;
-
-            // I/O row: label col shows name + total, data cols show each entry timestamped
-            const ioDateShort = (dtStr) => {
+            function sectionHdr(label, color) {
+                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">' + label + '</td></tr>';
+            }
+            function toggleHdr(cssClass, color) {
+                return '<tr onclick="[].slice.call(document.querySelectorAll(\'.' + cssClass + '\')).forEach(function(r){r.style.display=r.style.display===\'\'?\'none\':\'\'})" style="cursor:pointer;">' +
+                    '<td colspan="' + (maxValues + 1) + '" style="background:' + color + '22;color:' + color + ';font-size:0.64rem;font-weight:600;padding:3px 10px;text-align:center;border:1px solid ' + color + '44;">▼ SHOW / HIDE DAY −1</td></tr>';
+            }
+            function ioDateShort(dtStr) {
                 if (!dtStr) return '';
-                const _dm = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
-                return _dm ? `${_dm[1]} ${_dm[2]}` : dtStr.substring(0, 11);
-            };
-            const ioRow = (name, entries, unit, rowCls = '', abnFn = null) => {
+                var mm = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
+                return mm ? mm[1] + ' ' + mm[2] : dtStr.substring(0, 11);
+            }
+            function ioSumVol(entries) {
+                return (entries || []).reduce(function(s, e){ return s + (e.volume || 0); }, 0);
+            }
+            function ioRowHTML(name, entries, unit, rowCls) {
                 if (!entries || entries.length === 0) return '';
-                const sorted = [...entries].sort((a, b) => (b.dateTime || 0) - (a.dateTime || 0));
-                const total  = sorted.reduce((s, e) => s + (e.volume !== undefined ? (e.volume || 0) : (e.count || 0)), 0);
-                const totalStr = total > 0 ? ` <span style="font-size:0.65em;color:#94a3b8;font-weight:400;display:block;line-height:1.3;white-space:normal;">Total: ${total}${unit.trim() || ''}</span>` : '';
-                const trAttr = rowCls ? `class="${rowCls}" style="display:none"` : '';
-                let row = `<tr ${trAttr}><td style="max-width:160px;white-space:normal;line-height:1.3;">${name}${totalStr}</td>`;
-                for (let i = 0; i < maxValues; i++) {
+                var sorted = entries.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
+                var total  = ioSumVol(sorted);
+                var totalStr = total > 0 ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Total: ' + total + (unit.trim()||'') + '</span>' : '';
+                var trAttr = rowCls ? 'class="' + rowCls + '" style="display:none"' : '';
+                var row = '<tr ' + trAttr + '><td style="max-width:170px;white-space:normal;line-height:1.4;">' + name + totalStr + '</td>';
+                for (var i = 0; i < maxValues; i++) {
                     if (i < sorted.length) {
-                        const e = sorted[i];
-                        const val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '—');
-                        const dt  = ioDateShort(e.dateTimeStr || '');
-                        row += dataCell(val, dt, abnFn ? abnFn(val) : false, unit);
+                        var e = sorted[i];
+                        var val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '—');
+                        row += dataCell(val, ioDateShort(e.dateTimeStr || ''), false, unit);
                     } else { row += emptyCell(); }
                 }
-                row += `</tr>`;
-                return row;
-            };
-
-            // I/O total+balance summary row
-            const ioSumVol = (entries) => (entries || []).reduce((s, e) => s + (e.volume || 0), 0);
-            const ioBalance = (io) => {
-                if (!io) return null;
-                let totalIn = 0, totalOut = 0;
-                Object.values(io.intakes || {}).forEach(a => { totalIn += ioSumVol(a); });
+                return row + '</tr>';
+            }
+            function balanceRowHTML(io, rowCls) {
+                if (!io) return '';
+                var totalIn = 0, totalOut = 0;
+                Object.values(io.intakes || {}).forEach(function(a){ totalIn += ioSumVol(a); });
                 totalOut += ioSumVol(io.outputs && io.outputs.urine);
-                Object.values((io.outputs && io.outputs.drains) || {}).forEach(a => { totalOut += ioSumVol(a); });
-                Object.values((io.outputs && io.outputs.other)  || {}).forEach(a => { totalOut += ioSumVol(a); });
-                return { totalIn, totalOut, bal: totalIn - totalOut };
-            };
-
-            const balanceRow = (io, rowCls = '') => {
-                const b = ioBalance(io);
-                if (!b || (b.totalIn === 0 && b.totalOut === 0)) return '';
-                const balColor = b.bal >= 0 ? '#10b981' : '#f59e0b';
-                const trAttr = rowCls ? `class="${rowCls}" style="display:none"` : '';
-                return `<tr ${trAttr}>
-                  <td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>
-                  <td style="background:#1a2035;padding:4px 10px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ${b.totalIn} mL</span></td>
-                  <td style="background:#1a2035;padding:4px 10px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ${b.totalOut} mL</span></td>
-                  <td colspan="${Math.max(1, maxValues - 2)}" style="background:#1a2035;padding:4px 10px;white-space:nowrap;"><span style="color:${balColor};font-weight:700;">= BAL: ${b.bal >= 0 ? '+' : ''}${b.bal} mL</span></td>
-                </tr>`;
-            };
-
-            // Lab date/time helper
-            const getLabDT = (key, idx) => {
-                let dates = labData.datesArray?.[key] || [];
-                let times = labData.timesArray?.[key] || [];
-                if (!dates[idx] && labData.dates?.[key]) dates = [labData.dates[key]];
-                if (!times[idx] && labData.times?.[key]) times = [labData.times[key]];
-                const d = dates[idx] || '', t = times[idx] || times[0] || '';
+                Object.values((io.outputs && io.outputs.drains) || {}).forEach(function(a){ totalOut += ioSumVol(a); });
+                Object.values((io.outputs && io.outputs.other)  || {}).forEach(function(a){ totalOut += ioSumVol(a); });
+                if (totalIn === 0 && totalOut === 0) return '';
+                var bal = totalIn - totalOut;
+                var balColor = bal >= 0 ? '#10b981' : '#f59e0b';
+                var trAttr = rowCls ? 'class="' + rowCls + '" style="display:none"' : '';
+                var extra = Math.max(1, maxValues - 2);
+                return '<tr ' + trAttr + '>' +
+                    '<td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>' +
+                    '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>' +
+                    '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></td>' +
+                    '<td colspan="' + extra + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>' +
+                    '</tr>';
+            }
+            function getLabDT(key, idx) {
+                var dates = (labData.datesArray && labData.datesArray[key]) || [];
+                var times = (labData.timesArray && labData.timesArray[key]) || [];
+                if (!dates[idx] && labData.dates && labData.dates[key]) dates = [labData.dates[key]];
+                if (!times[idx] && labData.times && labData.times[key]) times = [labData.times[key]];
+                var d = dates[idx] || '', t = times[idx] || times[0] || '';
                 if (!d) return '';
-                const dm = d.match(/(\d{1,2}\/\d{1,2})/);
-                const tm = t.match(/(\d{1,2}:\d{2})/);
-                return [dm ? dm[1] : d, tm ? tm[1] : ''].filter(Boolean).join(' ');
-            };
+                var dm = d.match(/(\d{1,2}\/\d{1,2})/);
+                var tm = t.match(/(\d{1,2}:\d{2})/);
+                return (dm ? dm[1] : d) + (tm ? ' ' + tm[1] : '');
+            }
 
-            // ── TABLE SHELL ──────────────────────────────────────────────────────
-            let tableHTML = `<style>
-              #tableContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-              #tableContainer table { border-collapse: collapse; font-family: 'JetBrains Mono', monospace; min-width: 100%; }
-              #tableContainer th { background:#1e293b; color:#94a3b8; font-size:0.65rem; padding:3px 8px; text-align:center; position:sticky; top:0; z-index:2; white-space:nowrap; }
-              #tableContainer th:first-child { text-align:left; position:sticky; left:0; z-index:3; background:#1e293b; }
-              #tableContainer td:first-child { color:#cbd5e1; font-size:0.72rem; font-weight:600; padding:3px 8px; position:sticky; left:0; background:#0a0a14; z-index:1; border-right:1px solid #1e293b; vertical-align:top; }
-              #tableContainer tr:hover td { background-color:rgba(255,255,255,0.04); }
-              #tableContainer tr:hover td:first-child { background:#0f0f1e; }
-            </style><table>`;
-            tableHTML += `<tr><th>Parameter / Total</th>`;
-            for (let i = 0; i < maxValues; i++) tableHTML += `<th>#${i + 1}</th>`;
-            tableHTML += `</tr>`;
+            // ── TABLE HTML ───────────────────────────────────────────────────────
+            var tableHTML = '<style>' +
+                '#tableContainer{overflow-x:auto;-webkit-overflow-scrolling:touch;}' +
+                '#tableContainer table{border-collapse:collapse;font-family:monospace;min-width:100%;}' +
+                '#tableContainer th{background:#1e293b;color:#94a3b8;font-size:0.65rem;padding:3px 8px;text-align:center;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
+                '#tableContainer th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:#1e293b;}' +
+                '#tableContainer td:first-child{color:#cbd5e1;font-size:0.72rem;font-weight:600;padding:3px 8px;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;}' +
+                '#tableContainer tr:hover td{background-color:rgba(255,255,255,0.04);}' +
+                '#tableContainer tr:hover td:first-child{background:#0f0f1e;}' +
+                '</style><table><tr><th>Parameter / Total</th>';
+            for (var _ci = 0; _ci < maxValues; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
+            tableHTML += '</tr>';
 
-            // ════════════════════════════════════════════════════════════════════
-            // SECTION 1: VITALS (since 7 AM)
-            // ════════════════════════════════════════════════════════════════════
-            const hasVitalsToday = vitalDefs.some(d => vitals[d.key].today.length > 0);
-            const hasVitalsDay1  = vitalDefs.some(d => vitals[d.key].day1.length  > 0);
-
-            if (hasVitalsToday || hasVitalsDay1) {
-                tableHTML += sectionHeader('Vitals — Since 7 AM', '#0f4c81');
-                if (hasVitalsToday) {
-                    vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
-                        const arr = vitals[key].today;
+            // ── VITALS (since 7 AM) ──────────────────────────────────────────────
+            var hasVitToday = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0; });
+            var hasVitD1    = vitalDefs.some(function(d){ return vitals[d.key].day1.length  > 0; });
+            if (hasVitToday || hasVitD1) {
+                tableHTML += sectionHdr('Vitals — Since 7 AM', '#0f4c81');
+                vitalDefs.forEach(function(vd) {
+                    var arr = vitals[vd.key].today;
+                    if (!arr.length) return;
+                    var row = '<tr><td>' + vd.label + '</td>';
+                    for (var i = 0; i < maxValues; i++) {
+                        row += i < arr.length
+                            ? dataCell(arr[i].value, arr[i].label, arr[i].value < vd.lo || arr[i].value > vd.hi, vd.unit)
+                            : emptyCell();
+                    }
+                    tableHTML += row + '</tr>';
+                });
+                if (hasVitD1) {
+                    tableHTML += toggleHdr('tbl-d1-vitals', '#4a90d9');
+                    vitalDefs.forEach(function(vd) {
+                        var arr = vitals[vd.key].day1;
                         if (!arr.length) return;
-                        let row = `<tr><td>${label}</td>`;
-                        for (let i = 0; i < maxValues; i++) {
-                            if (i < arr.length) {
-                                const r = arr[i];
-                                row += dataCell(r.value, r.label, r.value < lo || r.value > hi, unit);
-                            } else { row += emptyCell(); }
+                        var row = '<tr class="tbl-d1-vitals" style="display:none"><td>' + vd.label + ' <span style="font-size:0.65em;color:#64748b;">Day−1</span></td>';
+                        for (var i = 0; i < maxValues; i++) {
+                            row += i < arr.length
+                                ? dataCell(arr[i].value, arr[i].label, arr[i].value < vd.lo || arr[i].value > vd.hi, vd.unit)
+                                : emptyCell();
                         }
-                        tableHTML += row + `</tr>`;
-                    });
-                }
-                if (hasVitalsDay1) {
-                    tableHTML += toggleRow('', 'tbl-d1-vitals', '#4a90d9');
-                    vitalDefs.forEach(({ key, label, unit, lo, hi }) => {
-                        const arr = vitals[key].day1;
-                        if (!arr.length) return;
-                        let row = `<tr class="tbl-d1-vitals" style="display:none"><td>${label} <span style="font-size:0.65em;color:#64748b;">Day−1</span></td>`;
-                        for (let i = 0; i < maxValues; i++) {
-                            if (i < arr.length) {
-                                const r = arr[i];
-                                row += dataCell(r.value, r.label, r.value < lo || r.value > hi, unit);
-                            } else { row += emptyCell(); }
-                        }
-                        tableHTML += row + `</tr>`;
+                        tableHTML += row + '</tr>';
                     });
                 }
             }
 
-            // ════════════════════════════════════════════════════════════════════
-            // SECTION 2: INTAKE (since 7 AM) + day-1
-            // ════════════════════════════════════════════════════════════════════
-            const hasIntakeToday = ioToday && Object.values(ioToday.intakes || {}).some(e => e && e.length > 0);
-            const hasIntakeDay1  = ioDay1  && Object.values(ioDay1.intakes  || {}).some(e => e && e.length > 0);
-
-            if (hasIntakeToday || hasIntakeDay1) {
-                tableHTML += sectionHeader('Intake — Since 7 AM', '#155724');
-                if (hasIntakeToday) {
-                    Object.entries(ioToday.intakes).forEach(([type, entries]) => {
-                        if (entries && entries.length > 0)
-                            tableHTML += ioRow(type.length > 36 ? type.substring(0, 36) + '…' : type, entries, ' mL');
-                    });
-                }
-                if (hasIntakeDay1) {
-                    tableHTML += toggleRow('', 'tbl-d1-intake', '#22c55e');
-                    Object.entries(ioDay1.intakes).forEach(([type, entries]) => {
-                        if (entries && entries.length > 0)
-                            tableHTML += ioRow(type.length > 36 ? type.substring(0, 36) + '…' : type, entries, ' mL', 'tbl-d1-intake');
-                    });
-                }
-            }
-
-            // ════════════════════════════════════════════════════════════════════
-            // SECTION 3: OUTPUT (since 7 AM) + day-1
-            // ════════════════════════════════════════════════════════════════════
-            const hasUrineToday  = ioToday && ioToday.outputs && ioToday.outputs.urine  && ioToday.outputs.urine.length > 0;
-            const hasDrainsToday = ioToday && ioToday.outputs && ioToday.outputs.drains && Object.values(ioToday.outputs.drains).some(e => e && e.length > 0);
-            const hasOtherToday  = ioToday && ioToday.outputs && ioToday.outputs.other  && Object.values(ioToday.outputs.other).some(e => e && e.length > 0);
-            const hasUrineDay1   = ioDay1  && ioDay1.outputs  && ioDay1.outputs.urine   && ioDay1.outputs.urine.length > 0;
-            const hasDrainsDay1  = ioDay1  && ioDay1.outputs  && ioDay1.outputs.drains  && Object.values(ioDay1.outputs.drains).some(e => e && e.length > 0);
-            const hasOtherDay1   = ioDay1  && ioDay1.outputs  && ioDay1.outputs.other   && Object.values(ioDay1.outputs.other).some(e => e && e.length > 0);
-            const hasOutputToday = hasUrineToday || hasDrainsToday || hasOtherToday;
-            const hasOutputDay1  = hasUrineDay1  || hasDrainsDay1  || hasOtherDay1;
-
-            if (hasOutputToday || hasOutputDay1) {
-                tableHTML += sectionHeader('Output — Since 7 AM', '#6b1a0f');
-                if (hasUrineToday)  tableHTML += ioRow('Urine', ioToday.outputs.urine, ' mL');
-                if (hasDrainsToday) Object.entries(ioToday.outputs.drains).forEach(([type, entries]) => {
-                    if (entries && entries.length > 0) tableHTML += ioRow(type.replace(/^Other:\s*/i, '').substring(0, 36), entries, ' mL', '', v => v > 100);
+            // ── INTAKE (since 7 AM) ──────────────────────────────────────────────
+            var hasInToday = ioToday && Object.values(ioToday.intakes || {}).some(function(e){ return e && e.length > 0; });
+            var hasInD1    = ioDay1  && Object.values(ioDay1.intakes  || {}).some(function(e){ return e && e.length > 0; });
+            if (hasInToday || hasInD1) {
+                tableHTML += sectionHdr('Intake — Since 7 AM', '#155724');
+                if (hasInToday) Object.entries(ioToday.intakes).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0, 36), kv[1], ' mL', '');
                 });
-                if (hasOtherToday)  Object.entries(ioToday.outputs.other).forEach(([type, entries]) => {
-                    if (entries && entries.length > 0) tableHTML += ioRow(type.substring(0, 36), entries, ' mL');
-                });
-
-                if (hasOutputDay1) {
-                    tableHTML += toggleRow('', 'tbl-d1-output', '#ef4444');
-                    if (hasUrineDay1)  tableHTML += ioRow('Urine Day−1', ioDay1.outputs.urine, ' mL', 'tbl-d1-output');
-                    if (hasDrainsDay1) Object.entries(ioDay1.outputs.drains).forEach(([type, entries]) => {
-                        if (entries && entries.length > 0) tableHTML += ioRow(type.replace(/^Other:\s*/i, '').substring(0, 36) + ' Day−1', entries, ' mL', 'tbl-d1-output', v => v > 100);
-                    });
-                    if (hasOtherDay1)  Object.entries(ioDay1.outputs.other).forEach(([type, entries]) => {
-                        if (entries && entries.length > 0) tableHTML += ioRow(type.substring(0, 36) + ' Day−1', entries, ' mL', 'tbl-d1-output');
+                if (hasInD1) {
+                    tableHTML += toggleHdr('tbl-d1-intake', '#22c55e');
+                    Object.entries(ioDay1.intakes).forEach(function(kv) {
+                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0, 36), kv[1], ' mL', 'tbl-d1-intake');
                     });
                 }
             }
 
-            // Counts (stool, emesis, etc.)
-            const hasCountsToday = ioToday && ioToday.counts && Object.values(ioToday.counts).some(e => e && e.length > 0);
-            if (hasCountsToday) {
-                tableHTML += sectionHeader('Counts — Since 7 AM', '#4a3500');
-                Object.entries(ioToday.counts).forEach(([type, entries]) => {
-                    if (entries && entries.length > 0)
-                        tableHTML += ioRow(type.substring(0, 36), entries, '', '', v => type.toLowerCase().includes('stool') && v > 3);
+            // ── OUTPUT (since 7 AM) ──────────────────────────────────────────────
+            var hasUrToday = ioToday && ioToday.outputs && ioToday.outputs.urine  && ioToday.outputs.urine.length  > 0;
+            var hasDrToday = ioToday && ioToday.outputs && ioToday.outputs.drains && Object.values(ioToday.outputs.drains).some(function(e){ return e && e.length>0; });
+            var hasOtToday = ioToday && ioToday.outputs && ioToday.outputs.other  && Object.values(ioToday.outputs.other).some(function(e){  return e && e.length>0; });
+            var hasUrD1    = ioDay1  && ioDay1.outputs  && ioDay1.outputs.urine   && ioDay1.outputs.urine.length   > 0;
+            var hasDrD1    = ioDay1  && ioDay1.outputs  && ioDay1.outputs.drains  && Object.values(ioDay1.outputs.drains).some(function(e){  return e && e.length>0; });
+            var hasOtD1    = ioDay1  && ioDay1.outputs  && ioDay1.outputs.other   && Object.values(ioDay1.outputs.other).some(function(e){   return e && e.length>0; });
+            var hasOutToday = hasUrToday || hasDrToday || hasOtToday;
+            var hasOutD1    = hasUrD1    || hasDrD1    || hasOtD1;
+            if (hasOutToday || hasOutD1) {
+                tableHTML += sectionHdr('Output — Since 7 AM', '#6b1a0f');
+                if (hasUrToday) tableHTML += ioRowHTML('Urine', ioToday.outputs.urine, ' mL', '');
+                if (hasDrToday) Object.entries(ioToday.outputs.drains).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,'').substring(0,36), kv[1], ' mL', '');
+                });
+                if (hasOtToday) Object.entries(ioToday.outputs.other).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0,36), kv[1], ' mL', '');
+                });
+                if (hasOutD1) {
+                    tableHTML += toggleHdr('tbl-d1-output', '#ef4444');
+                    if (hasUrD1) tableHTML += ioRowHTML('Urine Day−1', ioDay1.outputs.urine, ' mL', 'tbl-d1-output');
+                    if (hasDrD1) Object.entries(ioDay1.outputs.drains).forEach(function(kv) {
+                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,'').substring(0,36) + ' D−1', kv[1], ' mL', 'tbl-d1-output');
+                    });
+                    if (hasOtD1) Object.entries(ioDay1.outputs.other).forEach(function(kv) {
+                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0,36) + ' D−1', kv[1], ' mL', 'tbl-d1-output');
+                    });
+                }
+            }
+
+            // Counts
+            var hasCtToday = ioToday && ioToday.counts && Object.values(ioToday.counts).some(function(e){ return e && e.length>0; });
+            if (hasCtToday) {
+                tableHTML += sectionHdr('Counts — Since 7 AM', '#4a3500');
+                Object.entries(ioToday.counts).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0,36), kv[1], '', '');
                 });
             }
 
-            // ════════════════════════════════════════════════════════════════════
-            // SECTION 4: I/O BALANCE SUMMARY ROW
-            // ════════════════════════════════════════════════════════════════════
-            tableHTML += balanceRow(ioToday);
+            // ── I/O BALANCE ROWS ────────────────────────────────────────────────
+            tableHTML += balanceRowHTML(ioToday, '');
             if (ioDay1) {
-                const d1b = ioBalance(ioDay1);
-                if (d1b && (d1b.totalIn > 0 || d1b.totalOut > 0)) {
-                    tableHTML += toggleRow('', 'tbl-d1-balance', '#a855f7');
-                    tableHTML += balanceRow(ioDay1, 'tbl-d1-balance');
-                }
+                tableHTML += toggleHdr('tbl-d1-balance', '#a855f7');
+                tableHTML += balanceRowHTML(ioDay1, 'tbl-d1-balance');
             }
 
-            // ════════════════════════════════════════════════════════════════════
-            // SECTION 5: LABS
-            // ════════════════════════════════════════════════════════════════════
-            const labSections = [
+            // ── LABS ─────────────────────────────────────────────────────────────
+            var labSections = [
                 { color: '#1a5c2b', label: 'CBC', labs: [
                     { key: 'wbc',   label: 'WBC',    lo: 4.5,  hi: 11   },
                     { key: 'hgb',   label: 'Hgb',    lo: 7,    hi: 16   },
@@ -6878,13 +6831,13 @@ saveToLocalStorage();
                     { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40   }
                 ]},
                 { color: '#1e3a5f', label: 'BMP', labs: [
-                    { key: 'na',  label: 'Na',  lo: 135,  hi: 145  },
-                    { key: 'k',   label: 'K',   lo: 3.5,  hi: 5.0  },
-                    { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106  },
-                    { key: 'co2', label: 'CO2', lo: 23,   hi: 29   },
-                    { key: 'bun', label: 'BUN', lo: 7,    hi: 20   },
-                    { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0  },
-                    { key: 'glu', label: 'Glu', lo: 70,   hi: 100  }
+                    { key: 'na',  label: 'Na',  lo: 135,  hi: 145 },
+                    { key: 'k',   label: 'K',   lo: 3.5,  hi: 5.0 },
+                    { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106 },
+                    { key: 'co2', label: 'CO2', lo: 23,   hi: 29  },
+                    { key: 'bun', label: 'BUN', lo: 7,    hi: 20  },
+                    { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0 },
+                    { key: 'glu', label: 'Glu', lo: 70,   hi: 100 }
                 ]},
                 { color: '#4a1d72', label: 'Electrolytes', labs: [
                     { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3  },
@@ -6893,13 +6846,13 @@ saveToLocalStorage();
                     { key: 'phos',    label: 'Phos', lo: 2.5, hi: 4.5  }
                 ]},
                 { color: '#7c3009', label: 'LFTs', labs: [
-                    { key: 'ast',     label: 'AST',     lo: 10,  hi: 40   },
-                    { key: 'alt',     label: 'ALT',     lo: 10,  hi: 40   },
-                    { key: 'tbil',    label: 'TBil',    lo: 0.1, hi: 1.2  },
-                    { key: 'dbil',    label: 'DBil',    lo: 0,   hi: 0.3  },
-                    { key: 'alk',     label: 'Alk',     lo: 30,  hi: 120  },
-                    { key: 'ggt',     label: 'GGT',     lo: 9,   hi: 48   },
-                    { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5  }
+                    { key: 'ast',     label: 'AST',     lo: 10,  hi: 40  },
+                    { key: 'alt',     label: 'ALT',     lo: 10,  hi: 40  },
+                    { key: 'tbil',    label: 'TBil',    lo: 0.1, hi: 1.2 },
+                    { key: 'dbil',    label: 'DBil',    lo: 0,   hi: 0.3 },
+                    { key: 'alk',     label: 'Alk',     lo: 30,  hi: 120 },
+                    { key: 'ggt',     label: 'GGT',     lo: 9,   hi: 48  },
+                    { key: 'albumin', label: 'Albumin', lo: 3.5, hi: 5.5 }
                 ]},
                 { color: '#5c1a1a', label: 'Coags', labs: [
                     { key: 'pt',  label: 'PT',  lo: 11,  hi: 13.5 },
@@ -6922,32 +6875,28 @@ saveToLocalStorage();
                     { key: 'prealbumin',    label: 'PreAlb',  lo: 15, hi: 36   }
                 ]}
             ];
-
             if (labData.labs) {
-                labSections.forEach(({ color, label, labs }) => {
-                    const hasAny = labs.some(l => labData.labs[l.key] && labData.labs[l.key].length > 0);
+                labSections.forEach(function(sec) {
+                    var hasAny = sec.labs.some(function(l){ return labData.labs[l.key] && labData.labs[l.key].length > 0; });
                     if (!hasAny) return;
-                    tableHTML += sectionHeader(label, color);
-                    labs.forEach(({ key, label: lbl, lo, hi }) => {
-                        const arr = labData.labs[key];
+                    tableHTML += sectionHdr(sec.label, sec.color);
+                    sec.labs.forEach(function(ld) {
+                        var arr = labData.labs[ld.key];
                         if (!arr || arr.length === 0) return;
-                        let row = `<tr><td>${lbl}</td>`;
-                        for (let i = 0; i < maxValues; i++) {
+                        var row = '<tr><td>' + ld.label + '</td>';
+                        for (var i = 0; i < maxValues; i++) {
                             if (i < arr.length) {
-                                const v = arr[i];
-                                let dt = getLabDT(key, i);
-                                if (!dt && typeof KEY_ALIASES !== 'undefined' && KEY_ALIASES[key]) {
-                                    for (const alias of KEY_ALIASES[key]) { dt = getLabDT(alias, i); if (dt) break; }
-                                }
-                                row += dataCell(v, dt, !isNaN(v) && (v < lo || v > hi));
+                                var v = arr[i];
+                                var dt = getLabDT(ld.key, i);
+                                row += dataCell(v, dt, !isNaN(v) && (v < ld.lo || v > ld.hi), '');
                             } else { row += emptyCell(); }
                         }
-                        tableHTML += row + `</tr>`;
+                        tableHTML += row + '</tr>';
                     });
                 });
             }
 
-            tableHTML += `</table>`;
+            tableHTML += '</table>';
             document.getElementById('tableContainer').innerHTML = tableHTML;
         }
 
@@ -9569,7 +9518,7 @@ extractLabValue('Procalcitonin:', 'procalcitonin');
 
 
 
-function extractIntakeOutputData(text, overrideFrom = null, overrideTo = null) {
+function extractIntakeOutputData(text, overrideFrom, overrideTo) {
     console.log('extractIntakeOutputData called with text length:', text ? text.length : 0);
 
 const ioData = {
@@ -9606,14 +9555,14 @@ const ioData = {
     const intakeSection = intakeMatch ? intakeMatch[1] : '';
     const outputSection = outputMatch ? outputMatch[1] : '';
 
-    // Get current time and calculate 7 AM cutoff (supports optional overrides for day-1 extraction)
+    // Get current time and calculate 7 AM cutoff (overrides for day-1 extraction)
     const now = overrideTo || new Date();
-    const cutoffDate = overrideFrom || (() => {
-        const cd = new Date(now);
+    const cutoffDate = overrideFrom || (function() {
+        var cd = new Date(now);
         if (cd.getHours() < 7) cd.setDate(cd.getDate() - 1);
         cd.setHours(7, 0, 0, 0);
         return cd;
-    })();
+    }());
 
     console.log('Current time:', now);
     console.log('Cutoff date:', cutoffDate);
