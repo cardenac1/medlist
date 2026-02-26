@@ -2187,17 +2187,17 @@ select,
 
 
 	textarea, input[type="text"] {
-        font-size: 16px;
-        padding: 0.75rem;
+        font-size: 13px;
+        padding: 0.5rem;
         margin: 0.25rem 0 0.75rem;
         white-space: pre-wrap;
         word-wrap: break-word;
         overflow-wrap: break-word;
-        overflow-y: hidden;  /* ← CHANGED FROM auto TO hidden */
+        overflow-y: hidden;
     }
 
 .violin-field {
-    font-size: 16px !important;
+    font-size: 13px !important;
   }
   
 	
@@ -5901,6 +5901,41 @@ function parseCernerData(text) {
       (lc.includes('room') && lc.includes('name'))
     ) return;
 
+    // ── Mobile Cerner format ──────────────────────────────────────────────────
+    // e.g. “GARCIA, LASTIMA  Age65 yearsGenderFDate of BirthDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B”
+    // Detected when the line starts with LASTNAME, FIRSTNAME and contains MRN: keyword
+    const isMobileFmt = /MRN:?\s*\d{4,10}/i.test(line) &&
+                        /^[A-Z][A-Z',\-. ]+,\s*[A-Z]/i.test(line.trim());
+    if (isMobileFmt) {
+      // Name: everything before the first “Age” keyword or double-space separator
+      const nameM = /^(.+?)(?:\s{2,}|\s+(?=Age\s*\d|Gender|DOB:|MRN:))/i.exec(line.trim());
+      const ageM  = /Age\s*(\d+)/i.exec(line);
+      const genM  = /Gender\s*([MF])/i.exec(line);
+      const mrnM  = /MRN:?\s*(\d{4,10})/i.exec(line);
+      // Room: everything after the MRN number (trailing location string)
+      const roomM = /MRN:?\s*\d+\s+(.+?)\s*$/i.exec(line);
+
+      const p = {};
+      MASTER_HEADERS.forEach(h => p[h] = '');
+      p.Type = 'Patient';
+      p.Name = nameM ? nameM[1].trim() : line.split(',')[0].trim() || 'Unknown';
+      p.RM   = roomM ? roomM[1].trim() : 'TBD';
+      p.MRN  = mrnM  ? mrnM[1].trim()  : '';
+      p.Att  = '';
+
+      const age = ageM ? ageM[1] : '';
+      const gen = genM ? genM[1].toUpperCase() : '';
+      if (age || gen) {
+        const ag = age + gen;
+        p['A/G']      = ag;
+        p['Problems'] = ag;
+      }
+
+      newPatients.push(p);
+      return; // skip the column-based logic below
+    }
+
+    // ── Standard column-based Cerner format ───────────────────────────────────
     // split on tabs or big spaces
     let cols = line.split('\t').filter(c => c.trim());
     if (cols.length < 3) {
