@@ -6591,21 +6591,6 @@ saveToLocalStorage();
                 return [dm ? dm[1] : dateStr, tm ? tm[1] : ''].filter(Boolean).join(' ');
             };
 
-            // ── EXTRACT VITALS FROM RAW TEXT (split today vs day-1) ─────────────
-            const vitalReadings = {}; // kept for compat below but not actually used in old path
-            if (lastImportedData) {
-                const vitalPatterns = [
-                    { key: 'temp',  regex: /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseFloat },
-                    { key: 'hr',    regex: /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseInt },
-                    { key: 'o2',    regex: /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi, parse: parseInt }
-                ];
-                vitalPatterns.forEach(({ key, regex, parse }) => {
-                    let m;
-                    vitalReadings[key] = [];
-                    while ((m = regex.exec(lastImportedData)) !== null) {
-                        vitalReadings[key].push({ value: parse(m[1]), date: m[2], time: m[3] });
-                    }
-                });
             // ── EXTRACT VITALS split into today vs day-1 ────────────────────────
             const vitalDefs = [
                 { key: 'temp', label: 'Temp', unit: '°C',   lo: 35,  hi: 38  },
