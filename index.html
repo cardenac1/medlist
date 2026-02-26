@@ -4820,28 +4820,6 @@ function clearSearch() {
     detailsView.style.display = 'block';
     updateNavButtons();
 
-    // Auto-copy patient info to clipboard
-    const name = patient.Name || 'Unknown';
-    const rm = patient.RM || 'Unknown';
-    const mrn = patient.MRN || 'Unknown';
-    const textToCopy = `${name}\n${rm}\n${mrn}`;
-
-    navigator.clipboard.writeText(textToCopy).catch(err => {
-        // Fallback method if clipboard API fails
-        const ta = document.createElement('textarea');
-        ta.value = textToCopy;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-            document.execCommand('copy');
-        } catch (e) {
-            console.error('Failed to copy patient info:', e);
-        }
-        document.body.removeChild(ta);
-    });
-
 }
  
 
@@ -6565,10 +6543,12 @@ saveToLocalStorage();
 
 
 
-        function generateTableView() {
+        // Returns the unified table HTML string; usable both inline and in modal.
+        function buildUnifiedTableHTML(labDataArg, lastImportedDataArg) {
+            var labData = labDataArg;
+            var lastImportedData = lastImportedDataArg;
             if (!labData || Object.keys(labData).length === 0) {
-                document.getElementById('tableContainer').innerHTML = '<p>No lab data available. Please import data first.</p>';
-                return;
+                return '<p style="color:#94a3b8;padding:1rem;">No lab data available.</p>';
             }
 
             // ── TIME BOUNDARIES ──────────────────────────────────────────────────
@@ -6576,8 +6556,9 @@ saveToLocalStorage();
             var cutoff7am = new Date(_now);
             if (_now.getHours() < 7) cutoff7am.setDate(cutoff7am.getDate() - 1);
             cutoff7am.setHours(7, 0, 0, 0);
-            var cutoff7amD1 = new Date(cutoff7am);
-            cutoff7amD1.setDate(cutoff7amD1.getDate() - 1); // yesterday 7AM
+            var historyStart = new Date(cutoff7am);
+            historyStart.setHours(historyStart.getHours() - 72); // up to 72 hrs before 7 AM
+            var elapsedHours = Math.round((_now - cutoff7am) / 36000) / 100; // hrs since 7 AM
 
             // ── VITAL DEFS ───────────────────────────────────────────────────────
             var vitalDefs = [
@@ -6588,9 +6569,9 @@ saveToLocalStorage();
                 { key: 'o2',   label: 'O2',   unit: '%',    lo: 94,  hi: 100 }
             ];
 
-            // ── EXTRACT VITALS FROM RAW TEXT, split today vs day-1 ──────────────
+            // ── EXTRACT VITALS: today (since 7 AM) + history (up to 72 h before) ─
             var vitals = {};
-            vitalDefs.forEach(function(d) { vitals[d.key] = { today: [], day1: [] }; });
+            vitalDefs.forEach(function(d) { vitals[d.key] = { today: [], history: [] }; });
 
             if (lastImportedData) {
                 function pushVital(key, value, dateStr, timeStr) {
@@ -6601,10 +6582,9 @@ saveToLocalStorage();
                     if (!dt || isNaN(dt.getTime())) return;
                     var dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
                     var tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
-                    var lbl = (dm ? dm[1] : dateStr) + (tm ? ' ' + tm[1] : '');
-                    var entry = { value: value, label: lbl };
+                    var entry = { value: value, label: (dm ? dm[1] : dateStr) + (tm ? ' ' + tm[1] : '') };
                     if (dt >= cutoff7am && dt <= _now) vitals[key].today.push(entry);
-                    else if (dt >= cutoff7amD1 && dt < cutoff7am) vitals[key].day1.push(entry);
+                    else if (dt >= historyStart && dt < cutoff7am) vitals[key].history.push(entry);
                 }
                 var _vm;
                 var _tRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
@@ -6619,11 +6599,11 @@ saveToLocalStorage();
                 while ((_vm = _oRe.exec(lastImportedData))) pushVital('o2', parseInt(_vm[1]), _vm[2], _vm[3]);
             }
 
-            // ── EXTRACT I/O (today + day-1) ──────────────────────────────────────
-            var ioToday = null, ioDay1 = null;
+            // ── EXTRACT I/O: today (since 7 AM) + history (up to 72 h before) ───
+            var ioData = null, ioHistory = null;
             if (lastImportedData) {
-                try { ioToday = extractIntakeOutputData(lastImportedData); } catch(e) {}
-                try { ioDay1  = extractIntakeOutputData(lastImportedData, cutoff7amD1, cutoff7am); } catch(e) {}
+                try { ioData    = extractIntakeOutputData(lastImportedData); } catch(e) {}
+                try { ioHistory = extractIntakeOutputData(lastImportedData, historyStart, cutoff7am); } catch(e) {}
             }
 
             // ── COMPUTE COLUMN COUNT ─────────────────────────────────────────────
@@ -6637,8 +6617,8 @@ saveToLocalStorage();
                 return Math.max.apply(null, [0].concat(arrs.map(function(a){ return a ? a.length : 0; })));
             }
             var maxLabs = Math.max.apply(null, [0].concat(Object.values(labData.labs || {}).map(function(a){ return a ? a.length : 0; })));
-            var maxVit  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return Math.max(vitals[d.key].today.length, vitals[d.key].day1.length); })));
-            var maxValues = Math.max(maxLabs, maxVit, ioMaxCols(ioToday), ioMaxCols(ioDay1), 1);
+            var maxVit  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return Math.max(vitals[d.key].today.length, vitals[d.key].history.length); })));
+            var maxValues = Math.max(maxLabs, maxVit, ioMaxCols(ioData), ioMaxCols(ioHistory), 1);
 
             // ── CELL / ROW HELPERS ───────────────────────────────────────────────
             function dataCell(val, dt, abnormal, unit) {
@@ -6650,13 +6630,11 @@ saveToLocalStorage();
                 return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
             }
             function emptyCell() { return '<td></td>'; }
-
             function sectionHdr(label, color) {
                 return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">' + label + '</td></tr>';
             }
-            function toggleHdr(cssClass, color) {
-                return '<tr onclick="[].slice.call(document.querySelectorAll(\'.' + cssClass + '\')).forEach(function(r){r.style.display=r.style.display===\'\'?\'none\':\'\'})" style="cursor:pointer;">' +
-                    '<td colspan="' + (maxValues + 1) + '" style="background:' + color + '22;color:' + color + ';font-size:0.64rem;font-weight:600;padding:3px 10px;text-align:center;border:1px solid ' + color + '44;">▼ SHOW / HIDE DAY −1</td></tr>';
+            function demarcRow(label) {
+                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:#2d1f00;color:#fbbf24;font-size:0.72rem;font-weight:700;padding:6px 10px;text-align:center;border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b;letter-spacing:0.05em;">' + label + '</td></tr>';
             }
             function ioDateShort(dtStr) {
                 if (!dtStr) return '';
@@ -6666,13 +6644,14 @@ saveToLocalStorage();
             function ioSumVol(entries) {
                 return (entries || []).reduce(function(s, e){ return s + (e.volume || 0); }, 0);
             }
-            function ioRowHTML(name, entries, unit, rowCls) {
+            // timeLabel: e.g. "12.5 hrs" or "72 hrs" — appended as "Total: X mL / Y hrs"
+            function ioRowHTML(name, entries, unit, timeLabel) {
                 if (!entries || entries.length === 0) return '';
                 var sorted = entries.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
                 var total  = ioSumVol(sorted);
-                var totalStr = total > 0 ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Total: ' + total + (unit.trim()||'') + '</span>' : '';
-                var trAttr = rowCls ? 'class="' + rowCls + '" style="display:none"' : '';
-                var row = '<tr ' + trAttr + '><td style="max-width:170px;white-space:normal;line-height:1.4;">' + name + totalStr + '</td>';
+                var timeStr = (timeLabel && total > 0) ? ' / ' + timeLabel : '';
+                var totalStr = total > 0 ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Total: ' + total + (unit.trim()||'') + timeStr + '</span>' : '';
+                var row = '<tr><td style="white-space:normal;line-height:1.5;word-break:break-word;min-width:140px;">' + name + totalStr + '</td>';
                 for (var i = 0; i < maxValues; i++) {
                     if (i < sorted.length) {
                         var e = sorted[i];
@@ -6682,7 +6661,7 @@ saveToLocalStorage();
                 }
                 return row + '</tr>';
             }
-            function balanceRowHTML(io, rowCls) {
+            function balanceRowHTML(io) {
                 if (!io) return '';
                 var totalIn = 0, totalOut = 0;
                 Object.values(io.intakes || {}).forEach(function(a){ totalIn += ioSumVol(a); });
@@ -6692,9 +6671,8 @@ saveToLocalStorage();
                 if (totalIn === 0 && totalOut === 0) return '';
                 var bal = totalIn - totalOut;
                 var balColor = bal >= 0 ? '#10b981' : '#f59e0b';
-                var trAttr = rowCls ? 'class="' + rowCls + '" style="display:none"' : '';
                 var extra = Math.max(1, maxValues - 2);
-                return '<tr ' + trAttr + '>' +
+                return '<tr>' +
                     '<td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>' +
                     '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>' +
                     '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></td>' +
@@ -6713,6 +6691,9 @@ saveToLocalStorage();
                 return (dm ? dm[1] : d) + (tm ? ' ' + tm[1] : '');
             }
 
+            // Time label for today's I/O totals: e.g. "12.5 hrs"
+            var todayTimeLabel = (Math.round(elapsedHours * 10) / 10) + ' hrs';
+
             // ── TABLE HTML ───────────────────────────────────────────────────────
             var tableHTML = '<style>' +
                 '#tableContainer{overflow-x:auto;-webkit-overflow-scrolling:touch;}' +
@@ -6726,10 +6707,9 @@ saveToLocalStorage();
             for (var _ci = 0; _ci < maxValues; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
             tableHTML += '</tr>';
 
-            // ── VITALS (since 7 AM) ──────────────────────────────────────────────
-            var hasVitToday = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0; });
-            var hasVitD1    = vitalDefs.some(function(d){ return vitals[d.key].day1.length  > 0; });
-            if (hasVitToday || hasVitD1) {
+            // ── VITALS since 7 AM ────────────────────────────────────────────────
+            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0; });
+            if (hasVit) {
                 tableHTML += sectionHdr('Vitals — Since 7 AM', '#0f4c81');
                 vitalDefs.forEach(function(vd) {
                     var arr = vitals[vd.key].today;
@@ -6742,12 +6722,63 @@ saveToLocalStorage();
                     }
                     tableHTML += row + '</tr>';
                 });
-                if (hasVitD1) {
-                    tableHTML += toggleHdr('tbl-d1-vitals', '#4a90d9');
+            }
+
+            // ── INTAKE since 7 AM ────────────────────────────────────────────────
+            var hasIn = ioData && Object.values(ioData.intakes || {}).some(function(e){ return e && e.length > 0; });
+            if (hasIn) {
+                tableHTML += sectionHdr('Intake — Since 7 AM', '#155724');
+                Object.entries(ioData.intakes).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', todayTimeLabel);
+                });
+            }
+
+            // ── OUTPUT since 7 AM ────────────────────────────────────────────────
+            var hasUr = ioData && ioData.outputs && ioData.outputs.urine  && ioData.outputs.urine.length  > 0;
+            var hasDr = ioData && ioData.outputs && ioData.outputs.drains && Object.values(ioData.outputs.drains).some(function(e){ return e && e.length>0; });
+            var hasOt = ioData && ioData.outputs && ioData.outputs.other  && Object.values(ioData.outputs.other).some(function(e){  return e && e.length>0; });
+            if (hasUr || hasDr || hasOt) {
+                tableHTML += sectionHdr('Output — Since 7 AM', '#6b1a0f');
+                if (hasUr) tableHTML += ioRowHTML('Urine', ioData.outputs.urine, ' mL', todayTimeLabel);
+                if (hasDr) Object.entries(ioData.outputs.drains).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,''), kv[1], ' mL', todayTimeLabel);
+                });
+                if (hasOt) Object.entries(ioData.outputs.other).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', todayTimeLabel);
+                });
+            }
+
+            // ── COUNTS since 7 AM ────────────────────────────────────────────────
+            var hasCt = ioData && ioData.counts && Object.values(ioData.counts).some(function(e){ return e && e.length>0; });
+            if (hasCt) {
+                tableHTML += sectionHdr('Counts — Since 7 AM', '#4a3500');
+                Object.entries(ioData.counts).forEach(function(kv) {
+                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], '', todayTimeLabel);
+                });
+            }
+
+            // ── I/O BALANCE since 7 AM ───────────────────────────────────────────
+            tableHTML += balanceRowHTML(ioData);
+
+            // ── 7 AM DEMARCATION + HISTORY (up to 72 hrs before 7 AM) ───────────
+            var hasHistVit = vitalDefs.some(function(d){ return vitals[d.key].history.length > 0; });
+            var hasHistIn  = ioHistory && Object.values(ioHistory.intakes || {}).some(function(e){ return e && e.length>0; });
+            var hasHistUr  = ioHistory && ioHistory.outputs && ioHistory.outputs.urine  && ioHistory.outputs.urine.length  > 0;
+            var hasHistDr  = ioHistory && ioHistory.outputs && ioHistory.outputs.drains && Object.values(ioHistory.outputs.drains||{}).some(function(e){ return e && e.length>0; });
+            var hasHistOt  = ioHistory && ioHistory.outputs && ioHistory.outputs.other  && Object.values(ioHistory.outputs.other||{}).some(function(e){ return e && e.length>0; });
+            var hasHistory = hasHistVit || hasHistIn || hasHistUr || hasHistDr || hasHistOt;
+
+            if (hasHistory) {
+                var c7mo = String(cutoff7am.getMonth() + 1).padStart(2, '0');
+                var c7da = String(cutoff7am.getDate()).padStart(2, '0');
+                tableHTML += demarcRow('▲ 7:00 AM  ' + c7mo + '/' + c7da + '  ▲  BEFORE 7 AM — PREVIOUS DATA (up to 72 hrs)  ▼');
+
+                if (hasHistVit) {
+                    tableHTML += sectionHdr('Vitals — Before 7 AM', '#1a3555');
                     vitalDefs.forEach(function(vd) {
-                        var arr = vitals[vd.key].day1;
+                        var arr = vitals[vd.key].history;
                         if (!arr.length) return;
-                        var row = '<tr class="tbl-d1-vitals" style="display:none"><td>' + vd.label + ' <span style="font-size:0.65em;color:#64748b;">Day−1</span></td>';
+                        var row = '<tr><td>' + vd.label + '</td>';
                         for (var i = 0; i < maxValues; i++) {
                             row += i < arr.length
                                 ? dataCell(arr[i].value, arr[i].label, arr[i].value < vd.lo || arr[i].value > vd.hi, vd.unit)
@@ -6756,68 +6787,26 @@ saveToLocalStorage();
                         tableHTML += row + '</tr>';
                     });
                 }
-            }
 
-            // ── INTAKE (since 7 AM) ──────────────────────────────────────────────
-            var hasInToday = ioToday && Object.values(ioToday.intakes || {}).some(function(e){ return e && e.length > 0; });
-            var hasInD1    = ioDay1  && Object.values(ioDay1.intakes  || {}).some(function(e){ return e && e.length > 0; });
-            if (hasInToday || hasInD1) {
-                tableHTML += sectionHdr('Intake — Since 7 AM', '#155724');
-                if (hasInToday) Object.entries(ioToday.intakes).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0, 36), kv[1], ' mL', '');
-                });
-                if (hasInD1) {
-                    tableHTML += toggleHdr('tbl-d1-intake', '#22c55e');
-                    Object.entries(ioDay1.intakes).forEach(function(kv) {
-                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0, 36), kv[1], ' mL', 'tbl-d1-intake');
+                if (hasHistIn) {
+                    tableHTML += sectionHdr('Intake — Before 7 AM', '#0e3319');
+                    Object.entries(ioHistory.intakes).forEach(function(kv) {
+                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', '72 hrs');
                     });
                 }
-            }
 
-            // ── OUTPUT (since 7 AM) ──────────────────────────────────────────────
-            var hasUrToday = ioToday && ioToday.outputs && ioToday.outputs.urine  && ioToday.outputs.urine.length  > 0;
-            var hasDrToday = ioToday && ioToday.outputs && ioToday.outputs.drains && Object.values(ioToday.outputs.drains).some(function(e){ return e && e.length>0; });
-            var hasOtToday = ioToday && ioToday.outputs && ioToday.outputs.other  && Object.values(ioToday.outputs.other).some(function(e){  return e && e.length>0; });
-            var hasUrD1    = ioDay1  && ioDay1.outputs  && ioDay1.outputs.urine   && ioDay1.outputs.urine.length   > 0;
-            var hasDrD1    = ioDay1  && ioDay1.outputs  && ioDay1.outputs.drains  && Object.values(ioDay1.outputs.drains).some(function(e){  return e && e.length>0; });
-            var hasOtD1    = ioDay1  && ioDay1.outputs  && ioDay1.outputs.other   && Object.values(ioDay1.outputs.other).some(function(e){   return e && e.length>0; });
-            var hasOutToday = hasUrToday || hasDrToday || hasOtToday;
-            var hasOutD1    = hasUrD1    || hasDrD1    || hasOtD1;
-            if (hasOutToday || hasOutD1) {
-                tableHTML += sectionHdr('Output — Since 7 AM', '#6b1a0f');
-                if (hasUrToday) tableHTML += ioRowHTML('Urine', ioToday.outputs.urine, ' mL', '');
-                if (hasDrToday) Object.entries(ioToday.outputs.drains).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,'').substring(0,36), kv[1], ' mL', '');
-                });
-                if (hasOtToday) Object.entries(ioToday.outputs.other).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0,36), kv[1], ' mL', '');
-                });
-                if (hasOutD1) {
-                    tableHTML += toggleHdr('tbl-d1-output', '#ef4444');
-                    if (hasUrD1) tableHTML += ioRowHTML('Urine Day−1', ioDay1.outputs.urine, ' mL', 'tbl-d1-output');
-                    if (hasDrD1) Object.entries(ioDay1.outputs.drains).forEach(function(kv) {
-                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,'').substring(0,36) + ' D−1', kv[1], ' mL', 'tbl-d1-output');
+                if (hasHistUr || hasHistDr || hasHistOt) {
+                    tableHTML += sectionHdr('Output — Before 7 AM', '#3d0e0e');
+                    if (hasHistUr) tableHTML += ioRowHTML('Urine', ioHistory.outputs.urine, ' mL', '72 hrs');
+                    if (hasHistDr) Object.entries(ioHistory.outputs.drains).forEach(function(kv) {
+                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,''), kv[1], ' mL', '72 hrs');
                     });
-                    if (hasOtD1) Object.entries(ioDay1.outputs.other).forEach(function(kv) {
-                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0,36) + ' D−1', kv[1], ' mL', 'tbl-d1-output');
+                    if (hasHistOt) Object.entries(ioHistory.outputs.other).forEach(function(kv) {
+                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', '72 hrs');
                     });
                 }
-            }
 
-            // Counts
-            var hasCtToday = ioToday && ioToday.counts && Object.values(ioToday.counts).some(function(e){ return e && e.length>0; });
-            if (hasCtToday) {
-                tableHTML += sectionHdr('Counts — Since 7 AM', '#4a3500');
-                Object.entries(ioToday.counts).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].substring(0,36), kv[1], '', '');
-                });
-            }
-
-            // ── I/O BALANCE ROWS ────────────────────────────────────────────────
-            tableHTML += balanceRowHTML(ioToday, '');
-            if (ioDay1) {
-                tableHTML += toggleHdr('tbl-d1-balance', '#a855f7');
-                tableHTML += balanceRowHTML(ioDay1, 'tbl-d1-balance');
+                tableHTML += balanceRowHTML(ioHistory);
             }
 
             // ── LABS ─────────────────────────────────────────────────────────────
@@ -6897,7 +6886,15 @@ saveToLocalStorage();
             }
 
             tableHTML += '</table>';
-            document.getElementById('tableContainer').innerHTML = tableHTML;
+            return tableHTML;
+        }
+
+        function generateTableView() {
+            if (!labData || Object.keys(labData).length === 0) {
+                document.getElementById('tableContainer').innerHTML = '<p>No lab data available. Please import data first.</p>';
+                return;
+            }
+            document.getElementById('tableContainer').innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
         }
 
 
@@ -13859,36 +13856,12 @@ while (i < fishboneLines.length && !foundFluidBalance) {
 
 	
 
-  // ADD VITALS VISUALIZATION FIRST (before fishbone text)
-  if (_labData?.vitals && Object.keys(_labData.vitals).length > 0) {
-    const vitalsViz = createVitalsVisualization(_labData.vitals);
-    violinDisplay.appendChild(vitalsViz);
-  }
-
-  
-
-// ADD I/O DASHBOARD (replaces fishbone text)
-if (_ioData) {
-  const ioDashboard = createIODashboard(_ioData, _labData);
-  violinDisplay.appendChild(ioDashboard);
-}
-
-  // Generate and append lab values table
-  if (_labData && Object.keys(_labData.labs || {}).length > 0) {
-    const tableHTML = generateModernLabTable(_labData);
-    const tableDiv = document.createElement('div');
-    tableDiv.style.marginTop = '0.25rem';
-    tableDiv.innerHTML = tableHTML;
-    violinDisplay.appendChild(tableDiv);
-
-    // Ensure tooltips work
-    const labTable = tableDiv.querySelector('.modern-lab-table');
-    if (labTable) {
-      labTable.style.pointerEvents = 'auto';
-      labTable.querySelectorAll('td').forEach(td => {
-        td.style.pointerEvents = 'auto';
-      });
-    }
+  // ── UNIFIED TABLE: Vitals + I/O + Labs (inline) ─────────────────────────
+  {
+    var unifiedDiv = document.createElement('div');
+    unifiedDiv.style.cssText = 'white-space:normal;overflow-x:auto;margin-bottom:0.5rem;';
+    unifiedDiv.innerHTML = buildUnifiedTableHTML(_labData, _lastImportedData);
+    violinDisplay.appendChild(unifiedDiv);
   }
 
 // ADD CLINICAL SUGGESTIONS MODULE (after full orders/lab display)
