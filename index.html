@@ -4966,7 +4966,7 @@ function switchView(mode) {
             dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
-            const cardIcons = { 'Problems': '🩺', 'ICS': '📋', 'VIOLIN': '🎻', 'ORDERS': '💊', 'To do': '✅', 'Priority': '⚡' };
+            const cardIcons = { 'Problems': '', 'ICS': '', 'VIOLIN': '', 'ORDERS': '', 'To do': '', 'Priority': '' };
             const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'To do': '#22c55e', 'Priority': '#ef4444' };
             const textFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do', 'Priority'];
 
@@ -5127,7 +5127,7 @@ case 'chartcheck': {
 
             const checkboxFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do'];
             const fieldsToShowChartCheck = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
-            const ccSectionIcons = { 'Name': '\u{1F464}', 'RM': '\u{1F3E5}', 'MRN': '\u{1F522}', 'Att': '\u{1F468}\u{200D}\u{2695}\u{FE0F}', 'Problems': '\u{1FA7A}', 'ICS': '\u{1F4CB}', 'VIOLIN': '\u{1F3BB}', 'ORDERS': '\u{1F48A}', 'Priority': '\u{26A1}' };
+            const ccSectionIcons = { 'Name': '', 'RM': '', 'MRN': '', 'Att': '', 'Problems': '', 'ICS': '', 'VIOLIN': '', 'ORDERS': '', 'Priority': '' };
             const ccSectionColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'Priority': '#ef4444' };
 
             fieldsToShowChartCheck.forEach(header => {
@@ -6655,11 +6655,15 @@ saveToLocalStorage();
                 while ((_vm = _oRe.exec(lastImportedData))) pushVital('o2', parseInt(_vm[1]), _vm[2], _vm[3]);
             }
 
-            // ── EXTRACT I/O: today (since 7 AM) + history (up to 72 h before) ───
-            var ioData = null, ioHistory = null;
+            // ── EXTRACT I/O: today (since 7 AM) + history (up to 72 h before) + 24hr total ───
+            var ioData = null, ioHistory = null, io24hr = null;
             if (lastImportedData) {
                 try { ioData    = extractIntakeOutputData(lastImportedData); } catch(e) {}
                 try { ioHistory = extractIntakeOutputData(lastImportedData, historyStart, cutoff7am); } catch(e) {}
+                // 24hr total: exactly 24 hours before 7 AM (yesterday 7 AM → today 7 AM)
+                var start24hr = new Date(cutoff7am);
+                start24hr.setDate(start24hr.getDate() - 1);
+                try { io24hr = extractIntakeOutputData(lastImportedData, start24hr, cutoff7am); } catch(e) {}
             }
 
             // ── COMPUTE COLUMN COUNT ─────────────────────────────────────────────
@@ -6672,9 +6676,18 @@ saveToLocalStorage();
                     .concat(Object.values(io.counts || {}));
                 return Math.max.apply(null, [0].concat(arrs.map(function(a){ return a ? a.length : 0; })));
             }
-            var maxLabs = Math.max.apply(null, [0].concat(Object.values(labData.labs || {}).map(function(a){ return a ? a.length : 0; })));
-            var maxVit  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return Math.max(vitals[d.key].today.length, vitals[d.key].history.length); })));
-            var maxValues = Math.max(maxLabs, maxVit, ioMaxCols(ioData), ioMaxCols(ioHistory), 1);
+            var maxLabs     = Math.max.apply(null, [0].concat(Object.values(labData.labs || {}).map(function(a){ return a ? a.length : 0; })));
+            var maxTodayVit = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return vitals[d.key].today.length; })));
+            var maxHistVit  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return vitals[d.key].history.length; })));
+            var maxTodayIO  = ioMaxCols(ioData);
+            var maxHistIO   = ioMaxCols(ioHistory);
+            // maxMainCols: shared "today" columns used by labs, today vitals, today I/O
+            var maxMainCols = Math.max(maxLabs, maxTodayVit, maxTodayIO, 1);
+            // maxHistCols: extra columns for history vitals / history I/O (shown to the right)
+            var maxHistCols  = Math.max(maxHistVit, maxHistIO);
+            var hasSeparator = maxHistCols > 0;
+            var has24hrTotal = !!(ioData || ioHistory); // show 24hr total column if any I/O
+            var maxValues    = maxMainCols + (hasSeparator ? 1 + maxHistCols : 0) + (has24hrTotal ? 1 : 0);
 
             // ── CELL / ROW HELPERS ───────────────────────────────────────────────
             function dataCell(val, dt, abnormal, unit) {
@@ -6700,40 +6713,131 @@ saveToLocalStorage();
             function ioSumVol(entries) {
                 return (entries || []).reduce(function(s, e){ return s + (e.volume || 0); }, 0);
             }
-            // timeLabel: e.g. "12.5 hrs" or "72 hrs" — appended as "Total: X mL / Y hrs"
-            function ioRowHTML(name, entries, unit, timeLabel) {
-                if (!entries || entries.length === 0) return '';
-                var sorted = entries.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
-                var total  = ioSumVol(sorted);
-                var timeStr = (timeLabel && total > 0) ? ' / ' + timeLabel : '';
-                var totalStr = total > 0 ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Total: ' + total + (unit.trim()||'') + timeStr + '</span>' : '';
-                var row = '<tr><td style="white-space:normal;line-height:1.5;word-break:break-word;min-width:140px;">' + name + totalStr + '</td>';
-                for (var i = 0; i < maxValues; i++) {
-                    if (i < sorted.length) {
-                        var e = sorted[i];
-                        var val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '—');
+            // ── Visual cell helpers for history/total columns ──────────────────
+            function sepCell() {
+                return '<td style="background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;width:4px;padding:0;"></td>';
+            }
+            function histDataCell(val, dt, unit) {
+                unit = unit || '';
+                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#a78bfa;background:rgba(139,92,246,0.08);">' +
+                    '<div>' + val + unit + '</div>' +
+                    (dt ? '<div style="font-size:0.6em;color:#6b7280;white-space:nowrap;text-align:center;">' + dt + '</div>' : '') +
+                    '</td>';
+            }
+            function totalCell(content) {
+                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#fbbf24;font-weight:700;background:rgba(251,191,36,0.1);border-left:1px solid #374151;">' + content + '</td>';
+            }
+            function emptyTotalCell() {
+                return '<td style="border-left:1px solid #374151;background:rgba(251,191,36,0.05);"></td>';
+            }
+            // Combined I/O row: today values in main cols, history as extra cols, 24hr total at end
+            function ioRowHTMLCombined(name, todayEntries, histEntries, total24Entries, unit) {
+                unit = unit || '';
+                todayEntries  = todayEntries  || [];
+                histEntries   = histEntries   || [];
+                total24Entries = total24Entries || [];
+                if (!todayEntries.length && !histEntries.length) return '';
+                var sortedToday = todayEntries.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
+                var sortedHist  = histEntries.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
+                var totalToday  = ioSumVol(sortedToday);
+                var total24     = ioSumVol(total24Entries);
+                // Truncate long drain/intake names; show full name in tooltip
+                var dispName = name.length > 35 ? name.substring(0, 33) + '\u2026' : name;
+                var todayStr = (totalToday > 0 && todayTimeLabel)
+                    ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Today: ' + totalToday + (unit.trim()||'') + ' / ' + todayTimeLabel + '</span>'
+                    : '';
+                var row = '<tr><td style="white-space:normal;line-height:1.5;word-break:break-word;min-width:110px;max-width:150px;" title="' +
+                    name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + dispName + todayStr + '</td>';
+                // Today columns (shared with labs)
+                for (var i = 0; i < maxMainCols; i++) {
+                    if (i < sortedToday.length) {
+                        var e = sortedToday[i];
+                        var val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '\u2014');
                         row += dataCell(val, ioDateShort(e.dateTimeStr || ''), false, unit);
                     } else { row += emptyCell(); }
                 }
+                // Separator + history columns
+                if (hasSeparator) {
+                    row += sepCell();
+                    for (var j = 0; j < maxHistCols; j++) {
+                        if (j < sortedHist.length) {
+                            var eh = sortedHist[j];
+                            var valh = eh.volume !== undefined ? eh.volume : (eh.count !== undefined ? eh.count : '\u2014');
+                            row += histDataCell(valh, ioDateShort(eh.dateTimeStr || ''), unit);
+                        } else { row += emptyCell(); }
+                    }
+                }
+                // 24hr total column
+                if (has24hrTotal) {
+                    row += total24 > 0 ? totalCell(total24 + (unit.trim()||'')) : emptyTotalCell();
+                }
                 return row + '</tr>';
             }
-            function balanceRowHTML(io) {
-                if (!io) return '';
+            // Balance row: shows today + history balances + 24hr total in one row
+            function balanceRowHTMLNew(io, ioHist, io24hrArg) {
                 var totalIn = 0, totalOut = 0;
-                Object.values(io.intakes || {}).forEach(function(a){ totalIn += ioSumVol(a); });
-                totalOut += ioSumVol(io.outputs && io.outputs.urine);
-                Object.values((io.outputs && io.outputs.drains) || {}).forEach(function(a){ totalOut += ioSumVol(a); });
-                Object.values((io.outputs && io.outputs.other)  || {}).forEach(function(a){ totalOut += ioSumVol(a); });
-                if (totalIn === 0 && totalOut === 0) return '';
+                if (io) {
+                    Object.values(io.intakes || {}).forEach(function(a){ totalIn += ioSumVol(a); });
+                    totalOut += ioSumVol(io.outputs && io.outputs.urine);
+                    Object.values((io.outputs && io.outputs.drains) || {}).forEach(function(a){ totalOut += ioSumVol(a); });
+                    Object.values((io.outputs && io.outputs.other)  || {}).forEach(function(a){ totalOut += ioSumVol(a); });
+                }
+                var histIn = 0, histOut = 0;
+                if (ioHist) {
+                    Object.values(ioHist.intakes || {}).forEach(function(a){ histIn += ioSumVol(a); });
+                    histOut += ioSumVol(ioHist.outputs && ioHist.outputs.urine);
+                    Object.values((ioHist.outputs && ioHist.outputs.drains) || {}).forEach(function(a){ histOut += ioSumVol(a); });
+                    Object.values((ioHist.outputs && ioHist.outputs.other)  || {}).forEach(function(a){ histOut += ioSumVol(a); });
+                }
+                var in24 = 0, out24 = 0;
+                if (io24hrArg) {
+                    Object.values(io24hrArg.intakes || {}).forEach(function(a){ in24 += ioSumVol(a); });
+                    out24 += ioSumVol(io24hrArg.outputs && io24hrArg.outputs.urine);
+                    Object.values((io24hrArg.outputs && io24hrArg.outputs.drains) || {}).forEach(function(a){ out24 += ioSumVol(a); });
+                    Object.values((io24hrArg.outputs && io24hrArg.outputs.other)  || {}).forEach(function(a){ out24 += ioSumVol(a); });
+                }
+                if (totalIn === 0 && totalOut === 0 && histIn === 0 && histOut === 0) return '';
                 var bal = totalIn - totalOut;
                 var balColor = bal >= 0 ? '#10b981' : '#f59e0b';
-                var extra = Math.max(1, maxValues - 2);
-                return '<tr>' +
-                    '<td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>' +
-                    '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>' +
-                    '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></td>' +
-                    '<td colspan="' + extra + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>' +
-                    '</tr>';
+                var histBal  = histIn - histOut;
+                var histBalColor = histBal >= 0 ? '#10b981' : '#f59e0b';
+                var bal24   = in24 - out24;
+                var bal24Color = bal24 >= 0 ? '#10b981' : '#f59e0b';
+                var row = '<tr><td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>';
+                // Today balance across maxMainCols
+                if (maxMainCols >= 3) {
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></td>';
+                    row += '<td colspan="' + (maxMainCols - 2) + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                } else if (maxMainCols === 2) {
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑' + totalIn + '</span>&nbsp;<span style="color:#f87171;font-weight:700;">↓' + totalOut + '</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                } else {
+                    row += '<td colspan="' + maxMainCols + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                }
+                // History balance
+                if (hasSeparator) {
+                    row += sepCell();
+                    if (maxHistCols >= 3) {
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑ ' + histIn + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ ' + histOut + ' mL</span></td>';
+                        row += '<td colspan="' + (maxHistCols - 2) + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                    } else if (maxHistCols === 2) {
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑' + histIn + '</span>&nbsp;<span style="color:#f87171;font-weight:700;">↓' + histOut + '</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                    } else if (maxHistCols === 1) {
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                    }
+                }
+                // 24hr total balance
+                if (has24hrTotal) {
+                    if (in24 > 0 || out24 > 0) {
+                        row += '<td style="padding:3px 6px;background:rgba(251,191,36,0.1);border-left:1px solid #374151;white-space:nowrap;">' +
+                            '<span style="color:' + bal24Color + ';font-weight:700;font-size:0.78rem;">' + (bal24 >= 0 ? '+' : '') + bal24 + ' mL</span>' +
+                            '<div style="font-size:0.6em;color:#94a3b8;">\u2191' + in24 + ' \u2193' + out24 + '</div></td>';
+                    } else { row += emptyTotalCell(); }
+                }
+                return row + '</tr>';
             }
             function getLabDT(key, idx) {
                 var dates = (labData.datesArray && labData.datesArray[key]) || [];
@@ -6760,109 +6864,112 @@ saveToLocalStorage();
                 '#tableContainer tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '#tableContainer tr:hover td:first-child{background:#0f0f1e;}' +
                 '</style><table><tr><th>Parameter / Total</th>';
-            for (var _ci = 0; _ci < maxValues; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
+            for (var _ci = 0; _ci < maxMainCols; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
+            if (hasSeparator) {
+                tableHTML += '<th style="background:#2d1f00;color:#fbbf24;border-left:2px solid #f59e0b;font-size:0.6rem;white-space:nowrap;padding:3px 5px;">\u25c4 Pre-7AM \u25ba</th>';
+                for (var _hi = 0; _hi < maxHistCols; _hi++) tableHTML += '<th style="background:#1a1a2e;color:#a78bfa;">#' + (_hi + 1) + '</th>';
+            }
+            if (has24hrTotal) tableHTML += '<th style="background:#1a2035;color:#fbbf24;white-space:nowrap;font-size:0.6rem;border-left:1px solid #374151;padding:3px 5px;">24h Total</th>';
             tableHTML += '</tr>';
 
-            // ── VITALS since 7 AM ────────────────────────────────────────────────
-            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0; });
+            // ── VITALS (today in main cols, pre-7AM history in extra right cols) ──
+            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; });
             if (hasVit) {
-                tableHTML += sectionHdr('Vitals — Since 7 AM', '#0f4c81');
+                tableHTML += sectionHdr('Vitals — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#0f4c81');
                 vitalDefs.forEach(function(vd) {
-                    var arr = vitals[vd.key].today;
-                    if (!arr.length) return;
+                    var todayArr = vitals[vd.key].today;
+                    var histArr  = vitals[vd.key].history;
+                    if (!todayArr.length && !histArr.length) return;
                     var row = '<tr><td>' + vd.label + '</td>';
-                    for (var i = 0; i < maxValues; i++) {
-                        row += i < arr.length
-                            ? dataCell(arr[i].value, arr[i].label, arr[i].value < vd.lo || arr[i].value > vd.hi, vd.unit)
+                    // Today columns
+                    for (var i = 0; i < maxMainCols; i++) {
+                        row += i < todayArr.length
+                            ? dataCell(todayArr[i].value, todayArr[i].label, todayArr[i].value < vd.lo || todayArr[i].value > vd.hi, vd.unit)
                             : emptyCell();
                     }
+                    // Separator + history columns
+                    if (hasSeparator) {
+                        row += sepCell();
+                        for (var j = 0; j < maxHistCols; j++) {
+                            row += j < histArr.length
+                                ? histDataCell(histArr[j].value, histArr[j].label, vd.unit)
+                                : emptyCell();
+                        }
+                    }
+                    // Empty 24hr total cell (vitals don't have a daily total)
+                    if (has24hrTotal) row += emptyTotalCell();
                     tableHTML += row + '</tr>';
                 });
             }
 
-            // ── INTAKE since 7 AM ────────────────────────────────────────────────
-            var hasIn = ioData && Object.values(ioData.intakes || {}).some(function(e){ return e && e.length > 0; });
-            if (hasIn) {
-                tableHTML += sectionHdr('Intake — Since 7 AM', '#155724');
-                Object.entries(ioData.intakes).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', todayTimeLabel);
+            // ── I/O BALANCE (before intakes, as requested) ────────────────────────
+            tableHTML += balanceRowHTMLNew(ioData, ioHistory, io24hr);
+
+            // ── INTAKES (today cols + pre-7AM history cols + 24hr total) ─────────
+            var allIntakeKeys = [], intakeKeySet = {};
+            if (ioData)    Object.keys(ioData.intakes    || {}).forEach(function(k){ if (!intakeKeySet[k]){ intakeKeySet[k]=1; allIntakeKeys.push(k); } });
+            if (ioHistory) Object.keys(ioHistory.intakes || {}).forEach(function(k){ if (!intakeKeySet[k]){ intakeKeySet[k]=1; allIntakeKeys.push(k); } });
+            var hasAnyIntake = allIntakeKeys.some(function(k){
+                return ((ioData    && ioData.intakes    && ioData.intakes[k]    && ioData.intakes[k].length    > 0) ||
+                        (ioHistory && ioHistory.intakes && ioHistory.intakes[k] && ioHistory.intakes[k].length > 0));
+            });
+            if (hasAnyIntake) {
+                tableHTML += sectionHdr('Intake — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#155724');
+                allIntakeKeys.forEach(function(k) {
+                    var t   = (ioData    && ioData.intakes    && ioData.intakes[k])    || [];
+                    var h   = (ioHistory && ioHistory.intakes && ioHistory.intakes[k]) || [];
+                    var t24 = (io24hr    && io24hr.intakes    && io24hr.intakes[k])    || [];
+                    tableHTML += ioRowHTMLCombined(k, t, h, t24, ' mL');
                 });
             }
 
-            // ── OUTPUT since 7 AM ────────────────────────────────────────────────
-            var hasUr = ioData && ioData.outputs && ioData.outputs.urine  && ioData.outputs.urine.length  > 0;
-            var hasDr = ioData && ioData.outputs && ioData.outputs.drains && Object.values(ioData.outputs.drains).some(function(e){ return e && e.length>0; });
-            var hasOt = ioData && ioData.outputs && ioData.outputs.other  && Object.values(ioData.outputs.other).some(function(e){  return e && e.length>0; });
-            if (hasUr || hasDr || hasOt) {
-                tableHTML += sectionHdr('Output — Since 7 AM', '#6b1a0f');
-                if (hasUr) tableHTML += ioRowHTML('Urine', ioData.outputs.urine, ' mL', todayTimeLabel);
-                if (hasDr) Object.entries(ioData.outputs.drains).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,''), kv[1], ' mL', todayTimeLabel);
+            // ── OUTPUTS (today cols + pre-7AM history cols + 24hr total) ─────────
+            var allUrineToday = (ioData    && ioData.outputs    && ioData.outputs.urine)    || [];
+            var allUrineHist  = (ioHistory && ioHistory.outputs && ioHistory.outputs.urine) || [];
+            var allUrine24    = (io24hr    && io24hr.outputs    && io24hr.outputs.urine)    || [];
+            var hasUrine = allUrineToday.length > 0 || allUrineHist.length > 0;
+
+            var allDrainKeys = [], drainKeySet = {};
+            if (ioData    && ioData.outputs    && ioData.outputs.drains)    Object.keys(ioData.outputs.drains).forEach(function(k){ if (!drainKeySet[k]){ drainKeySet[k]=1; allDrainKeys.push(k); } });
+            if (ioHistory && ioHistory.outputs && ioHistory.outputs.drains) Object.keys(ioHistory.outputs.drains).forEach(function(k){ if (!drainKeySet[k]){ drainKeySet[k]=1; allDrainKeys.push(k); } });
+
+            var allOtherKeys = [], otherKeySet = {};
+            if (ioData    && ioData.outputs    && ioData.outputs.other)    Object.keys(ioData.outputs.other).forEach(function(k){ if (!otherKeySet[k]){ otherKeySet[k]=1; allOtherKeys.push(k); } });
+            if (ioHistory && ioHistory.outputs && ioHistory.outputs.other) Object.keys(ioHistory.outputs.other).forEach(function(k){ if (!otherKeySet[k]){ otherKeySet[k]=1; allOtherKeys.push(k); } });
+
+            var hasAnyOutput = hasUrine || allDrainKeys.length > 0 || allOtherKeys.length > 0;
+            if (hasAnyOutput) {
+                tableHTML += sectionHdr('Output — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#6b1a0f');
+                if (hasUrine) tableHTML += ioRowHTMLCombined('Urine', allUrineToday, allUrineHist, allUrine24, ' mL');
+                allDrainKeys.forEach(function(k) {
+                    var t   = (ioData    && ioData.outputs    && ioData.outputs.drains    && ioData.outputs.drains[k])    || [];
+                    var h   = (ioHistory && ioHistory.outputs && ioHistory.outputs.drains && ioHistory.outputs.drains[k]) || [];
+                    var t24 = (io24hr    && io24hr.outputs    && io24hr.outputs.drains    && io24hr.outputs.drains[k])    || [];
+                    tableHTML += ioRowHTMLCombined(k.replace(/^Other:\s*/i, ''), t, h, t24, ' mL');
                 });
-                if (hasOt) Object.entries(ioData.outputs.other).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', todayTimeLabel);
+                allOtherKeys.forEach(function(k) {
+                    var t   = (ioData    && ioData.outputs    && ioData.outputs.other    && ioData.outputs.other[k])    || [];
+                    var h   = (ioHistory && ioHistory.outputs && ioHistory.outputs.other && ioHistory.outputs.other[k]) || [];
+                    var t24 = (io24hr    && io24hr.outputs    && io24hr.outputs.other    && io24hr.outputs.other[k])    || [];
+                    tableHTML += ioRowHTMLCombined(k, t, h, t24, ' mL');
                 });
             }
 
-            // ── COUNTS since 7 AM ────────────────────────────────────────────────
-            var hasCt = ioData && ioData.counts && Object.values(ioData.counts).some(function(e){ return e && e.length>0; });
-            if (hasCt) {
-                tableHTML += sectionHdr('Counts — Since 7 AM', '#4a3500');
-                Object.entries(ioData.counts).forEach(function(kv) {
-                    if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], '', todayTimeLabel);
+            // ── COUNTS (today cols + pre-7AM history cols) ────────────────────────
+            var allCountKeys = [], countKeySet = {};
+            if (ioData)    Object.keys(ioData.counts    || {}).forEach(function(k){ if (!countKeySet[k]){ countKeySet[k]=1; allCountKeys.push(k); } });
+            if (ioHistory) Object.keys(ioHistory.counts || {}).forEach(function(k){ if (!countKeySet[k]){ countKeySet[k]=1; allCountKeys.push(k); } });
+            var hasAnyCounts = allCountKeys.some(function(k){
+                return ((ioData    && ioData.counts    && ioData.counts[k]    && ioData.counts[k].length    > 0) ||
+                        (ioHistory && ioHistory.counts && ioHistory.counts[k] && ioHistory.counts[k].length > 0));
+            });
+            if (hasAnyCounts) {
+                tableHTML += sectionHdr('Counts' + (hasSeparator ? ' — Since 7 AM | Pre-7AM \u25ba' : ''), '#4a3500');
+                allCountKeys.forEach(function(k) {
+                    var t = (ioData    && ioData.counts    && ioData.counts[k])    || [];
+                    var h = (ioHistory && ioHistory.counts && ioHistory.counts[k]) || [];
+                    tableHTML += ioRowHTMLCombined(k, t, h, [], '');
                 });
-            }
-
-            // ── I/O BALANCE since 7 AM ───────────────────────────────────────────
-            tableHTML += balanceRowHTML(ioData);
-
-            // ── 7 AM DEMARCATION + HISTORY (up to 72 hrs before 7 AM) ───────────
-            var hasHistVit = vitalDefs.some(function(d){ return vitals[d.key].history.length > 0; });
-            var hasHistIn  = ioHistory && Object.values(ioHistory.intakes || {}).some(function(e){ return e && e.length>0; });
-            var hasHistUr  = ioHistory && ioHistory.outputs && ioHistory.outputs.urine  && ioHistory.outputs.urine.length  > 0;
-            var hasHistDr  = ioHistory && ioHistory.outputs && ioHistory.outputs.drains && Object.values(ioHistory.outputs.drains||{}).some(function(e){ return e && e.length>0; });
-            var hasHistOt  = ioHistory && ioHistory.outputs && ioHistory.outputs.other  && Object.values(ioHistory.outputs.other||{}).some(function(e){ return e && e.length>0; });
-            var hasHistory = hasHistVit || hasHistIn || hasHistUr || hasHistDr || hasHistOt;
-
-            if (hasHistory) {
-                var c7mo = String(cutoff7am.getMonth() + 1).padStart(2, '0');
-                var c7da = String(cutoff7am.getDate()).padStart(2, '0');
-                tableHTML += demarcRow('▲ 7:00 AM  ' + c7mo + '/' + c7da + '  ▲  BEFORE 7 AM — PREVIOUS DATA (up to 72 hrs)  ▼');
-
-                if (hasHistVit) {
-                    tableHTML += sectionHdr('Vitals — Before 7 AM', '#1a3555');
-                    vitalDefs.forEach(function(vd) {
-                        var arr = vitals[vd.key].history;
-                        if (!arr.length) return;
-                        var row = '<tr><td>' + vd.label + '</td>';
-                        for (var i = 0; i < maxValues; i++) {
-                            row += i < arr.length
-                                ? dataCell(arr[i].value, arr[i].label, arr[i].value < vd.lo || arr[i].value > vd.hi, vd.unit)
-                                : emptyCell();
-                        }
-                        tableHTML += row + '</tr>';
-                    });
-                }
-
-                if (hasHistIn) {
-                    tableHTML += sectionHdr('Intake — Before 7 AM', '#0e3319');
-                    Object.entries(ioHistory.intakes).forEach(function(kv) {
-                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', '72 hrs');
-                    });
-                }
-
-                if (hasHistUr || hasHistDr || hasHistOt) {
-                    tableHTML += sectionHdr('Output — Before 7 AM', '#3d0e0e');
-                    if (hasHistUr) tableHTML += ioRowHTML('Urine', ioHistory.outputs.urine, ' mL', '72 hrs');
-                    if (hasHistDr) Object.entries(ioHistory.outputs.drains).forEach(function(kv) {
-                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0].replace(/^Other:\s*/i,''), kv[1], ' mL', '72 hrs');
-                    });
-                    if (hasHistOt) Object.entries(ioHistory.outputs.other).forEach(function(kv) {
-                        if (kv[1] && kv[1].length > 0) tableHTML += ioRowHTML(kv[0], kv[1], ' mL', '72 hrs');
-                    });
-                }
-
-                tableHTML += balanceRowHTML(ioHistory);
             }
 
             // ── LABS ─────────────────────────────────────────────────────────────
@@ -6876,13 +6983,14 @@ saveToLocalStorage();
                     { key: 'lymph', label: 'Lymph%', lo: 20,   hi: 40   }
                 ]},
                 { color: '#1e3a5f', label: 'BMP', labs: [
-                    { key: 'na',  label: 'Na',  lo: 135,  hi: 145 },
-                    { key: 'k',   label: 'K',   lo: 3.5,  hi: 5.0 },
-                    { key: 'cl',  label: 'Cl',  lo: 96,   hi: 106 },
-                    { key: 'co2', label: 'CO2', lo: 23,   hi: 29  },
-                    { key: 'bun', label: 'BUN', lo: 7,    hi: 20  },
-                    { key: 'cr',  label: 'Cr',  lo: 0.4,  hi: 1.0 },
-                    { key: 'glu', label: 'Glu', lo: 70,   hi: 100 }
+                    { key: 'na',     label: 'Na',      lo: 135,  hi: 145 },
+                    { key: 'k',      label: 'K',        lo: 3.5,  hi: 5.0 },
+                    { key: 'cl',     label: 'Cl',       lo: 96,   hi: 106 },
+                    { key: 'co2',    label: 'CO2',      lo: 23,   hi: 29  },
+                    { key: 'bun',    label: 'BUN',      lo: 7,    hi: 20  },
+                    { key: 'cr',     label: 'Cr',       lo: 0.4,  hi: 1.0 },
+                    { key: 'glu',    label: 'Glu',      lo: 70,   hi: 100 },
+                    { key: 'gluPOC', label: 'Glu POC',  lo: 70,   hi: 180 }
                 ]},
                 { color: '#4a1d72', label: 'Electrolytes', labs: [
                     { key: 'ca',      label: 'iCa',  lo: 4.5, hi: 5.3  },
@@ -6929,13 +7037,21 @@ saveToLocalStorage();
                         var arr = labData.labs[ld.key];
                         if (!arr || arr.length === 0) return;
                         var row = '<tr><td>' + ld.label + '</td>';
-                        for (var i = 0; i < maxValues; i++) {
+                        // Fill main columns (today / labs shared region)
+                        for (var i = 0; i < maxMainCols; i++) {
                             if (i < arr.length) {
                                 var v = arr[i];
                                 var dt = getLabDT(ld.key, i);
                                 row += dataCell(v, dt, !isNaN(v) && (v < ld.lo || v > ld.hi), '');
                             } else { row += emptyCell(); }
                         }
+                        // Visual separator + empty history cells (for column alignment)
+                        if (hasSeparator) {
+                            row += sepCell();
+                            for (var j = 0; j < maxHistCols; j++) row += emptyCell();
+                        }
+                        // Empty 24hr total cell
+                        if (has24hrTotal) row += emptyTotalCell();
                         tableHTML += row + '</tr>';
                     });
                 });
@@ -8351,6 +8467,53 @@ else {
             });
         });
 
+        // ── Category color map ─────────────────────────────────────────────────
+        const categoryColors = {
+            'NEURO/PAIN/SEDATION': '#c084fc', // purple
+            'PULM':                '#38bdf8', // sky blue
+            'CV/PRESSORS':         '#f87171', // red/coral
+            'GI/DIET':             '#fb923c', // orange
+            'RENAL/FLUIDS':        '#34d399', // emerald
+            'HEME/AC':             '#f472b6', // pink
+            'INFECTION/ABX':       '#a3e635', // lime/green
+            'ENDOCRINE/INSULIN':   '#fbbf24', // amber
+            'SKIN/OTHER':          '#94a3b8'  // slate
+        };
+
+        // ── Home med matching helpers ──────────────────────────────────────────
+        // Extract home meds once here so we can use them for matching
+        const _homeMedsRawForMatch = lastImportedData ? extractHomeMeds(lastImportedData) : '';
+        const homeMedLinesForMatch = _homeMedsRawForMatch
+            ? _homeMedsRawForMatch.split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0 && !l.match(/^(PRN|Scheduled|Continuous|Active|Active\s+PRN|Active\s+Scheduled|Active\s+Continuous|Medications?\s*\(\d+\))$/i))
+            : [];
+
+        function _mfw(s) { return (s || '').trim().split(/\s+/)[0].toLowerCase(); }
+
+        // Returns true if an inpatient med text matches any home med line
+        function isInpatMedAHomeMed(medText) {
+            if (!homeMedLinesForMatch.length) return false;
+            const fw = _mfw(medText);
+            const tl = medText.toLowerCase();
+            return homeMedLinesForMatch.some(hl => {
+                const hfw = _mfw(hl);
+                return hfw === fw || tl.includes(hfw) || hl.toLowerCase().includes(fw);
+            });
+        }
+
+        // Returns true if a home med line matches any active inpatient ordered med
+        function isHomeMedOrdered(homeLine) {
+            const hfw = _mfw(homeLine);
+            const hl = homeLine.toLowerCase();
+            return Object.values(categorizedMeds).some(medList =>
+                medList.some(med => {
+                    const fw = _mfw(med.text);
+                    return fw === hfw || med.text.toLowerCase().includes(hfw) || hl.includes(fw);
+                })
+            );
+        }
+
         // Medication abbreviation database
         const MED_ABBREVIATIONS = {
             'hydromorphone': 'D', 'oxycodone': 'O', 'morphine': 'M', 'fentanyl': 'F',
@@ -8427,9 +8590,10 @@ else {
 
             let html = '';
 
-            // Category header
+            // Category header with per-category color
+            const catColor = categoryColors[categoryName] || 'var(--primary)';
             html += `<div style="margin-bottom: 0.05rem;">`;
-            html += `<div style="color: var(--primary); font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}:</div>`;
+            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}:</div>`;
 
             // PO medications
             if (poMeds.length > 0) {
@@ -8457,7 +8621,8 @@ else {
                     const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
                     const manualIndicator = med.isManual ? '✏️ ' : '';
                     const editedIndicator = isEdited ? '📝 ' : '';
-                    const displayText = editedIndicator + manualIndicator + '💊 ' + baseText + (medIsPRN ? ' PRN' : '');
+                    const homeMedIndicator = isInpatMedAHomeMed(medText) ? '🏠 ' : '';
+                    const displayText = editedIndicator + manualIndicator + homeMedIndicator + '💊 ' + baseText + (medIsPRN ? ' PRN' : '');
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
@@ -8505,7 +8670,8 @@ else {
                     const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
                     const manualIndicator = med.isManual ? '✏️ ' : '';
                     const editedIndicator = isEdited ? '📝 ' : '';
-                    const displayText = editedIndicator + manualIndicator + '💉 ' + baseText + (medIsPRN ? ' PRN' : '');
+                    const homeMedIndicator = isInpatMedAHomeMed(medText) ? '🏠 ' : '';
+                    const displayText = editedIndicator + manualIndicator + homeMedIndicator + '💉 ' + baseText + (medIsPRN ? ' PRN' : '');
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
@@ -8667,8 +8833,12 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
                 if (deletedOrders.has(medId)) return;
                 const displayLine = showAbbreviatedTable ? abbreviateMedText(line) : line;
                 const medName = line.split(/\s+/)[0].toLowerCase();
-                tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
-                tableHTML += `<span>💊 ${displayLine}</span>`;
+                const homeOrdered = isHomeMedOrdered(line);
+                // ⚠️ = not yet ordered inpatient (needs to be started); 💊 = already ordered
+                const homePrefix = homeOrdered ? '💊 ' : '⚠️ ';
+                const homeColor = homeOrdered ? '#FFFFFF' : '#fbbf24'; // amber tint for unordered
+                tableHTML += `<div style="color: ${homeColor}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
+                tableHTML += `<span title="${homeOrdered ? 'Ordered inpatient' : 'NOT yet ordered inpatient \u2014 consider restarting'}">${homePrefix}${displayLine}</span>`;
                 tableHTML += `<div style="display: flex; gap: 4px;">`;
                 tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
                         class="med-status-btn"
@@ -9073,6 +9243,13 @@ const extractLabValue = (pattern, name) => {
             extractLabValue('BUN:', 'bun');
             extractLabValue('Creatinine:', 'cr');
             extractLabValue('Glucose:', 'glu');
+            // POC (point-of-care / bedside) glucose — common EHR label variants
+            extractLabValue('Glucose POC:', 'gluPOC');
+            extractLabValue('Glucose, POC:', 'gluPOC');
+            extractLabValue('Glucose Monitoring Result:', 'gluPOC');
+            extractLabValue('Blood Glucose:', 'gluPOC');
+            extractLabValue('Fingerstick Glucose:', 'gluPOC');
+            extractLabValue('Capillary Blood Glucose:', 'gluPOC');
             extractLabValue('Calcium, Ionized:', 'ca');
             extractLabValue('Ionized Calcium:', 'ca');
 
