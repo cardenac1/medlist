@@ -5894,71 +5894,66 @@ function parseCernerData(text) {
   const newPatients = [];
 
   lines.forEach(line => {
-    const lc = line.toLowerCase();
-    if (
-      !line.trim() ||
-      lc.includes('patient list') ||
-      (lc.includes('room') && lc.includes('name'))
-    ) return;
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const lc = trimmed.toLowerCase();
+    if (lc.includes('patient list') || (lc.includes('room') && lc.includes('name'))) return;
 
-    // ── Mobile Cerner format ──────────────────────────────────────────────────
-    // e.g. “GARCIA, LASTIMA  Age65 yearsGenderFDate of BirthDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B”
-    // Detected when the line starts with LASTNAME, FIRSTNAME and contains MRN: keyword
-    const isMobileFmt = /MRN:?\s*\d{4,10}/i.test(line) &&
-                        /^[A-Z][A-Z',\-. ]+,\s*[A-Z]/i.test(line.trim());
-    if (isMobileFmt) {
-      // Name: everything before the first “Age” keyword or double-space separator
-      const nameM = /^(.+?)(?:\s{2,}|\s+(?=Age\s*\d|Gender|DOB:|MRN:))/i.exec(line.trim());
-      const ageM  = /Age\s*(\d+)/i.exec(line);
-      const genM  = /Gender\s*([MF])/i.exec(line);
-      const mrnM  = /MRN:?\s*(\d{4,10})/i.exec(line);
-      // Room: everything after the MRN number (trailing location string)
-      const roomM = /MRN:?\s*\d+\s+(.+?)\s*$/i.exec(line);
+    // ── Primary: Mobile Cerner single-line format ─────────────────────────────
+    // “GARCIA, LASTIMA  Age65 yearsGenderFDate of BirthDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B”
+    //  ↑ LASTNAME, FIRSTNAME  ↑ Age##  ↑ GenderM/F  ↑ DOB  ↑ MRN:######  ↑ ROOM LOCATION
+    //
+    // Detect: has MRN: with digits AND starts with LASTNAME, FIRSTNAME pattern
+    const mrnM   = /MRN:?\s*(\d{4,10})/i.exec(trimmed);
+    const startsWithName = /^[A-Z][A-Z'.'\- ]*,\s*[A-Z]/i.test(trimmed);
+
+    if (mrnM && startsWithName) {
+      // Name — everything before the first double-space (or before Age/Gender/DOB/MRN keyword)
+      const nameM = /^(.+?)(?:\s{2,}|\s+(?=Age[\s\d]|Gender|DOB[: ]|MRN:?))/i.exec(trimmed);
+      const ageM  = /Age\s*(\d+)/i.exec(trimmed);
+      const genM  = /Gender\s*([MF])/i.exec(trimmed);
+      // Room — everything that follows the MRN number
+      const roomM = /MRN:?\s*\d+\s+(.+?)\s*$/i.exec(trimmed);
 
       const p = {};
       MASTER_HEADERS.forEach(h => p[h] = '');
       p.Type = 'Patient';
-      p.Name = nameM ? nameM[1].trim() : line.split(',')[0].trim() || 'Unknown';
+      // Fallback name: text before first comma segment if regex fails
+      p.Name = nameM ? nameM[1].trim() : trimmed.split(/\s{2,}/)[0].trim();
       p.RM   = roomM ? roomM[1].trim() : 'TBD';
-      p.MRN  = mrnM  ? mrnM[1].trim()  : '';
+      p.MRN  = mrnM[1].trim();
       p.Att  = '';
 
       const age = ageM ? ageM[1] : '';
       const gen = genM ? genM[1].toUpperCase() : '';
       if (age || gen) {
-        const ag = age + gen;
-        p['A/G']      = ag;
-        p['Problems'] = ag;
+        p['A/G']      = age + gen;
+        p['Problems'] = age + gen;
       }
 
       newPatients.push(p);
-      return; // skip the column-based logic below
+      return;
     }
 
-    // ── Standard column-based Cerner format ───────────────────────────────────
-    // split on tabs or big spaces
-    let cols = line.split('\t').filter(c => c.trim());
-    if (cols.length < 3) {
-      cols = line.split(/\s{2,}/).filter(c => c.trim());
-    }
+    // ── Fallback: Standard tab / multi-space column format ────────────────────
+    let cols = trimmed.split('\t').filter(c => c.trim());
+    if (cols.length < 3) cols = trimmed.split(/\s{2,}/).filter(c => c.trim());
     if (cols.length < 2) return;
 
-    // grab the basics
     let room = '', name = '', mrn = '', att = '';
     cols.forEach(c => {
       const t = c.trim();
-      if (/^\d{5,10}$/.test(t) && !mrn)           mrn = t;
+      if (/^\d{5,10}$/.test(t) && !mrn)                mrn = t;
       else if (/^(WMC|ICU|CCU|[A-Z]{2,4})\s+/.test(t) && !room) room = t;
-      else if (t.includes(',') && !name)           name = t;
-      else if (/(MD|MBBS|DO|Dr\b)/i.test(t) && !att) att = t;
-      else if (room && mrn && !name)               name = t;
+      else if (t.includes(',') && !name)                name = t;
+      else if (/(MD|MBBS|DO|Dr\b)/i.test(t) && !att)   att  = t;
+      else if (room && mrn && !name)                    name = t;
     });
     if (!name) {
       const guess = cols.find(c => c.trim() && !/^\d+$/.test(c) && c.trim() !== room);
       name = guess ? guess.trim() : 'Unknown';
     }
 
-    // build the blank patient object
     const p = {};
     MASTER_HEADERS.forEach(h => p[h] = '');
     p.Type = 'Patient';
@@ -5967,28 +5962,17 @@ function parseCernerData(text) {
     p.MRN  = mrn  || '';
     p.Att  = att  || '';
 
-    // —— extract Age/Gender ——
+    // Age/Gender in cols 7+8
     let ag = '';
-    const col7 = cols[6]?.trim() || '';
-    // 1) single “30F” in col7
+    const col7 = (cols[6] || '').trim();
     const m1 = /^(\d+)([MF])$/i.exec(col7);
     if (m1) {
       ag = m1[1] + m1[2].toUpperCase();
+    } else if (cols.length >= 8) {
+      const age = cols[6].trim(), g = cols[7].trim().toUpperCase();
+      if (/^\d+$/.test(age) && /^[MF]$/.test(g)) ag = age + g;
     }
-    // 2) separate age in col7 + gender in col8
-    else if (cols.length >= 8) {
-      const age = cols[6].trim();
-      const g   = cols[7].trim().toUpperCase();
-      if (/^\d+$/.test(age) && /^[MF]$/.test(g)) {
-        ag = age + g;
-      }
-    }
-
-    // if we got it, seed both A/G _and_ Problems
-    if (ag) {
-      p['A/G']      = ag;
-      p['Problems'] = ag;
-    }
+    if (ag) { p['A/G'] = ag; p['Problems'] = ag; }
 
     newPatients.push(p);
   });
