@@ -3694,8 +3694,28 @@ const helpContent = {
             }
         }
 
-        // Sync priority indicator lights when todos change (e.g. all checked = green)
+        // When all todos are checked → set Priority to 'C' (Complete) so sorting works.
+        // When any todo is unchecked → restore the previous priority value.
         function updatePriorityLightFromTodos(patient) {
+            const parsed = parseTodoText(patient['To do'] || '');
+            const tasks  = parsed.tasks.filter(t => t.type === 'task');
+            const allDone = tasks.length > 0 && tasks.every(t => t.done);
+
+            if (allDone && patient.Priority !== 'C') {
+                // Save existing priority so we can restore it if a task is later unchecked
+                patient._prevPriority = patient.Priority || '';
+                patient.Priority = 'C';
+                saveToLocalStorage();
+                displayRows(); // re-sorts the main list
+            } else if (!allDone && patient.Priority === 'C') {
+                // Restore the priority that was set before all tasks were completed
+                patient.Priority = patient._prevPriority || '';
+                delete patient._prevPriority;
+                saveToLocalStorage();
+                displayRows();
+            }
+
+            // Update all priority indicator elements in the detail view
             const { color } = getPriorityStatus(patient);
             const idx = patientData.indexOf(patient);
             if (idx !== -1) {
@@ -3706,6 +3726,10 @@ const helpContent = {
             if (btn) btn.style.background = color;
             const colorBox = document.getElementById('detailPriorityColorBox');
             if (colorBox) colorBox.style.background = color;
+            const priorityText = document.getElementById('detailPriorityText');
+            if (priorityText) priorityText.textContent = patient.Priority ? getPriorityName(patient.Priority) : 'Set Priority';
+            const priorityInput = document.getElementById('field_Priority');
+            if (priorityInput) priorityInput.value = patient.Priority || '';
         }
 
         // Refresh the todo display from patient data (called by external code)
@@ -4013,13 +4037,6 @@ function getChecklistStatus(patient, patientIndex) {
 
 
 	function getPriorityStatus(patient) {
-    // If ALL todo tasks are checked off → override to green regardless of priority
-    const _todoParsed = parseTodoText(patient['To do'] || '');
-    const _todoTasks = _todoParsed.tasks.filter(t => t.type === 'task');
-    if (_todoTasks.length > 0 && _todoTasks.every(t => t.done)) {
-        return { color: '#23CC72', title: 'All tasks complete \u2713' };
-    }
-
     // Normalize priority: handle undefined, null, or non-string values
     const priority = (patient.Priority || '').toString().trim().toLowerCase();
     console.log('getPriorityStatus: Normalized priority:', priority); // Debug log
