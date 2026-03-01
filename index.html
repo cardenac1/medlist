@@ -6205,7 +6205,7 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
 
             var name = nameM[1].trim();
             var mrn  = mrnM[1].trim();
-            var room = roomM ? roomM[1].trim() : 'TBD';
+            var room = roomM ? roomM[1].replace(/\bRoom\b\s*/i, '').replace(/\bBed\b\s*/i, '').replace(/\s+/g, ' ').trim() : 'TBD';
             var ag   = (ageM ? ageM[1] : '') + (genM ? genM[1].toUpperCase() : '');
 
             // Open the manual entry form and pre-fill fields
@@ -12726,25 +12726,25 @@ function generateFullChecklistHTML() {
 
   // ========= HEADER & TOP PROGRESS =========
   let html = `
-    <div style="margin-bottom: 1.5rem; text-align: center;">
-      <div style="display:flex; justify-content:center; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-        <strong style="color:${isTrauma ? '#ef4444' : '#3b82f6'}; font-size:1.3em;">
+    <div style="margin-bottom:0.35rem; text-align:center;">
+      <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-bottom:0.3rem;">
+        <strong style="color:${isTrauma ? '#ef4444' : '#3b82f6'}; font-size:1.05em;">
           ${isTrauma ? 'TRAUMA' : 'CONSULT PATIENT'} CHECKLIST
         </strong>
         <button onclick="toggleChecklistType()"
-          style="background:linear-gradient(135deg, ${isTrauma ? '#3b82f6' : '#ef4444'}, ${isTrauma ? '#2563eb' : '#dc2626'}); color:white; border:none; padding:0.2rem 0.5rem; border-radius:0.375rem; font-size:0.85rem; cursor:pointer; transition:all .3s; box-shadow:0 2px 4px rgba(0,0,0,.2);"
+          style="background:linear-gradient(135deg, ${isTrauma ? '#3b82f6' : '#ef4444'}, ${isTrauma ? '#2563eb' : '#dc2626'}); color:white; border:none; padding:0.15rem 0.4rem; border-radius:0.375rem; font-size:0.78rem; cursor:pointer; transition:all .3s; box-shadow:0 2px 4px rgba(0,0,0,.2);"
           onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           Switch to ${isTrauma ? 'Consult' : 'Trauma'}
         </button>
       </div>
     </div>
 
-    <div style="margin-bottom:0.5rem; padding:0.2rem; background:var(--card-bg); border-radius:0.5rem; border:2px solid var(--primary);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-        <strong style="color:var(--primary);">Progress</strong>
-        <span id="progressTextTop" style="color:var(--text-primary);">${completed}/${totalItems} (${progress}%)</span>
+    <div style="margin-bottom:0.35rem; padding:0.25rem 0.4rem; background:var(--card-bg); border-radius:0.4rem; border:1px solid var(--primary);">
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+        <strong style="color:var(--primary); font-size:0.8rem;">Progress</strong>
+        <span id="progressTextTop" style="color:var(--text-primary); font-size:0.8rem;">${completed}/${totalItems} (${progress}%)</span>
       </div>
-      <div style="background:var(--dark-bg); border-radius:1rem; height:10px; overflow:hidden;">
+      <div style="background:var(--dark-bg); border-radius:1rem; height:6px; overflow:hidden;">
         <div id="progressBarTop" style="background:linear-gradient(90deg, var(--primary), var(--secondary)); height:100%; width:${progress}%; transition:width .3s;"></div>
       </div>
     </div>
@@ -12764,13 +12764,13 @@ function generateFullChecklistHTML() {
     const sectionId = sectionName.replace(/[^a-zA-Z0-9]/g, '_');
 
     html += `
-      <div style="margin-bottom:0.75rem;">
-        <h4 style="color:${sectionColor}; margin-bottom:0.25rem; font-size:1.1em; font-weight:bold; cursor:${isOrders ? 'pointer' : 'default'};"
+      <div style="margin-bottom:0.3rem;">
+        <h4 style="color:${sectionColor}; margin-bottom:0.1rem; font-size:0.85rem; font-weight:bold; cursor:${isOrders ? 'pointer' : 'default'}; letter-spacing:0.03em;"
             ${isOrders ? `onclick="toggleSection('${sectionId}')"` : ''}>
           ${sectionName} ${isOrders ? '▸' : ''}
         </h4>
         <div id="${isOrders ? sectionId : ''}"
-             style="margin-left:1rem; display:grid; gap:0.15rem; ${isOrders ? 'display:none;' : ''}">
+             style="margin-left:0.5rem; display:grid; gap:0.02rem; ${isOrders ? 'display:none;' : ''}">
     `;
 
     sectionItems.forEach(item => {
@@ -12778,13 +12778,13 @@ function generateFullChecklistHTML() {
 
       // Parent row
       html += `
-        <label style="display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer; padding:0.2rem 0.5rem; border-radius:0.25rem; transition:background .2s; border:1px solid transparent;"
+        <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.06rem 0.3rem; border-radius:0.2rem; transition:background .2s; border:1px solid transparent;"
                onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';"
                onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
           <input type="checkbox" ${parentChecked ? 'checked' : ''}
                  onchange="updateFullChecklist('${patientKey}', '${item.index}', this.checked, ${/* total items */ totalItems})"
-                 style="width:18px; height:18px; min-width:18px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
-          <span style="color:var(--text-primary); font-size:0.95rem; line-height:1.4;">
+                 style="width:14px; height:14px; min-width:14px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
+          <span style="color:var(--text-primary); font-size:0.82rem; line-height:1.25;">
             ${item.text}
           </span>
         </label>
@@ -12792,17 +12792,17 @@ function generateFullChecklistHTML() {
 
       // Children (if any)
       if (Array.isArray(item.children) && item.children.length) {
-        html += `<ul style="margin:0.25rem 0 0.5rem 1.5rem; padding-left:0.5rem; list-style:none; border-left:2px solid ${sectionColor}30;">`;
+        html += `<ul style="margin:0.05rem 0 0.15rem 1rem; padding-left:0.3rem; list-style:none; border-left:2px solid ${sectionColor}30;">`;
         item.children.forEach((childText, idx) => {
           const childKey = `${item.index}_child_${idx}`;
           const childChecked = !!states[`item_${childKey}`];
           html += `
             <li>
-              <label style="display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer; padding:0.15rem 0.5rem; border-radius:0.25rem;">
+              <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.04rem 0.25rem; border-radius:0.2rem;">
                 <input type="checkbox" ${childChecked ? 'checked' : ''}
                        onchange="updateFullChecklist('${patientKey}', '${childKey}', this.checked, ${totalItems})"
-                       style="width:18px; height:18px; min-width:18px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
-                <span style="color:var(--text-primary); font-size:0.93rem; line-height:1.35;">
+                       style="width:13px; height:13px; min-width:13px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
+                <span style="color:var(--text-primary); font-size:0.79rem; line-height:1.2;">
                   ${childText}
                 </span>
               </label>
@@ -12818,12 +12818,12 @@ function generateFullChecklistHTML() {
 
   // ========= BOTTOM PROGRESS =========
   html += `
-    <div style="margin-top:0.5rem; padding:0.2rem; background:var(--card-bg); border-radius:0.5rem; border:2px solid var(--primary);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-        <strong style="color:var(--primary);">Progress</strong>
-        <span id="progressTextBottom" style="color:var(--text-primary);">${completed}/${totalItems} (${progress}%)</span>
+    <div style="margin-top:0.3rem; padding:0.25rem 0.4rem; background:var(--card-bg); border-radius:0.4rem; border:1px solid var(--primary);">
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+        <strong style="color:var(--primary); font-size:0.8rem;">Progress</strong>
+        <span id="progressTextBottom" style="color:var(--text-primary); font-size:0.8rem;">${completed}/${totalItems} (${progress}%)</span>
       </div>
-      <div style="background:var(--dark-bg); border-radius:1rem; height:10px; overflow:hidden;">
+      <div style="background:var(--dark-bg); border-radius:1rem; height:6px; overflow:hidden;">
         <div id="progressBarBottom" style="background:linear-gradient(90deg, var(--primary), var(--secondary)); height:100%; width:${progress}%; transition:width .3s;"></div>
       </div>
     </div>
