@@ -5443,10 +5443,10 @@ function switchView(mode) {
 
             // Editable short fields row inside header
             const shortFieldsRow = document.createElement('div');
-            shortFieldsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.65rem;';
-            ['Name', 'RM', 'MRN', 'Att'].forEach(header => {
+            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.65rem;';
+            ['Name', 'RM', 'MRN'].forEach(header => {
                 const fieldWrap = document.createElement('div');
-                fieldWrap.style.cssText = 'flex:1;min-width:80px;';
+                fieldWrap.style.cssText = 'width:100%;';
                 const lbl = document.createElement('label');
                 lbl.textContent = header;
                 lbl.style.cssText = 'margin-top:0;';
