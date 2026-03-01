@@ -6205,7 +6205,7 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
 
             var name = nameM[1].trim();
             var mrn  = mrnM[1].trim();
-            var room = roomM ? roomM[1].trim() : 'TBD';
+            var room = roomM ? roomM[1].replace(/\bRoom\b\s*/i, '').replace(/\bBed\b\s*/i, '').replace(/\s+/g, ' ').trim() : 'TBD';
             var ag   = (ageM ? ageM[1] : '') + (genM ? genM[1].toUpperCase() : '');
 
             // Open the manual entry form and pre-fill fields
