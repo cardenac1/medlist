@@ -3089,7 +3089,7 @@ async function testOCRAvailability() {
         <div id="entryTypeSelection" class="nav-buttons">
             <button type="button" onclick="showManualEntry()">Manual Entry</button>
             <button type="button" onclick="showPasteEntry()">Paste Entry</button>
-            <button type="button" onclick="showDotPhraseEntry()" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;">📋 Dot Phrase</button>
+            <button type="button" onclick="showDotPhraseEntry()" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;">📱 Mobile Cerner</button>
             <button type="button" onclick="showUpdatePatientsSection()">🔄 Update Patients</button>
             <button type="button" onclick="closeAddEntryModal()">Cancel</button>
 			<button type="button" onclick="showCameraEntry()">📸 Scan Label</button>
@@ -3112,20 +3112,16 @@ async function testOCRAvailability() {
             </div>
         </div>
 
-        <!-- Dot Phrase Quick Import -->
+        <!-- Mobile Cerner Quick Import -->
         <div id="dotPhraseSection" style="display: none;">
-            <h3 style="color:#38bdf8;margin-bottom:8px;font-size:1rem;">📋 Dot Phrase Import</h3>
+            <h3 style="color:#38bdf8;margin-bottom:8px;font-size:1rem;">📱 Mobile Cerner Import</h3>
             <p style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:4px;line-height:1.5;">
-                Paste your 5-line dot phrase output — one field per line:
+                Paste the patient line copied from the Mobile Cerner app:
             </p>
-            <pre style="background:#0f172a;color:#94a3b8;font-size:0.75rem;padding:8px 12px;border-radius:6px;border:1px solid #1e293b;margin-bottom:10px;line-height:1.6;">[ Name ]
-[ Nurse Unit ]
-[ Room ]
-[ Bed ]
-[ MRN ]</pre>
-            <textarea id="dotPhraseTextarea" rows="6"
-                style="width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 12px;font-size:1rem;font-family:monospace;resize:vertical;line-height:1.6;"
-                placeholder="CRUZ, ANTHONY&#10;WMC 5NE&#10;530&#10;A&#10;4584118"></textarea>
+            <pre style="background:#0f172a;color:#94a3b8;font-size:0.75rem;padding:8px 12px;border-radius:6px;border:1px solid #1e293b;margin-bottom:10px;line-height:1.6;white-space:pre-wrap;">LASTNAME, FIRSTNAME  Age## yearsGender[M/F]Date of BirthDOB:Mon DD, YYYYMRN:####### UNIT ROOM BED</pre>
+            <textarea id="dotPhraseTextarea" rows="4"
+                style="width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 12px;font-size:0.9rem;font-family:monospace;resize:vertical;line-height:1.6;"
+                placeholder="GARCIA, LASTIMA  Age65 yearsGenderFDate of BirthDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B"></textarea>
             <div class="nav-buttons" style="margin-top:10px;">
                 <button type="button" onclick="parseDotPhraseEntry()" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;font-weight:700;">✔ Fill Form</button>
                 <button type="button" onclick="backToEntrySelection()">← Back</button>
@@ -6190,29 +6186,39 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
         }
 
         function parseDotPhraseEntry() {
-            var raw = document.getElementById('dotPhraseTextarea').value;
-            var lines = raw.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
-            if (lines.length < 5) {
-                alert('Expected 5 lines:\n1. Name\n2. Nurse Unit\n3. Room\n4. Bed\n5. MRN\n\nGot ' + lines.length + ' line(s). Please paste the full dot phrase output.');
+            // Parses Mobile Cerner single-line format:
+            // GARCIA, LASTIMA  Age65 yearsGenderFDate of BirthDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B
+            var raw = document.getElementById('dotPhraseTextarea').value.trim();
+            if (!raw) { alert('Please paste Mobile Cerner patient data.'); return; }
+
+            var nameM = /^([A-Z][A-Z'\-. ]+,\s*[A-Z][A-Z'\-. ]*)/i.exec(raw);
+            var mrnM  = /MRN:?\s*(\d+)/i.exec(raw);
+            var ageM  = /Age\s*(\d+)/i.exec(raw);
+            var genM  = /Gender\s*([MF])/i.exec(raw);
+            // Room = everything after the MRN digits to end of line
+            var roomM = /MRN:?\s*\d+\s+(.+?)\s*$/i.exec(raw);
+
+            if (!nameM || !mrnM) {
+                alert('Could not parse patient data.\n\nExpected format:\nGARCIA, LASTIMA  Age65 yearsGenderFDate of BirthDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B');
                 return;
             }
-            var name         = lines[0];
-            var unit         = lines[1];
-            var roomNum      = lines[2];
-            var bed          = lines[3];
-            var mrn          = lines[4];
-            var roomCombined = [unit, roomNum, bed].filter(Boolean).join(' ');
 
-            // Hide dot phrase panel, open the manual entry form
+            var name = nameM[1].trim();
+            var mrn  = mrnM[1].trim();
+            var room = roomM ? roomM[1].trim() : 'TBD';
+            var ag   = (ageM ? ageM[1] : '') + (genM ? genM[1].toUpperCase() : '');
+
+            // Open the manual entry form and pre-fill fields
             document.getElementById('dotPhraseSection').style.display = 'none';
-            showManualEntry(); // generates #newEntryFields inputs
+            showManualEntry();
 
-            // Pre-fill Name, RM, MRN
             document.querySelectorAll('#newEntryFields input[data-header]').forEach(function(inp) {
                 var h = inp.getAttribute('data-header');
-                if (h === 'Name') inp.value = name;
-                else if (h === 'RM')  inp.value = roomCombined;
-                else if (h === 'MRN') inp.value = mrn;
+                if      (h === 'Name')     inp.value = name;
+                else if (h === 'RM')       inp.value = room;
+                else if (h === 'MRN')      inp.value = mrn;
+                else if (h === 'A/G')      inp.value = ag;
+                else if (h === 'Problems') inp.value = ag;
             });
         }
 
