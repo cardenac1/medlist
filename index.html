@@ -378,18 +378,19 @@ const VIOLIN_DASHBOARD_CSS = `
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+  gap: 0.4rem;
 }
 
 .section-header {
-  color: #1e40af; /* your blue */
-  font-weight: bold;
-  font-size: 1rem;
+  color: #60a5fa;
+  font-weight: 700;
+  font-size: 0.72rem;
 }
 
 .section-check {
-  transform: scale(1.2);
-  margin-left: 8px;
-  accent-color: #1e40af;
+  transform: scale(1.1);
+  margin-left: 6px;
+  accent-color: #3b82f6;
 }
 
 
@@ -1070,75 +1071,81 @@ const VIOLIN_DASHBOARD_CSS = `
 
 .help-modal-content {
     background: var(--card-bg);
-    margin: 5% auto;
-    padding: 2rem;
-    border-radius: 1rem;
+    margin: 3% auto;
+    padding: 0.9rem 1.1rem;
+    border-radius: 0.65rem;
     width: 90%;
-    max-width: 900px;
-    max-height: 80vh;
+    max-width: 860px;
+    max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.07);
     animation: slideIn 0.3s ease;
     position: relative;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 .help-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border);
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .help-modal-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--primary-light);
     margin: 0;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
 .help-modal-close {
-    background: var(--danger);
-    color: white;
-    border: none;
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1.5rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .help-modal-close:hover {
-    transform: scale(1.1);
-    background: #dc2626;
+    background: rgba(239,68,68,0.35);
+    color: #fff;
 }
 
 .help-modal-body {
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 0.74rem;
+    line-height: 1.38;
     color: var(--text-primary);
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 .help-modal-body ul {
-    margin: 1rem 0;
-    padding-left: 1.5rem;
+    margin: 0.25rem 0 0.4rem;
+    padding-left: 1rem;
 }
 
 .help-modal-body li {
-    margin: 0.5rem 0;
+    margin: 0.1rem 0;
 }
 
 .help-modal-body strong {
-    color: var(--accent-4);
+    color: #fbbf24;
 }
 
 .help-modal-body a {
-    color: var(--primary);
+    color: var(--primary-light);
     text-decoration: none;
 }
 
@@ -1148,7 +1155,7 @@ const VIOLIN_DASHBOARD_CSS = `
 
 /* Custom scrollbar for modal */
 .help-modal-content::-webkit-scrollbar {
-    width: 12px;
+    width: 5px;
 }
 
 .help-modal-content::-webkit-scrollbar-track {
@@ -1624,6 +1631,153 @@ textarea, input[type="text"] {
     background: rgba(255,255,255,0.06);
 }
 .todo-mode-btn.active {
+    color: #22c55e;
+    background: rgba(34,197,94,0.1);
+}
+
+/* ===== OPPQRST compact bar (above HPI textarea) ===== */
+.oppqrst-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.22rem;
+    padding: 0.2rem 0 0.35rem;
+}
+.oppqrst-pill {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.22);
+    border-radius: 0.25rem;
+    padding: 0.06rem 0.38rem;
+    cursor: default;
+    user-select: none;
+}
+.oppqrst-letter {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #60a5fa;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+}
+.oppqrst-word {
+    font-size: 0.5rem;
+    color: #64748b;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* ===== ROS / PE interactive widget ===== */
+.sys-btn-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.22rem;
+    padding: 0.25rem 0;
+}
+.sys-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.18rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.16rem 0.42rem;
+    border-radius: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: background 0.13s, transform 0.1s;
+    white-space: nowrap;
+    line-height: 1.2;
+    font-family: inherit;
+}
+.sys-btn:active { transform: scale(0.94); }
+.sys-btn.neg {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.28);
+}
+.sys-btn.neg:hover { background: rgba(239,68,68,0.26); }
+.sys-btn.pos {
+    background: rgba(34,197,94,0.17);
+    color: #86efac;
+    border: 1px solid rgba(34,197,94,0.32);
+}
+.sys-btn.pos:hover { background: rgba(34,197,94,0.28); }
+.sys-btn.normal {
+    background: rgba(34,197,94,0.12);
+    color: #86efac;
+    border: 1px solid rgba(34,197,94,0.25);
+}
+.sys-btn.normal:hover { background: rgba(34,197,94,0.22); }
+.sys-btn.abnormal {
+    background: rgba(251,146,60,0.18);
+    color: #fdba74;
+    border: 1px solid rgba(251,146,60,0.32);
+}
+.sys-btn.abnormal:hover { background: rgba(251,146,60,0.28); }
+.sys-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.sys-btn.neg .sys-dot { background: #ef4444; }
+.sys-btn.pos .sys-dot { background: #22c55e; }
+.sys-btn.normal .sys-dot { background: #22c55e; }
+.sys-btn.abnormal .sys-dot { background: #f97316; }
+.sys-comment-area { padding: 0.1rem 0 0.35rem; }
+.sys-comment-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin-bottom: 0.18rem;
+    background: rgba(255,255,255,0.025);
+    border-radius: 0.3rem;
+    padding: 0.18rem 0.4rem;
+}
+.sys-comment-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #94a3b8;
+    white-space: nowrap;
+    min-width: 56px;
+    padding-top: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.sys-comment-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    outline: none;
+    padding: 0.08rem 0.15rem;
+    resize: none;
+    min-height: 20px;
+    overflow: hidden;
+    width: 100%;
+}
+.sys-comment-input:focus { border-bottom-color: rgba(59,130,246,0.5); }
+.sys-widget-mode-btn {
+    font-size: 0.6rem;
+    margin-left: 0.12rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.12rem 0.32rem;
+    border-radius: 0.2rem;
+    transition: color 0.15s, background 0.15s;
+    border: none;
+    background: none;
+    font-family: inherit;
+}
+.sys-widget-mode-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.06);
+}
+.sys-widget-mode-btn.active {
     color: #22c55e;
     background: rgba(34,197,94,0.1);
 }
@@ -2694,34 +2848,58 @@ select,
 
 
 		/* === Scoped help styling inside the existing modal body === */
-.help-modal-body .help-section { color: var(--text-primary); background: transparent; line-height: 1.55; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+.help-modal-body .help-section { color: var(--text-primary); background: transparent; line-height: 1.35; font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif; }
 
-/* Section chips (bold headers) */
+/* Section chips (collapsible title pill) */
 .help-modal-body .section-header {
-  display: inline-block; font-weight: 800; letter-spacing: .2px;
-  padding: 6px 10px; border-radius: 999px; margin: 8px 0 12px;
-  background: #111827; border: 1px solid #374151; color: #fff;
+  display: inline-block; font-weight: 700; letter-spacing: 0.03em;
+  padding: 2px 8px; border-radius: 999px; margin: 2px 0 3px;
+  background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.1);
+  color: #e8eaed; font-size: 0.7rem;
 }
 
-/* Color accents by tag */
-.help-modal-body .section-header[data-tag="problems"]{ box-shadow: inset 0 0 0 9999px rgba(96,165,250,.18); border-color: rgba(96,165,250,.38); }
-.help-modal-body .section-header[data-tag="ros"]     { box-shadow: inset 0 0 0 9999px rgba(52,211,153,.18); border-color: rgba(52,211,153,.38); }
-.help-modal-body .section-header[data-tag="pmh"]     { box-shadow: inset 0 0 0 9999px rgba(245,158,11,.18); border-color: rgba(245,158,11,.38); }
-.help-modal-body .section-header[data-tag="meds"]    { box-shadow: inset 0 0 0 9999px rgba(167,139,250,.18); border-color: rgba(167,139,250,.38); }
-.help-modal-body .section-header[data-tag="allg"]    { box-shadow: inset 0 0 0 9999px rgba(244,114,182,.18); border-color: rgba(244,114,182,.38); }
-.help-modal-body .section-header[data-tag="cex"]     { box-shadow: inset 0 0 0 9999px rgba(248,113,113,.18); border-color: rgba(248,113,113,.38); }
-.help-modal-body .section-header[data-tag="trauma"]  { box-shadow: inset 0 0 0 9999px rgba(244,63,94,.18);  border-color: rgba(244,63,94,.38);  }
+/* Color accents by tag — left-border strip style */
+.help-modal-body .section-header[data-tag="problems"]{ border-color: rgba(96,165,250,.45);  color: #93c5fd; background: rgba(96,165,250,.07); }
+.help-modal-body .section-header[data-tag="ros"]     { border-color: rgba(52,211,153,.45);  color: #6ee7b7; background: rgba(52,211,153,.07); }
+.help-modal-body .section-header[data-tag="pmh"]     { border-color: rgba(245,158,11,.45);  color: #fcd34d; background: rgba(245,158,11,.07); }
+.help-modal-body .section-header[data-tag="psh"]     { border-color: rgba(245,158,11,.35);  color: #fde68a; background: rgba(245,158,11,.05); }
+.help-modal-body .section-header[data-tag="meds"]    { border-color: rgba(167,139,250,.45); color: #c4b5fd; background: rgba(167,139,250,.07); }
+.help-modal-body .section-header[data-tag="allg"]    { border-color: rgba(244,114,182,.45); color: #f9a8d4; background: rgba(244,114,182,.07); }
+.help-modal-body .section-header[data-tag="soc"]     { border-color: rgba(251,191,36,.35);  color: #fde68a; background: rgba(251,191,36,.05); }
+.help-modal-body .section-header[data-tag="fhx"]     { border-color: rgba(156,163,175,.35); color: #d1d5db; background: rgba(156,163,175,.05); }
+.help-modal-body .section-header[data-tag="cex"]     { border-color: rgba(248,113,113,.45); color: #fca5a5; background: rgba(248,113,113,.07); }
+.help-modal-body .section-header[data-tag="trauma"]  { border-color: rgba(244,63,94,.45);   color: #fda4af; background: rgba(244,63,94,.07); }
 
-/* Collapsible groups */
-.help-modal-body .help-collapsible { background: #0f172a; border: 1px solid #27324a; border-radius: 10px; padding: 8px 10px; margin: 10px 0; }
-.help-modal-body .help-collapsible summary { cursor: pointer; font-weight: 800; color: var(--text-primary); outline: none; }
-.help-modal-body .help-collapsible[open] { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15) inset; }
+/* Collapsible groups — tight, dark, minimal */
+.help-modal-body .help-collapsible {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: 4px 0;
+}
+.help-modal-body .help-collapsible summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  outline: none;
+  list-style: none;
+  user-select: none;
+}
+.help-modal-body .help-collapsible summary::-webkit-details-marker { display: none; }
+.help-modal-body .help-collapsible[open] {
+  border-color: rgba(59,130,246,0.28);
+  background: rgba(59,130,246,0.04);
+}
 
-/* Topic chip + lists + subnote */
-.help-modal-body .topic-header { font-weight: 800; display: inline-block; margin: 6px 0 4px; padding: 2px 8px; border-radius: 9px; background: #152036; color: #fca5a5; border: 1px solid #2a3a62; }
-.help-modal-body ul { margin: 6px 0 10px 1.1rem; }
-.help-modal-body li { margin: 4px 0; }
-.help-modal-body .subnote { color: var(--text-secondary, #9ca3af); font-size: .9em; }
+/* Lists + subnote */
+.help-modal-body ul { margin: 2px 0 4px 0.9rem; padding-left: 0; list-style: disc; }
+.help-modal-body li { margin: 1px 0; font-size: 0.72rem; line-height: 1.35; }
+.help-modal-body .subnote { color: var(--text-muted, #5f6368); font-size: 0.65em; }
+
+/* Topic chip */
+.help-modal-body .topic-header { font-weight: 700; display: inline-block; margin: 3px 0 2px; padding: 1px 6px; border-radius: 5px; background: rgba(59,130,246,0.1); color: #93c5fd; border: 1px solid rgba(59,130,246,0.2); font-size: 0.7rem; }
 
 		
 
@@ -3362,6 +3540,311 @@ const helpContent = {
 
         // Current todo mode: 'interactive' or 'raw'
         let todoViewMode = 'interactive';
+
+        // ===== OPPQRST / ROS / PE WIDGET DATA =====
+        const OPPQRST = [
+            {letter:'O', word:'Onset'},
+            {letter:'P', word:'Provoke'},
+            {letter:'P', word:'Palliate'},
+            {letter:'Q', word:'Quality'},
+            {letter:'R', word:'Radiation'},
+            {letter:'S', word:'Severity'},
+            {letter:'T', word:'Time/Trend'},
+        ];
+
+        const ROS_SYSTEMS = [
+            {key:'Constitutional', hint:'fever, chills, weight loss, anorexia, last meal'},
+            {key:'Neuro',          hint:'headache, dizziness, numbness, weakness, seizures, gait'},
+            {key:'Skin',           hint:'jaundice, rash, lesions, petechiae, itching'},
+            {key:'ENMT',           hint:'vision, hearing, ear/eye pain, sore throat, congestion'},
+            {key:'Resp',           hint:'SOB, cough, wheezing'},
+            {key:'CV',             hint:'chest pain, palpitations'},
+            {key:'GI',             hint:'nausea, vomiting, last BM/gas, abd pain, dysphagia'},
+            {key:'GU',             hint:'dysuria, retention, hematuria, discharge'},
+            {key:'MSK',            hint:'pain, joint swelling, stiffness, myalgias, trauma'},
+            {key:'Psych',          hint:'anxiety, depression, restlessness, SI'},
+            {key:'Heme/Lymph',     hint:'bleeding tendency, bruising, petechiae, swollen nodes'},
+            {key:'Menstrual',      hint:'LMP, menopausal'},
+        ];
+
+        const PE_SYSTEMS = [
+            {key:'Gen',    normal:'well appearing, NAD, A&O x3'},
+            {key:'Neuro',  normal:'strength/sensation intact BUE+BLE, CN II-XII intact, EOMI'},
+            {key:'Resp',   normal:'non-labored, no accessory muscles, CTAB'},
+            {key:'CV',     normal:'hemodynamically stable, RRR'},
+            {key:'Pulse',  normal:'palpable b/l DP/PT, radial/ulnar pulses'},
+            {key:'Abd',    normal:'soft, NT, ND, no guarding, no rebound'},
+            {key:'Wound',  normal:'incisions CDI'},
+            {key:'Ext',    normal:'atraumatic, no deformities, brisk cap refill'},
+            {key:'LTD',    normal:''},
+        ];
+
+        // ===== ROS WIDGET =====
+        let rosWidgetMode = 'interactive';
+
+        function parseROSSystems(text) {
+            const defaults = ROS_SYSTEMS.map(s => ({key:s.key, positive:false, comment:''}));
+            if (!text || !text.trim()) return defaults;
+            if (!text.includes('|') && !text.match(/^\[[-+]\]/)) return defaults;
+            const parts = text.split('|');
+            parts.forEach(part => {
+                const m = part.match(/^\[([-+])\]([^:]+):?([\s\S]*)?$/);
+                if (m) {
+                    const idx = defaults.findIndex(r => r.key === m[2].trim());
+                    if (idx !== -1) {
+                        defaults[idx].positive = m[1] === '+';
+                        defaults[idx].comment = (m[3] || '').trim();
+                    }
+                }
+            });
+            return defaults;
+        }
+
+        function serializeROSSystems(systems) {
+            return systems.map(s => {
+                const flag = s.positive ? '+' : '-';
+                const comment = s.comment ? ':' + s.comment : '';
+                return `[${flag}]${s.key}${comment}`;
+            }).join('|');
+        }
+
+        function renderROSWidget(container, patient) {
+            container.innerHTML = '';
+            const text = patient['ROS'] || '';
+
+            if (rosWidgetMode === 'raw') {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.cssText = 'width:100%;min-height:80px;resize:none;overflow:hidden;box-sizing:border-box;';
+                ta.addEventListener('input', function() {
+                    patient['ROS'] = this.value;
+                    saveToLocalStorage();
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+                container.appendChild(ta);
+                setTimeout(() => { ta.style.height = ta.scrollHeight + 'px'; }, 0);
+                return;
+            }
+
+            const systems = parseROSSystems(text);
+            const grid = document.createElement('div');
+            grid.className = 'sys-btn-grid';
+            const commentArea = document.createElement('div');
+            commentArea.className = 'sys-comment-area';
+
+            function refreshComments() {
+                commentArea.innerHTML = '';
+                systems.forEach((sys, idx) => {
+                    if (!sys.positive) return;
+                    const row = document.createElement('div');
+                    row.className = 'sys-comment-row';
+                    const lbl = document.createElement('span');
+                    lbl.className = 'sys-comment-label';
+                    lbl.textContent = sys.key;
+                    row.appendChild(lbl);
+                    const inp = document.createElement('textarea');
+                    inp.className = 'sys-comment-input';
+                    inp.rows = 1;
+                    inp.placeholder = ROS_SYSTEMS[idx] ? ROS_SYSTEMS[idx].hint : '';
+                    inp.value = sys.comment || '';
+                    inp.addEventListener('input', function() {
+                        sys.comment = this.value;
+                        patient['ROS'] = serializeROSSystems(systems);
+                        saveToLocalStorage();
+                        this.style.height = 'auto';
+                        this.style.height = this.scrollHeight + 'px';
+                    });
+                    row.appendChild(inp);
+                    commentArea.appendChild(row);
+                    setTimeout(() => { inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; }, 0);
+                });
+            }
+
+            systems.forEach((sys, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sys-btn ' + (sys.positive ? 'pos' : 'neg');
+                const dot = document.createElement('span');
+                dot.className = 'sys-dot';
+                btn.appendChild(dot);
+                btn.appendChild(document.createTextNode(sys.key));
+                if (ROS_SYSTEMS[idx]) btn.title = ROS_SYSTEMS[idx].hint;
+                btn.addEventListener('click', () => {
+                    sys.positive = !sys.positive;
+                    btn.className = 'sys-btn ' + (sys.positive ? 'pos' : 'neg');
+                    patient['ROS'] = serializeROSSystems(systems);
+                    saveToLocalStorage();
+                    refreshComments();
+                });
+                grid.appendChild(btn);
+            });
+
+            container.appendChild(grid);
+            refreshComments();
+            container.appendChild(commentArea);
+        }
+
+        function injectROSModeButtons(label) {
+            ['interactive','raw'].forEach(mode => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sys-widget-mode-btn ros-mode-btn' + (rosWidgetMode === mode ? ' active' : '');
+                btn.textContent = mode === 'interactive' ? '◉' : 'raw';
+                btn.title = mode === 'interactive' ? 'Interactive mode' : 'Raw text mode';
+                btn.addEventListener('click', () => {
+                    rosWidgetMode = mode;
+                    document.querySelectorAll('.ros-mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const c = document.getElementById('rosContainer');
+                    if (c && patientData[currentPatientIndex]) renderROSWidget(c, patientData[currentPatientIndex]);
+                });
+                label.appendChild(btn);
+            });
+        }
+
+        // ===== PE WIDGET =====
+        let peWidgetMode = 'interactive';
+
+        function parsePESystems(text) {
+            const defaults = PE_SYSTEMS.map(s => ({key:s.key, abnormal:false, comment:''}));
+            if (!text || !text.trim()) return defaults;
+            if (!text.includes('|') && !text.match(/^\[[N!]\]/)) return defaults;
+            const parts = text.split('|');
+            parts.forEach(part => {
+                const m = part.match(/^\[([N!])\]([^:]+):?([\s\S]*)?$/);
+                if (m) {
+                    const idx = defaults.findIndex(r => r.key === m[2].trim());
+                    if (idx !== -1) {
+                        defaults[idx].abnormal = m[1] === '!';
+                        defaults[idx].comment = (m[3] || '').trim();
+                    }
+                }
+            });
+            return defaults;
+        }
+
+        function serializePESystems(systems) {
+            return systems.map(s => {
+                const flag = s.abnormal ? '!' : 'N';
+                const comment = s.comment ? ':' + s.comment : '';
+                return `[${flag}]${s.key}${comment}`;
+            }).join('|');
+        }
+
+        function renderPEWidget(container, patient) {
+            container.innerHTML = '';
+            const text = patient['PE'] || '';
+
+            if (peWidgetMode === 'raw') {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.cssText = 'width:100%;min-height:80px;resize:none;overflow:hidden;box-sizing:border-box;';
+                ta.addEventListener('input', function() {
+                    patient['PE'] = this.value;
+                    saveToLocalStorage();
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+                container.appendChild(ta);
+                setTimeout(() => { ta.style.height = ta.scrollHeight + 'px'; }, 0);
+                return;
+            }
+
+            const systems = parsePESystems(text);
+            const grid = document.createElement('div');
+            grid.className = 'sys-btn-grid';
+            const commentArea = document.createElement('div');
+            commentArea.className = 'sys-comment-area';
+
+            function refreshComments() {
+                commentArea.innerHTML = '';
+                systems.forEach((sys, idx) => {
+                    if (!sys.abnormal) return;
+                    const row = document.createElement('div');
+                    row.className = 'sys-comment-row';
+                    const lbl = document.createElement('span');
+                    lbl.className = 'sys-comment-label';
+                    lbl.textContent = sys.key;
+                    row.appendChild(lbl);
+                    const inp = document.createElement('textarea');
+                    inp.className = 'sys-comment-input';
+                    inp.rows = 1;
+                    inp.placeholder = 'describe finding...';
+                    inp.value = sys.comment || '';
+                    inp.addEventListener('input', function() {
+                        sys.comment = this.value;
+                        patient['PE'] = serializePESystems(systems);
+                        saveToLocalStorage();
+                        this.style.height = 'auto';
+                        this.style.height = this.scrollHeight + 'px';
+                    });
+                    row.appendChild(inp);
+                    commentArea.appendChild(row);
+                    setTimeout(() => { inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; }, 0);
+                });
+            }
+
+            systems.forEach((sys, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sys-btn ' + (sys.abnormal ? 'abnormal' : 'normal');
+                const dot = document.createElement('span');
+                dot.className = 'sys-dot';
+                btn.appendChild(dot);
+                btn.appendChild(document.createTextNode(sys.key));
+                if (PE_SYSTEMS[idx] && PE_SYSTEMS[idx].normal) btn.title = PE_SYSTEMS[idx].normal;
+                btn.addEventListener('click', () => {
+                    sys.abnormal = !sys.abnormal;
+                    btn.className = 'sys-btn ' + (sys.abnormal ? 'abnormal' : 'normal');
+                    patient['PE'] = serializePESystems(systems);
+                    saveToLocalStorage();
+                    refreshComments();
+                });
+                grid.appendChild(btn);
+            });
+
+            container.appendChild(grid);
+            refreshComments();
+            container.appendChild(commentArea);
+        }
+
+        function injectPEModeButtons(label) {
+            ['interactive','raw'].forEach(mode => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sys-widget-mode-btn pe-mode-btn' + (peWidgetMode === mode ? ' active' : '');
+                btn.textContent = mode === 'interactive' ? '◉' : 'raw';
+                btn.title = mode === 'interactive' ? 'Interactive mode' : 'Raw text mode';
+                btn.addEventListener('click', () => {
+                    peWidgetMode = mode;
+                    document.querySelectorAll('.pe-mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const c = document.getElementById('peContainer');
+                    if (c && patientData[currentPatientIndex]) renderPEWidget(c, patientData[currentPatientIndex]);
+                });
+                label.appendChild(btn);
+            });
+        }
+
+        function buildOPPQRSTBar() {
+            const bar = document.createElement('div');
+            bar.className = 'oppqrst-bar';
+            OPPQRST.forEach(item => {
+                const pill = document.createElement('div');
+                pill.className = 'oppqrst-pill';
+                const letter = document.createElement('span');
+                letter.className = 'oppqrst-letter';
+                letter.textContent = item.letter;
+                const word = document.createElement('span');
+                word.className = 'oppqrst-word';
+                word.textContent = item.word;
+                pill.appendChild(letter);
+                pill.appendChild(word);
+                bar.appendChild(pill);
+            });
+            return bar;
+        }
 
         // Render the interactive todo list into a container
         function renderTodoList(container, patient) {
@@ -4960,10 +5443,10 @@ function switchView(mode) {
 
             // Editable short fields row inside header
             const shortFieldsRow = document.createElement('div');
-            shortFieldsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.65rem;';
-            ['Name', 'RM', 'MRN', 'Att'].forEach(header => {
+            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.65rem;';
+            ['Name', 'RM', 'MRN'].forEach(header => {
                 const fieldWrap = document.createElement('div');
-                fieldWrap.style.cssText = 'flex:1;min-width:80px;';
+                fieldWrap.style.cssText = 'width:100%;';
                 const lbl = document.createElement('label');
                 lbl.textContent = header;
                 lbl.style.cssText = 'margin-top:0;';
@@ -5429,6 +5912,10 @@ if (currentViewMode !== 'chartcheck') {
         label.appendChild(toggleBtn);
     } else if (header === 'To do') {
         injectTodoModeButtons(label);
+    } else if (header === 'ROS') {
+        injectROSModeButtons(label);
+    } else if (header === 'PE') {
+        injectPEModeButtons(label);
     }
 }
 
@@ -5527,6 +6014,14 @@ if (header === 'To do') {
     input.className = 'todo-container';
     input.style.cssText = 'min-height:120px;';
 }
+else if (header === 'ROS') {
+    input = document.createElement('div');
+    input.id = 'rosContainer';
+}
+else if (header === 'PE') {
+    input = document.createElement('div');
+    input.id = 'peContainer';
+}
 else if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
     input = document.createElement('input');
 }
@@ -5545,14 +6040,14 @@ else {
                     input.type = 'text';
                 }
                 
-                if (header !== 'To do') {
+                if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
                     input.id = `field_${header.replace(/\s+/g, '_')}`;
                 }
 
 
 // Set initial content
-if (header === 'To do') {
-    // Interactive todo handles its own content
+if (header === 'To do' || header === 'ROS' || header === 'PE') {
+    // Widget handles its own content
 } else if (header === 'VIOLIN') {
     const content = patient[header] || '';
     // If content has HTML spans, use innerHTML to preserve red formatting
@@ -5569,7 +6064,7 @@ if (header === 'ORDERS') {
     input.placeholder = 'PAIN:\nAC:\nABX:\nN/F:\nLTD:\nDISPO:';
 }
 
-if (header !== 'To do') {
+if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
     input.addEventListener('input', function() {
         patient[header] = this.value;
 
@@ -5589,6 +6084,11 @@ if (header !== 'To do') {
 
                 form.appendChild(label);
 
+                // OPPQRST compact bar above HPI textarea
+                if (header === 'HPI') {
+                    form.appendChild(buildOPPQRSTBar());
+                }
+
                 // Add full orders display above ORDERS field
                 if (header === 'ORDERS') {
                     const fullOrdersDiv = document.createElement('div');
@@ -5596,11 +6096,15 @@ if (header !== 'To do') {
                     fullOrdersDiv.className = 'orders-section hidden';
                     form.appendChild(fullOrdersDiv);
                 }
-                
+
                 form.appendChild(input);
 
                 if (header === 'To do') {
                     renderTodoList(input, patient);
+                } else if (header === 'ROS') {
+                    renderROSWidget(input, patient);
+                } else if (header === 'PE') {
+                    renderPEWidget(input, patient);
                 } else if (input.tagName === 'TEXTAREA') {
                     setTimeout(() => autoResizeTextarea(input), 0);
                 }
