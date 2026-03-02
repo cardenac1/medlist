@@ -976,11 +976,19 @@ const VIOLIN_DASHBOARD_CSS = `
 .chartcheck-sidebar {
     position: sticky;
     top: 80px;
-    height: calc(100vh - 100px);
+    align-self: start;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+}
+.chartcheck-todo-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(10, 10, 10, 0.95);
+    border-radius: 1rem 1rem 0 0;
 }
 .chartcheck-section {
     background: rgba(10, 10, 10, 0.7);
@@ -1522,6 +1530,12 @@ textarea, input[type="text"] {
     font-size: 0.82rem;
     line-height: 1.4;
     outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+    resize: none;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 .todo-edit-btn {
     width: 18px;
@@ -4010,12 +4024,19 @@ const helpContent = {
 
         // Inline edit helper — enters edit mode for a task item
         function startTodoEdit(item, parsed, container, patient, textEl) {
-            const input = document.createElement('input');
-            input.type = 'text';
+            const input = document.createElement('textarea');
             input.className = 'todo-text-input';
             input.value = item.text;
+            input.rows = 1;
+            // Auto-resize to fit content
+            function autoResize() {
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
+            }
+            input.addEventListener('input', autoResize);
             input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     item.text = this.value.trim() || item.text;
                     patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
                     saveToLocalStorage();
@@ -4033,6 +4054,7 @@ const helpContent = {
             textEl.replaceWith(input);
             input.focus();
             input.select();
+            autoResize();
         }
 
         // Build a single task element (checkbox + text + edit + delete)
@@ -5757,19 +5779,19 @@ case 'chartcheck': {
             const ccSidebar = document.createElement('div');
             ccSidebar.className = 'chartcheck-sidebar';
 
-            // To-do section in sidebar — fills the remaining column height
+            // To-do section in sidebar — auto-sizes to content
             const todoCard = document.createElement('div');
             todoCard.className = 'chartcheck-section';
-            todoCard.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;';
+            todoCard.style.cssText = 'display:flex;flex-direction:column;';
             const todoHeader = document.createElement('div');
-            todoHeader.className = 'chartcheck-section-header';
+            todoHeader.className = 'chartcheck-section-header chartcheck-todo-header-sticky';
             todoHeader.innerHTML = '<span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span><span id="todoBadge" class="todo-count-badge" style="display:none;"></span>';
             injectTodoModeButtons(todoHeader);
             todoCard.appendChild(todoHeader);
             const todoBody = document.createElement('div');
             todoBody.className = 'chartcheck-section-body';
             todoBody.id = 'todoContainer';
-            todoBody.style.cssText = 'flex:1;display:flex;flex-direction:column;padding:0.5rem 0.6rem;overflow:hidden;';
+            todoBody.style.cssText = 'padding:0.5rem 0.6rem;';
             renderTodoList(todoBody, patient);
             todoCard.appendChild(todoBody);
             ccSidebar.appendChild(todoCard);
