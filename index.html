@@ -2996,7 +2996,75 @@ select,
 
 
 
-		
+
+
+/* ===== VIOLIN PROGRESS TOOL STYLES ===== */
+.prog-section {
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.prog-label {
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #a78bfa;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.prog-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.3rem;
+}
+.prog-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.78rem;
+    background: rgba(55,65,81,0.8);
+    color: #d1d5db;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.prog-btn:hover {
+    background: rgba(139,92,246,0.3);
+    border-color: #8b5cf6;
+    color: #fff;
+}
+.prog-btn.prog-selected {
+    background: rgba(139,92,246,0.6);
+    border-color: #8b5cf6;
+    color: #fff;
+    font-weight: bold;
+}
+.prog-input {
+    width: 100%;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
+    background: rgba(30,30,46,0.8);
+    color: #e2e8f0;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+    margin-top: 0.2rem;
+}
+.prog-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+#progPreview {
+    background: #1a1a2e;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    min-height: 60px;
+    color: #e2e8f0;
+}
+
     </style>
 </head>
 
@@ -4399,6 +4467,7 @@ const helpContent = {
             <div class="nav-buttons">
                 <button onclick="exportJSON(); this.closest('.modal').remove()">Export as JSON</button>
                 <button onclick="exportCSV(); this.closest('.modal').remove()">Export as CSV</button>
+                <button onclick="exportPDF(); this.closest('.modal').remove()" style="background:linear-gradient(135deg,#dc2626,#991b1b);">🖨️ Print Patient List (PDF)</button>
                 <button onclick="this.closest('.modal').remove()">Cancel</button>
             </div>
         </div>
@@ -12964,19 +13033,25 @@ function updateFullChecklist(patientKey, index, checked, totalItems) {
 
 
 		function showHelpModal(fieldName) {
+    // VIOLIN help button launches the PROGRESS Note Builder directly
+    if (fieldName === 'VIOLIN') {
+        showViolinProgressTool();
+        return;
+    }
+
     const modal = document.getElementById('helpModal') || createHelpModal();
     const title = document.getElementById('helpModalTitle');
     const body = document.getElementById('helpModalBody');
-    
+
     title.textContent = `${fieldName} - Help & Instructions`;
-    
+
     // Special handling for interactive 'To do' checklist
     if (fieldName === 'To do' && currentPatientIndex !== -1) {
         body.innerHTML = generateFullChecklistHTML();
     } else {
         body.innerHTML = helpContent[fieldName] || 'No help content available.';
     }
-    
+
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 }
@@ -13035,12 +13110,493 @@ function createHelpModal() {
 
 
 
+// ===== PDF EXPORT =====
+
+function exportPDF() {
+    if (patientData.length === 0) {
+        alert('No data to export');
+        return;
+    }
+
+    const now = new Date();
+    const dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+
+    function esc(t) {
+        if (t === undefined || t === null) return '';
+        return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    let rows = '';
+    patientData.forEach(function(patient) {
+        const name   = patient.Name || '';
+        const rm     = patient.RM   || '';
+        const mrn    = patient.MRN  || '';
+        const vitalsHTML = buildPDFVitalsHTML(patient);
+        const orders = (patient.ORDERS  || '').trim();
+        const todo   = (patient['To do'] || '').trim();
+
+        rows += `<tr>
+            <td class="col-id">
+                <strong>${esc(name)}</strong><br>
+                ${esc(rm)}<br>
+                <span style="color:#555;font-size:6.5pt;">${esc(mrn)}</span>
+            </td>
+            <td class="col-vitals">${vitalsHTML}</td>
+            <td class="col-orders">${esc(orders).replace(/\n/g,'<br>')}</td>
+            <td class="col-blank"></td>
+            <td class="col-todo"><strong>To Do:</strong><br>${esc(todo).replace(/\n/g,'<br>')}</td>
+        </tr>`;
+    });
+
+    const htmlDoc = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Patient List - ${dateStr}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; font-size: 8pt; line-height: 1.25; color: #000; }
+table { width:100%; border-collapse:collapse; table-layout:fixed; }
+th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; overflow:hidden; word-wrap:break-word; }
+th { background:#1a1a2e; color:#fff; font-size:7.5pt; text-align:center; padding:3px 2px;
+     -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.col-id     { width:13%; }
+.col-vitals { width:26%; }
+.col-orders { width:23%; font-size:7pt; }
+.col-blank  { width:13%; }
+.col-todo   { width:25%; font-size:7pt; }
+.vitals-line { margin-bottom:2px; font-size:7.5pt; }
+.fishbone-box { border:1px solid #bbb; border-radius:2px; padding:1px 3px; margin:2px 0;
+                background:#f8f8f8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.fishbone { font-family:'Courier New', monospace; font-size:7pt; white-space:pre; line-height:1.3; }
+.ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
+.ab  { color:#cc0000; font-weight:bold; }
+tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; }
+@page { margin:0.4in; size:landscape; }
+</style>
+</head>
+<body>
+<div class="page-title">Patient List &mdash; ${dateStr}</div>
+<table>
+<thead>
+<tr>
+  <th>NAME / RM / MRN</th>
+  <th>VITALS / LABS</th>
+  <th>ORDERS</th>
+  <th>NOTES</th>
+  <th>TO DO</th>
+</tr>
+</thead>
+<tbody>
+${rows}
+</tbody>
+</table>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert('Please allow pop-ups in your browser to use the PDF export.');
+        return;
+    }
+    printWindow.document.write(htmlDoc);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(function() { printWindow.print(); }, 600);
+}
+
+function buildPDFVitalsHTML(patient) {
+    function esc(t) {
+        if (t === undefined || t === null) return '';
+        return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function fmtVal(val, lo, hi) {
+        if (val === undefined || val === null) return '--';
+        const v = parseFloat(val);
+        if (isNaN(v)) return '--';
+        return (v < lo || v > hi) ? '<span class="ab">*' + v + '*</span>' : String(v);
+    }
+
+    let html = '';
+
+    // Extract primary vitals summary line from VIOLIN text
+    const violin = patient.VIOLIN || '';
+    violin.split('\n').some(function(line) {
+        const t = line.trim();
+        if (t && t !== 'Subj:' && /\b(T\s+[\d\*]|HR\s+[\d\*]|SBP\s+[\d\*])/.test(t)) {
+            html += '<div class="vitals-line">' + esc(t) + '</div>';
+            return true;
+        }
+        return false;
+    });
+
+    // Parse stored lab data
+    let ld = {};
+    try { if (patient.LabData) ld = JSON.parse(patient.LabData); } catch(e) {}
+
+    const labs  = ld.labs  || {};
+    const dates = ld.dates || {};
+    const times = ld.times || {};
+
+    function getTS(keys) {
+        for (const k of keys) {
+            const tm = times[k] || '';
+            const dt = dates[k] || '';
+            if (tm || dt) return [tm, dt].filter(Boolean).join(' ');
+        }
+        return '';
+    }
+
+    // ── CBC ──────────────────────────────────────────────
+    const wbc = labs.wbc?.[0];
+    const hgb = labs.hgb?.[0];
+    const plt = labs.plt?.[0];
+    const hct = labs.hct?.[0];
+
+    if (wbc !== undefined || hgb !== undefined || plt !== undefined || hct !== undefined) {
+        const cbcTS  = getTS(['wbc','hgb','plt']);
+
+        // Plain-text (for spacing reference)
+        function plain(val, lo, hi) {
+            if (val === undefined || val === null) return '--';
+            const v = parseFloat(val);
+            if (isNaN(v)) return '--';
+            return (v < lo || v > hi) ? '*' + v + '*' : String(v);
+        }
+        const wbcP = plain(wbc, 4.5, 11);
+        const hgbP = plain(hgb, 7,   16);
+        const hctP = (hct !== undefined && hct !== null) ? String(hct) : '--';
+        const col1w = wbcP.length;
+
+        // HTML-highlighted versions
+        const wbcH = fmtVal(wbc, 4.5, 11);
+        const hgbH = fmtVal(hgb, 7,   16);
+        const pltH = fmtVal(plt, 150, 400);
+        const hctH = (hct !== undefined && hct !== null) ? String(hct) : '--';
+
+        // Row 1: WBC \ Hgb / PLT
+        // Row 2: (pad) / Hct \
+        const pad1 = ''.padEnd(col1w);
+        const row1 = wbcH + '\\' + hgbH + ' /' + pltH;
+        const row2 = pad1 + '/' + hctH + '\\';
+
+        html += '<div class="fishbone-box">';
+        html += '<div class="ts">CBC' + (cbcTS ? ' (' + esc(cbcTS) + ')' : '') + '</div>';
+        html += '<div class="fishbone">' + row1 + '</div>';
+        html += '<div class="fishbone">' + row2 + '</div>';
+        html += '</div>';
+    }
+
+    // ── BMP ──────────────────────────────────────────────
+    const na  = labs.na?.[0];
+    const k   = labs.k?.[0];
+    const cl  = labs.cl?.[0];
+    const co2 = labs.co2?.[0];
+    const bun = labs.bun?.[0];
+    const cr  = labs.cr?.[0];
+
+    if (na !== undefined || k !== undefined || bun !== undefined || cr !== undefined) {
+        const bmpTS = getTS(['na','k','bun','cr']);
+
+        const naF  = fmtVal(na,  135, 145);
+        const kF   = fmtVal(k,   3.5, 5.0);
+        const clF  = fmtVal(cl,  96,  106);
+        const co2F = (co2 !== undefined && co2 !== null) ? String(co2) : '--';
+        const bunF = fmtVal(bun, 7,   24);
+        const crF  = fmtVal(cr,  0.4, 1.2);
+
+        // BMP fishbone:
+        // Na | Cl | BUN /
+        // K  | CO2| Cr  \
+        html += '<div class="fishbone-box">';
+        html += '<div class="ts">BMP' + (bmpTS ? ' (' + esc(bmpTS) + ')' : '') + '</div>';
+        html += '<div class="fishbone">' + naF + '|' + clF + '|' + bunF + '/</div>';
+        html += '<div class="fishbone">' + kF  + '|' + co2F + '|' + crF  + '\\</div>';
+        html += '</div>';
+    }
+
+    // Fallback: first non-blank VIOLIN lines if no lab data
+    if (!html) {
+        const fallbackLines = (patient.VIOLIN || '').split('\n')
+            .filter(l => l.trim() && l.trim() !== 'Subj:')
+            .slice(0, 5);
+        if (fallbackLines.length > 0) {
+            html = '<div class="fishbone">' + esc(fallbackLines.join('\n')) + '</div>';
+        }
+    }
+
+    return html || '<span style="color:#aaa">&mdash;</span>';
+}
+
+
+// ===== VIOLIN PROGRESS TOOL =====
+
+var _progState = {};
+
+function showViolinProgressTool() {
+    if (currentPatientIndex === -1) {
+        alert('Please select a patient first.');
+        return;
+    }
+
+    _progState = {};
+
+    const existing = document.getElementById('progressToolModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'progressToolModal';
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.style.zIndex = '10001';
+
+    modal.innerHTML = `
+    <div class="modal-content" style="max-width:680px;max-height:92vh;overflow-y:auto;padding:0;">
+        <div class="help-modal-header" style="padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.15);">
+            <h2 style="color:#a78bfa;font-size:1rem;margin:0;">&#9673; PROGRESS Note Builder</h2>
+            <button onclick="document.getElementById('progressToolModal').remove();document.body.style.overflow='auto';" style="background:none;border:none;color:#9ca3af;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+        </div>
+        <div style="padding:0.8rem 1rem;">
+
+            <!-- CC -->
+            <div class="prog-section">
+                <div class="prog-label">Chief Complaint (CC):</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'cc','Doing well')">Doing well</button>
+                    <button class="prog-btn" onclick="progSelect(this,'cc','Feeling better')">Feeling better</button>
+                    <button class="prog-btn" onclick="progSelect(this,'cc','Feeling the same')">Feeling the same</button>
+                    <button class="prog-btn" onclick="progSelect(this,'cc','Some pain')">Some pain</button>
+                    <button class="prog-btn" onclick="progSelect(this,'cc','Nausea/vomiting')">Nausea/vomiting</button>
+                    <button class="prog-btn" onclick="progSelect(this,'cc','Shortness of breath')">SOB</button>
+                    <button class="prog-btn" onclick="progSelect(this,'cc','No complaints')">No complaints</button>
+                </div>
+                <input type="text" id="progCCCustom" class="prog-input" placeholder="Or type custom CC..." oninput="progCustomInput('cc', this.value)">
+            </div>
+
+            <!-- Diet -->
+            <div class="prog-section">
+                <div class="prog-label">Diet:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'diet','Tolerating diet')">Tolerating diet</button>
+                    <button class="prog-btn" onclick="progSelect(this,'diet','Tolerating clears')">Clears</button>
+                    <button class="prog-btn" onclick="progSelect(this,'diet','Tolerating soft diet')">Soft diet</button>
+                    <button class="prog-btn" onclick="progSelect(this,'diet','NPO')">NPO</button>
+                    <button class="prog-btn" onclick="progSelect(this,'diet','On tube feeds')">Tube feeds</button>
+                    <button class="prog-btn" onclick="progSelect(this,'diet','On TPN')">TPN</button>
+                </div>
+            </div>
+
+            <!-- Voiding -->
+            <div class="prog-section">
+                <div class="prog-label">Voiding:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'void','voiding normally')">Normally</button>
+                    <button class="prog-btn" onclick="progSelect(this,'void','with foley catheter')">Foley</button>
+                    <button class="prog-btn" onclick="progSelect(this,'void','not voiding')">Not voiding</button>
+                    <button class="prog-btn" onclick="progSelect(this,'void','via ostomy')">Ostomy</button>
+                    <button class="prog-btn" onclick="progSelect(this,'void','via suprapubic catheter')">SP cath</button>
+                </div>
+            </div>
+
+            <!-- Gas -->
+            <div class="prog-section">
+                <div class="prog-label">GI / Passing gas:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'gas','passing gas')">Passing gas</button>
+                    <button class="prog-btn" onclick="progSelect(this,'gas','passing gas and having BMs')">Gas + BMs</button>
+                    <button class="prog-btn" onclick="progSelect(this,'gas','no gas')">No gas</button>
+                    <button class="prog-btn" onclick="progSelect(this,'gas','no gas/BM')">No gas/BM</button>
+                    <button class="prog-btn" onclick="progSelect(this,'gas','nausea/vomiting')">N/V</button>
+                </div>
+            </div>
+
+            <!-- BM -->
+            <div class="prog-section">
+                <div class="prog-label">Last BM:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'bm','today')">Today</button>
+                    <button class="prog-btn" onclick="progSelect(this,'bm','yesterday')">Yesterday</button>
+                    <button class="prog-btn" onclick="progSelect(this,'bm','2 days ago')">2 days ago</button>
+                    <button class="prog-btn" onclick="progSelect(this,'bm','none')">None</button>
+                </div>
+                <input type="text" id="progBMDate" class="prog-input" placeholder="Or specify date (e.g. 3/14)..." oninput="progCustomInput('bm', this.value)">
+            </div>
+
+            <!-- Ambulation -->
+            <div class="prog-section">
+                <div class="prog-label">Ambulation:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'amb','ambulated')">Ambulated</button>
+                    <button class="prog-btn" onclick="progSelect(this,'amb','ambulated with assist')">With assist</button>
+                    <button class="prog-btn" onclick="progSelect(this,'amb','OOB to chair')">OOB to chair</button>
+                    <button class="prog-btn" onclick="progSelect(this,'amb','up with PT')">Up with PT</button>
+                    <button class="prog-btn" onclick="progSelect(this,'amb','bedrest')">Bedrest</button>
+                    <button class="prog-btn" onclick="progSelect(this,'amb','limited mobility')">Limited mobility</button>
+                </div>
+            </div>
+
+            <!-- Exam -->
+            <div class="prog-section">
+                <div class="prog-label">General Exam:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'exam','NAD')">NAD</button>
+                    <button class="prog-btn" onclick="progSelect(this,'exam','Alert and oriented x3')">A&amp;Ox3</button>
+                    <button class="prog-btn" onclick="progSelect(this,'exam','Uncomfortable appearing')">Uncomfortable</button>
+                    <button class="prog-btn" onclick="progSelect(this,'exam','Mild distress')">Mild distress</button>
+                    <button class="prog-btn" onclick="progSelect(this,'exam','Moderate distress')">Mod distress</button>
+                    <button class="prog-btn" onclick="progSelect(this,'exam','Acute distress')">Acute distress</button>
+                </div>
+                <input type="text" id="progExamCustom" class="prog-input" placeholder="Or type exam finding..." oninput="progCustomInput('exam', this.value)">
+            </div>
+
+            <!-- SCD -->
+            <div class="prog-section">
+                <div class="prog-label">SCD (Sequential Compression Device):</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'scd','SCD in place')">In place</button>
+                    <button class="prog-btn" onclick="progSelect(this,'scd','SCD not ordered')">Not ordered</button>
+                    <button class="prog-btn" onclick="progSelect(this,'scd','on AC - SCD deferred')">On AC (deferred)</button>
+                    <button class="prog-btn" onclick="progSelect(this,'scd','SCD not tolerated')">Not tolerated</button>
+                </div>
+            </div>
+
+            <!-- IS -->
+            <div class="prog-section" style="border-bottom:none;">
+                <div class="prog-label">IS (Incentive Spirometry):</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSelect(this,'is','IS in place')">In place</button>
+                    <button class="prog-btn" onclick="progSelect(this,'is','IS not ordered')">Not ordered</button>
+                    <button class="prog-btn" onclick="progSelect(this,'is','on ventilator - IS deferred')">On vent</button>
+                    <button class="prog-btn" onclick="progSelect(this,'is','IS not tolerated')">Not tolerated</button>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div style="margin-top:0.75rem;">
+                <div class="prog-label">Preview:</div>
+                <div id="progPreview">Select options above to preview...</div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                <button onclick="progInsertToViolin()" style="flex:1;padding:0.6rem;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:0.88rem;">
+                    &#10003; Insert into VIOLIN (after Subj:)
+                </button>
+                <button onclick="document.getElementById('progressToolModal').remove();document.body.style.overflow='auto';" style="padding:0.6rem 1.2rem;background:#374151;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.88rem;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function progSelect(btn, field, value) {
+    const row = btn.closest('.prog-btn-row');
+    if (row) row.querySelectorAll('.prog-btn').forEach(b => b.classList.remove('prog-selected'));
+    btn.classList.add('prog-selected');
+    _progState[field] = value;
+
+    const inputMap = { cc: 'progCCCustom', bm: 'progBMDate', exam: 'progExamCustom' };
+    if (inputMap[field]) {
+        const inp = document.getElementById(inputMap[field]);
+        if (inp) inp.value = '';
+    }
+    progUpdatePreview();
+}
+
+function progCustomInput(field, value) {
+    if (value && value.trim()) {
+        _progState[field] = value.trim();
+        const sectionOrder = ['cc','diet','void','gas','bm','amb','exam','scd','is'];
+        const si = sectionOrder.indexOf(field);
+        if (si !== -1) {
+            const sections = document.querySelectorAll('#progressToolModal .prog-section');
+            if (sections[si]) sections[si].querySelectorAll('.prog-btn').forEach(b => b.classList.remove('prog-selected'));
+        }
+    } else {
+        delete _progState[field];
+    }
+    progUpdatePreview();
+}
+
+function progUpdatePreview() {
+    const cc    = _progState['cc']   || '';
+    const diet  = _progState['diet'] || '';
+    const voidS = _progState['void'] || '';
+    const gas   = _progState['gas']  || '';
+    const bm    = _progState['bm']   || '';
+    const amb   = _progState['amb']  || '';
+    const exam  = _progState['exam'] || '';
+    const scd   = _progState['scd']  || '';
+    const isS   = _progState['is']   || '';
+
+    const ccLine  = 'CC: ' + (cc || '[ ]');
+    const actParts = [diet, voidS, gas, bm ? 'BMs (last ' + bm + ')' : '', amb].filter(Boolean);
+    const actLine  = actParts.length ? actParts.join(', ') : '[ ]';
+    const examParts = [exam, scd, isS].filter(Boolean);
+    const examLine  = 'Exam: ' + (examParts.length ? examParts.join(', ') : '[ ]');
+
+    const el = document.getElementById('progPreview');
+    if (el) el.textContent = ccLine + '\n' + actLine + '\n' + examLine;
+}
+
+function progInsertToViolin() {
+    if (currentPatientIndex === -1) return;
+
+    const patient = patientData[currentPatientIndex];
+    const cc    = _progState['cc']   || '[ ]';
+    const diet  = _progState['diet'] || '';
+    const voidS = _progState['void'] || '';
+    const gas   = _progState['gas']  || '';
+    const bm    = _progState['bm']   || '';
+    const amb   = _progState['amb']  || '';
+    const exam  = _progState['exam'] || '[ ]';
+    const scd   = _progState['scd']  || '';
+    const isS   = _progState['is']   || '';
+
+    const actParts  = [diet, voidS, gas, bm ? 'BMs (last ' + bm + ')' : '', amb].filter(Boolean);
+    const actLine   = actParts.join(', ') || '[ ]';
+    const examParts = [exam, scd, isS].filter(Boolean);
+    const examLine  = 'Exam: ' + (examParts.length ? examParts.join(', ') : '[ ]');
+    const note = 'CC: ' + cc + '\n' + actLine + '\n' + examLine + '\n';
+
+    let violin = patient.VIOLIN || '';
+    if (/^Subj:/.test(violin)) {
+        const firstNL = violin.indexOf('\n');
+        violin = firstNL !== -1
+            ? violin.substring(0, firstNL + 1) + note + violin.substring(firstNL + 1)
+            : violin + '\n' + note;
+    } else {
+        violin = 'Subj:\n' + note + '\n' + violin;
+    }
+
+    patient.VIOLIN = violin;
+    saveToLocalStorage();
+
+    const violinField = document.getElementById('field_VIOLIN') ||
+                        document.querySelector('textarea[id*="VIOLIN"]');
+    if (violinField) {
+        violinField.value = violin;
+        if (typeof autoResizeTextarea === 'function') autoResizeTextarea(violinField);
+    }
+
+    const modalEl = document.getElementById('progressToolModal');
+    if (modalEl) modalEl.remove();
+    document.body.style.overflow = 'auto';
+    _progState = {};
+}
+
+
 		function exportCSV() {
     if (patientData.length === 0) {
         alert('No data to export');
         return;
     }
-    
+
     // Define the fields to export (exclude internal fields)
     const exportFields = MASTER_HEADERS.slice(0, -2); // Exclude ImportedData and LabData
     
