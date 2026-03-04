@@ -13171,9 +13171,7 @@ th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3
 .pt-name { font-weight:bold; font-size:9pt; margin-bottom:1px; }
 .pt-rm   { font-size:8.5pt; }
 .pt-mrn  { font-size:7.5pt; color:#444; }
-.vitals-line { margin-bottom:2px; }
-.fishbone-box { border:1px solid #bbb; border-radius:2px; padding:1px 3px; margin:2px 0;
-                background:#f8f8f8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.vitals-line { margin-bottom:1px; }
 .fishbone { font-family:'Courier New', Courier, monospace; font-size:7pt; white-space:pre; line-height:1.3; }
 .ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
 .ab  { color:#cc0000; font-weight:bold; }
@@ -13227,18 +13225,27 @@ function buildPDFVitalsHTML(patient) {
 
     let html = '';
 
-    // Extract primary vitals summary line from VIOLIN text
+    // ── Vitals: parse each sign to its own line ───────────
     const violin = patient.VIOLIN || '';
+    let vitalsRaw = '';
     violin.split('\n').some(function(line) {
         const t = line.trim();
         if (t && t !== 'Subj:' && /\b(T\s+[\d\*]|HR\s+[\d\*]|SBP\s+[\d\*])/.test(t)) {
-            html += '<div class="vitals-line">' + esc(t) + '</div>';
+            vitalsRaw = t;
             return true;
         }
         return false;
     });
 
-    // Parse stored lab data
+    if (vitalsRaw) {
+        // Match individual vital tokens: e.g. "T 98.6", "HR 72 (60-80)", "O2 98%-*NC*@2L"
+        const tokens = vitalsRaw.match(/(?:T|HR|SBP|DBP|MAP|RR|O2)\s+[^\s,]+(?:\s*\([^)]+\))?(?:-[^\s,@]+)?(?:@[^\s,]+)?/g) || [vitalsRaw];
+        tokens.forEach(function(tok) {
+            html += '<div class="vitals-line">' + esc(tok.trim()) + '</div>';
+        });
+    }
+
+    // ── Labs ─────────────────────────────────────────────
     let ld = {};
     try { if (patient.LabData) ld = JSON.parse(patient.LabData); } catch(e) {}
 
@@ -13262,9 +13269,8 @@ function buildPDFVitalsHTML(patient) {
     const hct = labs.hct?.[0];
 
     if (wbc !== undefined || hgb !== undefined || plt !== undefined || hct !== undefined) {
-        const cbcTS  = getTS(['wbc','hgb','plt']);
+        const cbcTS = getTS(['wbc','hgb','plt']);
 
-        // Plain-text (for spacing reference)
         function plain(val, lo, hi) {
             if (val === undefined || val === null) return '--';
             const v = parseFloat(val);
@@ -13272,27 +13278,17 @@ function buildPDFVitalsHTML(patient) {
             return (v < lo || v > hi) ? '*' + v + '*' : String(v);
         }
         const wbcP = plain(wbc, 4.5, 11);
-        const hgbP = plain(hgb, 7,   16);
-        const hctP = (hct !== undefined && hct !== null) ? String(hct) : '--';
         const col1w = wbcP.length;
+        const pad1  = ''.padEnd(col1w);
 
-        // HTML-highlighted versions
         const wbcH = fmtVal(wbc, 4.5, 11);
         const hgbH = fmtVal(hgb, 7,   16);
         const pltH = fmtVal(plt, 150, 400);
         const hctH = (hct !== undefined && hct !== null) ? String(hct) : '--';
 
-        // Row 1: WBC \ Hgb / PLT
-        // Row 2: (pad) / Hct \
-        const pad1 = ''.padEnd(col1w);
-        const row1 = wbcH + '\\' + hgbH + ' /' + pltH;
-        const row2 = pad1 + '/' + hctH + '\\';
-
-        html += '<div class="fishbone-box">';
         html += '<div class="ts">CBC' + (cbcTS ? ' (' + esc(cbcTS) + ')' : '') + '</div>';
-        html += '<div class="fishbone">' + row1 + '</div>';
-        html += '<div class="fishbone">' + row2 + '</div>';
-        html += '</div>';
+        html += '<div class="fishbone">' + wbcH + '\\' + hgbH + ' /' + pltH + '</div>';
+        html += '<div class="fishbone">' + pad1 + '/' + hctH + '\\</div>';
     }
 
     // ── BMP ──────────────────────────────────────────────
@@ -13313,14 +13309,9 @@ function buildPDFVitalsHTML(patient) {
         const bunF = fmtVal(bun, 7,   24);
         const crF  = fmtVal(cr,  0.4, 1.2);
 
-        // BMP fishbone:
-        // Na | Cl | BUN /
-        // K  | CO2| Cr  \
-        html += '<div class="fishbone-box">';
-        html += '<div class="ts">BMP' + (bmpTS ? ' (' + esc(bmpTS) + ')' : '') + '</div>';
+        html += '<div class="ts" style="margin-top:2px;">BMP' + (bmpTS ? ' (' + esc(bmpTS) + ')' : '') + '</div>';
         html += '<div class="fishbone">' + naF + '|' + clF + '|' + bunF + '/</div>';
         html += '<div class="fishbone">' + kF  + '|' + co2F + '|' + crF  + '\\</div>';
-        html += '</div>';
     }
 
     // Fallback: first non-blank VIOLIN lines if no lab data
