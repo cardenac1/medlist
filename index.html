@@ -409,11 +409,28 @@ const VIOLIN_DASHBOARD_CSS = `
 
         /* Controls */
   /* Controls */
+.controls-wrap {
+    margin-bottom: 0.5rem;
+}
+.controls-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(10,10,10,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0.5rem;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    margin-bottom: 0.25rem;
+}
+.controls-toggle:hover { color: #e2e8f0; background: rgba(30,30,30,0.7); }
 .controls {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
     padding: 0.75rem;
     background: rgba(10, 10, 10, 0.7);
     backdrop-filter: blur(12px);
@@ -3127,20 +3144,25 @@ async function testOCRAvailability() {
 
     <div class="container">
         <!-- Controls -->
-        <div class="controls">
-            <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".json,.csv">
-                <label for="fileInput" class="file-input-label">
-                    📁 Import
-                </label>
+        <div class="controls-wrap">
+            <button class="controls-toggle" id="controlsToggle" onclick="toggleControls()">
+                ⚙ Tools <span id="controlsArrow" style="display:inline-block;transition:transform 200ms ease;">▸</span>
+            </button>
+            <div class="controls" id="controlsBar" style="display:none;">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" accept=".json,.csv">
+                    <label for="fileInput" class="file-input-label">
+                        📁 Import
+                    </label>
+                </div>
+                <button onclick="toggleColumnDropdown()">Column Options</button>
+                <select id="columnSelect" onchange="sortRows()">
+                    <option value="">Sort by</option>
+                </select>
+                <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
+                <button onclick="toggleSearch()">🔍 Search</button>
+                <button id="exportButtonMain" onclick="exportData()">Export</button>
             </div>
-            <button onclick="toggleColumnDropdown()">Column Options</button>
-            <select id="columnSelect" onchange="sortRows()">
-                <option value="">Sort by</option>
-            </select>
-               <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
-            <button onclick="toggleSearch()">🔍</button>
-            <button id="exportButtonMain" onclick="exportData()">Export</button>
         </div>
 
         <!-- Column Dropdown -->
@@ -3151,9 +3173,10 @@ async function testOCRAvailability() {
         <!-- Search Container -->
         <div class="search-wrapper">
             <div id="searchContainer" class="search-container">
-                <input type="text" id="searchInput" placeholder="Search entries..." />
-                <button onclick="searchRows()">Search</button>
-                <button onclick="clearSearch()">Clear</button>
+                <input type="text" id="searchInput" placeholder="Search entries..."
+                    oninput="searchRows()"
+                    onkeydown="if(event.key==='Escape') clearSearch()" />
+                <button onclick="clearSearch()">✕ Clear</button>
             </div>
         </div>
 
@@ -5335,6 +5358,15 @@ function displayRows(data = patientData) {
         function toggleColumnDropdown() {
             const dropdown = document.getElementById('columnDropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // ============ CONTROLS COLLAPSE ============
+        function toggleControls() {
+            const bar = document.getElementById('controlsBar');
+            const arrow = document.getElementById('controlsArrow');
+            const isOpen = bar.style.display !== 'none';
+            bar.style.display = isOpen ? 'none' : 'flex';
+            arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
         }
 
         // ============ SEARCH FUNCTIONS ============
