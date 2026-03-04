@@ -13126,6 +13126,28 @@ function exportPDF() {
         return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    function buildPDFOrdersHTML(patient) {
+        const ordersRaw = (patient.ORDERS || '').trim();
+        const medsRaw   = (patient.Meds   || '').trim();
+        let html = '';
+
+        if (ordersRaw) {
+            const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+            const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
+            const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
+            const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
+            const all   = main.concat(ltd).concat(dispo);
+            html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
+        }
+
+        if (medsRaw) {
+            html += '<div class="hm-hdr">Home Meds:</div>';
+            html += '<div class="orders-list">' + esc(medsRaw).replace(/\n/g,'<br>') + '</div>';
+        }
+
+        return html || '<span style="color:#aaa">&mdash;</span>';
+    }
+
     let rows = '';
     patientData.forEach(function(patient) {
         const name     = patient.Name     || '';
@@ -13133,7 +13155,7 @@ function exportPDF() {
         const mrn      = patient.MRN      || '';
         const problems = (patient.Problems || '').trim();
         const vitalsHTML = buildPDFVitalsHTML(patient);
-        const orders   = (patient.ORDERS   || '').trim();
+        const ordersHTML = buildPDFOrdersHTML(patient);
         const todo     = (patient['To do'] || '').trim();
 
         rows += `<tr>
@@ -13144,7 +13166,7 @@ function exportPDF() {
             </td>
             <td class="col-prob">${esc(problems).replace(/\n/g,'<br>')}</td>
             <td class="col-vitals">${vitalsHTML}</td>
-            <td class="col-orders">${esc(orders).replace(/\n/g,'<br>')}</td>
+            <td class="col-orders">${ordersHTML}</td>
             <td class="col-blank"></td>
             <td class="col-todo"><strong>To Do:</strong><br>${esc(todo).replace(/\n/g,'<br>')}</td>
         </tr>`;
@@ -13159,7 +13181,7 @@ function exportPDF() {
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: 'Courier New', Courier, monospace; font-size: 7.5pt; line-height: 1.25; color: #000; }
 table { width:100%; border-collapse:collapse; table-layout:fixed; }
-th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; overflow:hidden; word-wrap:break-word; }
+th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; }
 th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3px 2px;
      -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .col-id     { width:10%; }
@@ -13174,6 +13196,8 @@ th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3
 .vitals-line { margin-bottom:1px; }
 .fishbone { font-family:'Courier New', Courier, monospace; font-size:7pt; white-space:pre; line-height:1.3; }
 .ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
+.orders-list { font-family:'Courier New',Courier,monospace; font-size:5.5pt; line-height:1.2; word-wrap:break-word; overflow-wrap:break-word; white-space:normal; }
+.hm-hdr { font-size:5.5pt; font-weight:bold; margin-top:2px; padding-top:1px; border-top:1px solid #999; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; font-family:Arial,sans-serif; }
@@ -13413,11 +13437,9 @@ function showViolinProgressTool() {
                 <div class="prog-label">Diet:</div>
                 <div class="prog-btn-row">
                     <button class="prog-btn" onclick="progSel(this,'diet','tol diet')">Tol diet</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','tol clears')">Clears</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','tol soft diet')">Soft</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol clears')">Tol clears</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol tube feeds')">Tol TF</button>
                     <button class="prog-btn" onclick="progSel(this,'diet','NPO')">NPO</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','tube feeds')">TF</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','TPN')">TPN</button>
                 </div>
             </div>
 
@@ -13425,18 +13447,30 @@ function showViolinProgressTool() {
             <div class="prog-section">
                 <div class="prog-label">Voiding:</div>
                 <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSel(this,'void','voiding nml')">Nml</button>
-                    <button class="prog-btn" onclick="progSel(this,'void','foley')">Foley</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','voiding spontaneously')">Spontaneous</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','voiding into foley')">Foley</button>
                     <button class="prog-btn" onclick="progSel(this,'void','not voiding')">Not voiding</button>
                     <button class="prog-btn" onclick="progSel(this,'void','ostomy')">Ostomy</button>
                     <button class="prog-btn" onclick="progSel(this,'void','SP cath')">SP cath</button>
                 </div>
             </div>
 
-            <!-- Gas / BM: open text -->
+            <!-- Gas / BM: button selectors + optional text -->
             <div class="prog-section">
-                <div class="prog-label">Gas / Last BM: <span style="font-weight:normal;color:#9ca3af;font-size:0.72rem;">(optional free text)</span></div>
-                <input type="text" id="pGasBM" class="prog-input" placeholder="e.g. passing gas, last BM 3/14 or no gas/BM" oninput="progPI()">
+                <div class="prog-label">Gas:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSel(this,'gas','passing gas')">Passing gas</button>
+                    <button class="prog-btn" onclick="progSel(this,'gas','no gas')">No gas</button>
+                </div>
+            </div>
+            <div class="prog-section">
+                <div class="prog-label">BM:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSel(this,'bm','BM today')">BM today</button>
+                    <button class="prog-btn" onclick="progSel(this,'bm','no BM')">No BM</button>
+                    <button class="prog-btn" onclick="progSel(this,'bm','constipated')">Constipated</button>
+                </div>
+                <input type="text" id="pGasBM" class="prog-input" style="margin-top:0.3rem;" placeholder="optional: last BM date, stool type, etc." oninput="progPI()">
             </div>
 
             <!-- Ambulation: buttons -->
@@ -13466,8 +13500,8 @@ function showViolinProgressTool() {
 
             <!-- Preview -->
             <div style="margin-top:0.7rem;">
-                <div class="prog-label">Output (one line after Subj:):</div>
-                <div id="progPreview" style="font-size:0.75rem;">Fill in fields above...</div>
+                <div class="prog-label">Preview:</div>
+                <div id="progPreview" style="font-size:0.75rem;color:#a78bfa;">Fill in fields above...</div>
             </div>
 
             <!-- Actions -->
@@ -13515,8 +13549,8 @@ function progPI() {
 
 function progBuildLine() {
     const parts = [];
-    if (_progState.cc)   parts.push('CC: ' + _progState.cc);
-    const act = [_progState.diet, _progState.void, _progState.gasbm, _progState.amb].filter(Boolean).join(', ');
+    if (_progState.cc) parts.push('CC: ' + _progState.cc);
+    const act = [_progState.diet, _progState.void, _progState.gas, _progState.bm, _progState.gasbm, _progState.amb].filter(Boolean).join(', ');
     if (act) parts.push(act);
     if (_progState.ros)  parts.push('ROS: ' + _progState.ros);
     if (_progState.exam) parts.push('Exam: ' + _progState.exam);
@@ -13526,7 +13560,7 @@ function progBuildLine() {
 function progUpdatePreview() {
     const line = progBuildLine();
     const el = document.getElementById('progPreview');
-    if (el) el.textContent = line || '(empty — fill in fields above)';
+    if (el) el.textContent = line ? 'Subj: ' + line : '(empty — fill in fields above)';
 }
 
 function progInsertToViolin() {
@@ -13539,14 +13573,11 @@ function progInsertToViolin() {
     const patient = patientData[currentPatientIndex];
     let violin = patient.VIOLIN || '';
 
-    if (/^Subj:/.test(violin)) {
-        const firstNL = violin.indexOf('\n');
-        // Insert as first line of content right after "Subj:\n"
-        violin = firstNL !== -1
-            ? violin.substring(0, firstNL + 1) + line + '\n' + violin.substring(firstNL + 1)
-            : violin + '\n' + line + '\n';
+    if (/^Subj:/m.test(violin)) {
+        // Replace the Subj: line with content inline
+        violin = violin.replace(/^Subj:.*$/m, 'Subj: ' + line);
     } else {
-        violin = 'Subj:\n' + line + '\n\n' + violin;
+        violin = 'Subj: ' + line + '\n\n' + violin;
     }
 
     patient.VIOLIN = violin;
