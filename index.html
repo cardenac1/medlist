@@ -13262,6 +13262,15 @@ function buildPDFVitalsHTML(patient) {
         return '';
     }
 
+    // Helper: plain-text representation for width measurement
+    function pdfPlain(val, lo, hi) {
+        if (val === undefined || val === null) return '--';
+        const v = parseFloat(val);
+        if (isNaN(v)) return '--';
+        return (v < lo || v > hi) ? '*' + v + '*' : String(v);
+    }
+    function sp(n) { return ' '.repeat(Math.max(0, n)); }
+
     // ── CBC ──────────────────────────────────────────────
     const wbc = labs.wbc?.[0];
     const hgb = labs.hgb?.[0];
@@ -13271,24 +13280,24 @@ function buildPDFVitalsHTML(patient) {
     if (wbc !== undefined || hgb !== undefined || plt !== undefined || hct !== undefined) {
         const cbcTS = getTS(['wbc','hgb','plt']);
 
-        function plain(val, lo, hi) {
-            if (val === undefined || val === null) return '--';
-            const v = parseFloat(val);
-            if (isNaN(v)) return '--';
-            return (v < lo || v > hi) ? '*' + v + '*' : String(v);
-        }
-        const wbcP = plain(wbc, 4.5, 11);
-        const col1w = wbcP.length;
-        const pad1  = ''.padEnd(col1w);
+        const wbcP = pdfPlain(wbc, 4.5, 11);
+        const hgbP = pdfPlain(hgb, 7,   16);
+        const hctP = (hct !== undefined && hct !== null) ? String(hct) : '--';
+
+        // Each column width = max of the two rows sharing that column
+        const c1w = wbcP.length;                         // col1: WBC (row1) vs blank (row2)
+        const c2w = Math.max(hgbP.length, hctP.length); // col2: Hgb (row1) vs Hct (row2)
 
         const wbcH = fmtVal(wbc, 4.5, 11);
         const hgbH = fmtVal(hgb, 7,   16);
         const pltH = fmtVal(plt, 150, 400);
-        const hctH = (hct !== undefined && hct !== null) ? String(hct) : '--';
+        const hctH = hctP; // Hct is never flagged abnormal here
 
+        // Row 1: WBC \ Hgb  / PLT
+        // Row 2:      / Hct \
         html += '<div class="ts">CBC' + (cbcTS ? ' (' + esc(cbcTS) + ')' : '') + '</div>';
-        html += '<div class="fishbone">' + wbcH + '\\' + hgbH + ' /' + pltH + '</div>';
-        html += '<div class="fishbone">' + pad1 + '/' + hctH + '\\</div>';
+        html += '<div class="fishbone">' + wbcH + sp(c1w - wbcP.length) + '\\' + hgbH + sp(c2w - hgbP.length) + ' /' + pltH + '</div>';
+        html += '<div class="fishbone">' + sp(c1w)                      + '/' + hctH + sp(c2w - hctP.length) +  '\\</div>';
     }
 
     // ── BMP ──────────────────────────────────────────────
@@ -13302,16 +13311,30 @@ function buildPDFVitalsHTML(patient) {
     if (na !== undefined || k !== undefined || bun !== undefined || cr !== undefined) {
         const bmpTS = getTS(['na','k','bun','cr']);
 
+        const naP  = pdfPlain(na,  135, 145);
+        const kP   = pdfPlain(k,   3.5, 5.0);
+        const clP  = pdfPlain(cl,  96,  106);
+        const co2P = (co2 !== undefined && co2 !== null) ? String(co2) : '--';
+        const bunP = pdfPlain(bun, 7,   24);
+        const crP  = pdfPlain(cr,  0.4, 1.2);
+
+        // Column widths so | always lands in the same position both rows
+        const b1w = Math.max(naP.length,  kP.length);
+        const b2w = Math.max(clP.length,  co2P.length);
+        const b3w = Math.max(bunP.length, crP.length);
+
         const naF  = fmtVal(na,  135, 145);
         const kF   = fmtVal(k,   3.5, 5.0);
         const clF  = fmtVal(cl,  96,  106);
-        const co2F = (co2 !== undefined && co2 !== null) ? String(co2) : '--';
+        const co2F = co2P;
         const bunF = fmtVal(bun, 7,   24);
         const crF  = fmtVal(cr,  0.4, 1.2);
 
+        // Row 1: Na  | Cl  | BUN /
+        // Row 2: K   | CO2 | Cr  \
         html += '<div class="ts" style="margin-top:2px;">BMP' + (bmpTS ? ' (' + esc(bmpTS) + ')' : '') + '</div>';
-        html += '<div class="fishbone">' + naF + '|' + clF + '|' + bunF + '/</div>';
-        html += '<div class="fishbone">' + kF  + '|' + co2F + '|' + crF  + '\\</div>';
+        html += '<div class="fishbone">' + naF  + sp(b1w - naP.length)  + '|' + clF  + sp(b2w - clP.length)  + '|' + bunF + sp(b3w - bunP.length) + '/</div>';
+        html += '<div class="fishbone">' + kF   + sp(b1w - kP.length)   + '|' + co2F + sp(b2w - co2P.length) + '|' + crF  + sp(b3w - crP.length)  + '\\</div>';
     }
 
     // Fallback: first non-blank VIOLIN lines if no lab data
