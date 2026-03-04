@@ -13437,11 +13437,9 @@ function showViolinProgressTool() {
                 <div class="prog-label">Diet:</div>
                 <div class="prog-btn-row">
                     <button class="prog-btn" onclick="progSel(this,'diet','tol diet')">Tol diet</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','tol clears')">Clears</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','tol soft diet')">Soft</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol clears')">Tol clears</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol tube feeds')">Tol TF</button>
                     <button class="prog-btn" onclick="progSel(this,'diet','NPO')">NPO</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','tube feeds')">TF</button>
-                    <button class="prog-btn" onclick="progSel(this,'diet','TPN')">TPN</button>
                 </div>
             </div>
 
@@ -13449,18 +13447,30 @@ function showViolinProgressTool() {
             <div class="prog-section">
                 <div class="prog-label">Voiding:</div>
                 <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSel(this,'void','voiding nml')">Nml</button>
-                    <button class="prog-btn" onclick="progSel(this,'void','foley')">Foley</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','voiding spontaneously')">Spontaneous</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','voiding into foley')">Foley</button>
                     <button class="prog-btn" onclick="progSel(this,'void','not voiding')">Not voiding</button>
                     <button class="prog-btn" onclick="progSel(this,'void','ostomy')">Ostomy</button>
                     <button class="prog-btn" onclick="progSel(this,'void','SP cath')">SP cath</button>
                 </div>
             </div>
 
-            <!-- Gas / BM: open text -->
+            <!-- Gas / BM: button selectors + optional text -->
             <div class="prog-section">
-                <div class="prog-label">Gas / Last BM: <span style="font-weight:normal;color:#9ca3af;font-size:0.72rem;">(optional free text)</span></div>
-                <input type="text" id="pGasBM" class="prog-input" placeholder="e.g. passing gas, last BM 3/14 or no gas/BM" oninput="progPI()">
+                <div class="prog-label">Gas:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSel(this,'gas','passing gas')">Passing gas</button>
+                    <button class="prog-btn" onclick="progSel(this,'gas','no gas')">No gas</button>
+                </div>
+            </div>
+            <div class="prog-section">
+                <div class="prog-label">BM:</div>
+                <div class="prog-btn-row">
+                    <button class="prog-btn" onclick="progSel(this,'bm','BM today')">BM today</button>
+                    <button class="prog-btn" onclick="progSel(this,'bm','no BM')">No BM</button>
+                    <button class="prog-btn" onclick="progSel(this,'bm','constipated')">Constipated</button>
+                </div>
+                <input type="text" id="pGasBM" class="prog-input" style="margin-top:0.3rem;" placeholder="optional: last BM date, stool type, etc." oninput="progPI()">
             </div>
 
             <!-- Ambulation: buttons -->
@@ -13490,8 +13500,8 @@ function showViolinProgressTool() {
 
             <!-- Preview -->
             <div style="margin-top:0.7rem;">
-                <div class="prog-label">Output (one line after Subj:):</div>
-                <div id="progPreview" style="font-size:0.75rem;">Fill in fields above...</div>
+                <div class="prog-label">Preview:</div>
+                <div id="progPreview" style="font-size:0.75rem;color:#a78bfa;">Fill in fields above...</div>
             </div>
 
             <!-- Actions -->
@@ -13539,8 +13549,8 @@ function progPI() {
 
 function progBuildLine() {
     const parts = [];
-    if (_progState.cc)   parts.push('CC: ' + _progState.cc);
-    const act = [_progState.diet, _progState.void, _progState.gasbm, _progState.amb].filter(Boolean).join(', ');
+    if (_progState.cc) parts.push('CC: ' + _progState.cc);
+    const act = [_progState.diet, _progState.void, _progState.gas, _progState.bm, _progState.gasbm, _progState.amb].filter(Boolean).join(', ');
     if (act) parts.push(act);
     if (_progState.ros)  parts.push('ROS: ' + _progState.ros);
     if (_progState.exam) parts.push('Exam: ' + _progState.exam);
@@ -13550,7 +13560,7 @@ function progBuildLine() {
 function progUpdatePreview() {
     const line = progBuildLine();
     const el = document.getElementById('progPreview');
-    if (el) el.textContent = line || '(empty — fill in fields above)';
+    if (el) el.textContent = line ? 'Subj: ' + line : '(empty — fill in fields above)';
 }
 
 function progInsertToViolin() {
@@ -13563,14 +13573,11 @@ function progInsertToViolin() {
     const patient = patientData[currentPatientIndex];
     let violin = patient.VIOLIN || '';
 
-    if (/^Subj:/.test(violin)) {
-        const firstNL = violin.indexOf('\n');
-        // Insert as first line of content right after "Subj:\n"
-        violin = firstNL !== -1
-            ? violin.substring(0, firstNL + 1) + line + '\n' + violin.substring(firstNL + 1)
-            : violin + '\n' + line + '\n';
+    if (/^Subj:/m.test(violin)) {
+        // Replace the Subj: line with content inline
+        violin = violin.replace(/^Subj:.*$/m, 'Subj: ' + line);
     } else {
-        violin = 'Subj:\n' + line + '\n\n' + violin;
+        violin = 'Subj: ' + line + '\n\n' + violin;
     }
 
     patient.VIOLIN = violin;
