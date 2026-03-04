@@ -13128,19 +13128,21 @@ function exportPDF() {
 
     let rows = '';
     patientData.forEach(function(patient) {
-        const name   = patient.Name || '';
-        const rm     = patient.RM   || '';
-        const mrn    = patient.MRN  || '';
+        const name     = patient.Name     || '';
+        const rm       = patient.RM       || '';
+        const mrn      = patient.MRN      || '';
+        const problems = (patient.Problems || '').trim();
         const vitalsHTML = buildPDFVitalsHTML(patient);
-        const orders = (patient.ORDERS  || '').trim();
-        const todo   = (patient['To do'] || '').trim();
+        const orders   = (patient.ORDERS   || '').trim();
+        const todo     = (patient['To do'] || '').trim();
 
         rows += `<tr>
             <td class="col-id">
-                <strong>${esc(name)}</strong><br>
-                ${esc(rm)}<br>
-                <span style="color:#555;font-size:6.5pt;">${esc(mrn)}</span>
+                <div class="pt-name">${esc(name)}</div>
+                <div class="pt-rm">${esc(rm)}</div>
+                <div class="pt-mrn">${esc(mrn)}</div>
             </td>
+            <td class="col-prob">${esc(problems).replace(/\n/g,'<br>')}</td>
             <td class="col-vitals">${vitalsHTML}</td>
             <td class="col-orders">${esc(orders).replace(/\n/g,'<br>')}</td>
             <td class="col-blank"></td>
@@ -13155,25 +13157,29 @@ function exportPDF() {
 <title>Patient List - ${dateStr}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: Arial, sans-serif; font-size: 8pt; line-height: 1.25; color: #000; }
+body { font-family: 'Courier New', Courier, monospace; font-size: 7.5pt; line-height: 1.25; color: #000; }
 table { width:100%; border-collapse:collapse; table-layout:fixed; }
 th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; overflow:hidden; word-wrap:break-word; }
-th { background:#1a1a2e; color:#fff; font-size:7.5pt; text-align:center; padding:3px 2px;
+th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3px 2px;
      -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.col-id     { width:13%; }
-.col-vitals { width:26%; }
-.col-orders { width:23%; font-size:7pt; }
-.col-blank  { width:13%; }
-.col-todo   { width:25%; font-size:7pt; }
-.vitals-line { margin-bottom:2px; font-size:7.5pt; }
+.col-id     { width:10%; }
+.col-prob   { width:19%; }
+.col-vitals { width:22%; }
+.col-orders { width:18%; }
+.col-blank  { width:11%; }
+.col-todo   { width:20%; }
+.pt-name { font-weight:bold; font-size:9pt; margin-bottom:1px; }
+.pt-rm   { font-size:8.5pt; }
+.pt-mrn  { font-size:7.5pt; color:#444; }
+.vitals-line { margin-bottom:2px; }
 .fishbone-box { border:1px solid #bbb; border-radius:2px; padding:1px 3px; margin:2px 0;
                 background:#f8f8f8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.fishbone { font-family:'Courier New', monospace; font-size:7pt; white-space:pre; line-height:1.3; }
+.fishbone { font-family:'Courier New', Courier, monospace; font-size:7pt; white-space:pre; line-height:1.3; }
 .ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; }
-@page { margin:0.4in; size:landscape; }
+.page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; font-family:Arial,sans-serif; }
+@page { margin:0.35in; size:landscape; }
 </style>
 </head>
 <body>
@@ -13182,6 +13188,7 @@ tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; pr
 <thead>
 <tr>
   <th>NAME / RM / MRN</th>
+  <th>PROBLEMS</th>
   <th>VITALS / LABS</th>
   <th>ORDERS</th>
   <th>NOTES</th>
@@ -13352,138 +13359,87 @@ function showViolinProgressTool() {
     modal.style.zIndex = '10001';
 
     modal.innerHTML = `
-    <div class="modal-content" style="max-width:680px;max-height:92vh;overflow-y:auto;padding:0;">
-        <div class="help-modal-header" style="padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.15);">
-            <h2 style="color:#a78bfa;font-size:1rem;margin:0;">&#9673; PROGRESS Note Builder</h2>
+    <div class="modal-content" style="max-width:640px;max-height:92vh;overflow-y:auto;padding:0;">
+        <div class="help-modal-header" style="padding:0.65rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.15);">
+            <h2 style="color:#a78bfa;font-size:0.95rem;margin:0;">&#9673; PROGRESS Note Builder</h2>
             <button onclick="document.getElementById('progressToolModal').remove();document.body.style.overflow='auto';" style="background:none;border:none;color:#9ca3af;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
         </div>
-        <div style="padding:0.8rem 1rem;">
+        <div style="padding:0.7rem 1rem;">
 
-            <!-- CC -->
+            <!-- CC: plain text -->
             <div class="prog-section">
-                <div class="prog-label">Chief Complaint (CC):</div>
-                <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'cc','Doing well')">Doing well</button>
-                    <button class="prog-btn" onclick="progSelect(this,'cc','Feeling better')">Feeling better</button>
-                    <button class="prog-btn" onclick="progSelect(this,'cc','Feeling the same')">Feeling the same</button>
-                    <button class="prog-btn" onclick="progSelect(this,'cc','Some pain')">Some pain</button>
-                    <button class="prog-btn" onclick="progSelect(this,'cc','Nausea/vomiting')">Nausea/vomiting</button>
-                    <button class="prog-btn" onclick="progSelect(this,'cc','Shortness of breath')">SOB</button>
-                    <button class="prog-btn" onclick="progSelect(this,'cc','No complaints')">No complaints</button>
-                </div>
-                <input type="text" id="progCCCustom" class="prog-input" placeholder="Or type custom CC..." oninput="progCustomInput('cc', this.value)">
+                <div class="prog-label">CC:</div>
+                <input type="text" id="pCC" class="prog-input" placeholder="e.g. doing well, some pain, nausea..." oninput="progPI()">
             </div>
 
-            <!-- Diet -->
+            <!-- Diet: buttons -->
             <div class="prog-section">
                 <div class="prog-label">Diet:</div>
                 <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'diet','Tolerating diet')">Tolerating diet</button>
-                    <button class="prog-btn" onclick="progSelect(this,'diet','Tolerating clears')">Clears</button>
-                    <button class="prog-btn" onclick="progSelect(this,'diet','Tolerating soft diet')">Soft diet</button>
-                    <button class="prog-btn" onclick="progSelect(this,'diet','NPO')">NPO</button>
-                    <button class="prog-btn" onclick="progSelect(this,'diet','On tube feeds')">Tube feeds</button>
-                    <button class="prog-btn" onclick="progSelect(this,'diet','On TPN')">TPN</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol diet')">Tol diet</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol clears')">Clears</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tol soft diet')">Soft</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','NPO')">NPO</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','tube feeds')">TF</button>
+                    <button class="prog-btn" onclick="progSel(this,'diet','TPN')">TPN</button>
                 </div>
             </div>
 
-            <!-- Voiding -->
+            <!-- Voiding: buttons -->
             <div class="prog-section">
                 <div class="prog-label">Voiding:</div>
                 <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'void','voiding normally')">Normally</button>
-                    <button class="prog-btn" onclick="progSelect(this,'void','with foley catheter')">Foley</button>
-                    <button class="prog-btn" onclick="progSelect(this,'void','not voiding')">Not voiding</button>
-                    <button class="prog-btn" onclick="progSelect(this,'void','via ostomy')">Ostomy</button>
-                    <button class="prog-btn" onclick="progSelect(this,'void','via suprapubic catheter')">SP cath</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','voiding nml')">Nml</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','foley')">Foley</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','not voiding')">Not voiding</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','ostomy')">Ostomy</button>
+                    <button class="prog-btn" onclick="progSel(this,'void','SP cath')">SP cath</button>
                 </div>
             </div>
 
-            <!-- Gas -->
+            <!-- Gas / BM: open text -->
             <div class="prog-section">
-                <div class="prog-label">GI / Passing gas:</div>
-                <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'gas','passing gas')">Passing gas</button>
-                    <button class="prog-btn" onclick="progSelect(this,'gas','passing gas and having BMs')">Gas + BMs</button>
-                    <button class="prog-btn" onclick="progSelect(this,'gas','no gas')">No gas</button>
-                    <button class="prog-btn" onclick="progSelect(this,'gas','no gas/BM')">No gas/BM</button>
-                    <button class="prog-btn" onclick="progSelect(this,'gas','nausea/vomiting')">N/V</button>
-                </div>
+                <div class="prog-label">Gas / Last BM: <span style="font-weight:normal;color:#9ca3af;font-size:0.72rem;">(optional free text)</span></div>
+                <input type="text" id="pGasBM" class="prog-input" placeholder="e.g. passing gas, last BM 3/14 or no gas/BM" oninput="progPI()">
             </div>
 
-            <!-- BM -->
-            <div class="prog-section">
-                <div class="prog-label">Last BM:</div>
-                <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'bm','today')">Today</button>
-                    <button class="prog-btn" onclick="progSelect(this,'bm','yesterday')">Yesterday</button>
-                    <button class="prog-btn" onclick="progSelect(this,'bm','2 days ago')">2 days ago</button>
-                    <button class="prog-btn" onclick="progSelect(this,'bm','none')">None</button>
-                </div>
-                <input type="text" id="progBMDate" class="prog-input" placeholder="Or specify date (e.g. 3/14)..." oninput="progCustomInput('bm', this.value)">
-            </div>
-
-            <!-- Ambulation -->
+            <!-- Ambulation: buttons -->
             <div class="prog-section">
                 <div class="prog-label">Ambulation:</div>
                 <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'amb','ambulated')">Ambulated</button>
-                    <button class="prog-btn" onclick="progSelect(this,'amb','ambulated with assist')">With assist</button>
-                    <button class="prog-btn" onclick="progSelect(this,'amb','OOB to chair')">OOB to chair</button>
-                    <button class="prog-btn" onclick="progSelect(this,'amb','up with PT')">Up with PT</button>
-                    <button class="prog-btn" onclick="progSelect(this,'amb','bedrest')">Bedrest</button>
-                    <button class="prog-btn" onclick="progSelect(this,'amb','limited mobility')">Limited mobility</button>
+                    <button class="prog-btn" onclick="progSel(this,'amb','ambulated')">Ambulated</button>
+                    <button class="prog-btn" onclick="progSel(this,'amb','amb w/ assist')">W/ assist</button>
+                    <button class="prog-btn" onclick="progSel(this,'amb','OOB to chair')">OOB chair</button>
+                    <button class="prog-btn" onclick="progSel(this,'amb','up w/ PT')">PT</button>
+                    <button class="prog-btn" onclick="progSel(this,'amb','bedrest')">Bedrest</button>
                 </div>
             </div>
 
-            <!-- Exam -->
+            <!-- ROS: text -->
             <div class="prog-section">
-                <div class="prog-label">General Exam:</div>
-                <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'exam','NAD')">NAD</button>
-                    <button class="prog-btn" onclick="progSelect(this,'exam','Alert and oriented x3')">A&amp;Ox3</button>
-                    <button class="prog-btn" onclick="progSelect(this,'exam','Uncomfortable appearing')">Uncomfortable</button>
-                    <button class="prog-btn" onclick="progSelect(this,'exam','Mild distress')">Mild distress</button>
-                    <button class="prog-btn" onclick="progSelect(this,'exam','Moderate distress')">Mod distress</button>
-                    <button class="prog-btn" onclick="progSelect(this,'exam','Acute distress')">Acute distress</button>
-                </div>
-                <input type="text" id="progExamCustom" class="prog-input" placeholder="Or type exam finding..." oninput="progCustomInput('exam', this.value)">
+                <div class="prog-label">ROS: <span style="font-weight:normal;color:#9ca3af;font-size:0.72rem;">(optional)</span></div>
+                <input type="text" id="pROS" class="prog-input" placeholder="e.g. denies fevers, chills, SOB, chest pain" oninput="progPI()">
             </div>
 
-            <!-- SCD -->
-            <div class="prog-section">
-                <div class="prog-label">SCD (Sequential Compression Device):</div>
-                <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'scd','SCD in place')">In place</button>
-                    <button class="prog-btn" onclick="progSelect(this,'scd','SCD not ordered')">Not ordered</button>
-                    <button class="prog-btn" onclick="progSelect(this,'scd','on AC - SCD deferred')">On AC (deferred)</button>
-                    <button class="prog-btn" onclick="progSelect(this,'scd','SCD not tolerated')">Not tolerated</button>
-                </div>
-            </div>
-
-            <!-- IS -->
+            <!-- Exam: text with reminder -->
             <div class="prog-section" style="border-bottom:none;">
-                <div class="prog-label">IS (Incentive Spirometry):</div>
-                <div class="prog-btn-row">
-                    <button class="prog-btn" onclick="progSelect(this,'is','IS in place')">In place</button>
-                    <button class="prog-btn" onclick="progSelect(this,'is','IS not ordered')">Not ordered</button>
-                    <button class="prog-btn" onclick="progSelect(this,'is','on ventilator - IS deferred')">On vent</button>
-                    <button class="prog-btn" onclick="progSelect(this,'is','IS not tolerated')">Not tolerated</button>
-                </div>
+                <div class="prog-label">Exam:</div>
+                <div style="font-size:0.72rem;color:#f59e0b;margin-bottom:0.3rem;letter-spacing:0.03em;">&#9888; Check: SCD / IS / LINES / DRAINS</div>
+                <input type="text" id="pExam" class="prog-input" placeholder="e.g. NAD, SCD in place, IS in place, JP drain 20cc" oninput="progPI()">
             </div>
 
             <!-- Preview -->
-            <div style="margin-top:0.75rem;">
-                <div class="prog-label">Preview:</div>
-                <div id="progPreview">Select options above to preview...</div>
+            <div style="margin-top:0.7rem;">
+                <div class="prog-label">Output (one line after Subj:):</div>
+                <div id="progPreview" style="font-size:0.75rem;">Fill in fields above...</div>
             </div>
 
             <!-- Actions -->
-            <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-                <button onclick="progInsertToViolin()" style="flex:1;padding:0.6rem;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:0.88rem;">
-                    &#10003; Insert into VIOLIN (after Subj:)
+            <div style="display:flex;gap:0.5rem;margin-top:0.65rem;">
+                <button onclick="progInsertToViolin()" style="flex:1;padding:0.55rem;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:0.85rem;">
+                    &#10003; Insert into VIOLIN
                 </button>
-                <button onclick="document.getElementById('progressToolModal').remove();document.body.style.overflow='auto';" style="padding:0.6rem 1.2rem;background:#374151;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.88rem;">
+                <button onclick="document.getElementById('progressToolModal').remove();document.body.style.overflow='auto';" style="padding:0.55rem 1rem;background:#374151;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;">
                     Cancel
                 </button>
             </div>
@@ -13494,84 +13450,67 @@ function showViolinProgressTool() {
     document.body.style.overflow = 'hidden';
 }
 
-function progSelect(btn, field, value) {
+function progSel(btn, field, value) {
     const row = btn.closest('.prog-btn-row');
     if (row) row.querySelectorAll('.prog-btn').forEach(b => b.classList.remove('prog-selected'));
-    btn.classList.add('prog-selected');
-    _progState[field] = value;
-
-    const inputMap = { cc: 'progCCCustom', bm: 'progBMDate', exam: 'progExamCustom' };
-    if (inputMap[field]) {
-        const inp = document.getElementById(inputMap[field]);
-        if (inp) inp.value = '';
+    // toggle off if already selected
+    if (_progState[field] === value) {
+        delete _progState[field];
+    } else {
+        btn.classList.add('prog-selected');
+        _progState[field] = value;
     }
+    progPI();
+}
+
+// progPI = "prog preview input" — called by all inputs & buttons
+function progPI() {
+    const cc    = (document.getElementById('pCC')    || {}).value || '';
+    const gasbm = (document.getElementById('pGasBM') || {}).value || '';
+    const ros   = (document.getElementById('pROS')   || {}).value || '';
+    const exam  = (document.getElementById('pExam')  || {}).value || '';
+    // store text fields in state for insert
+    _progState.cc    = cc.trim();
+    _progState.gasbm = gasbm.trim();
+    _progState.ros   = ros.trim();
+    _progState.exam  = exam.trim();
     progUpdatePreview();
 }
 
-function progCustomInput(field, value) {
-    if (value && value.trim()) {
-        _progState[field] = value.trim();
-        const sectionOrder = ['cc','diet','void','gas','bm','amb','exam','scd','is'];
-        const si = sectionOrder.indexOf(field);
-        if (si !== -1) {
-            const sections = document.querySelectorAll('#progressToolModal .prog-section');
-            if (sections[si]) sections[si].querySelectorAll('.prog-btn').forEach(b => b.classList.remove('prog-selected'));
-        }
-    } else {
-        delete _progState[field];
-    }
-    progUpdatePreview();
+function progBuildLine() {
+    const parts = [];
+    if (_progState.cc)   parts.push('CC: ' + _progState.cc);
+    const act = [_progState.diet, _progState.void, _progState.gasbm, _progState.amb].filter(Boolean).join(', ');
+    if (act) parts.push(act);
+    if (_progState.ros)  parts.push('ROS: ' + _progState.ros);
+    if (_progState.exam) parts.push('Exam: ' + _progState.exam);
+    return parts.join('. ');
 }
 
 function progUpdatePreview() {
-    const cc    = _progState['cc']   || '';
-    const diet  = _progState['diet'] || '';
-    const voidS = _progState['void'] || '';
-    const gas   = _progState['gas']  || '';
-    const bm    = _progState['bm']   || '';
-    const amb   = _progState['amb']  || '';
-    const exam  = _progState['exam'] || '';
-    const scd   = _progState['scd']  || '';
-    const isS   = _progState['is']   || '';
-
-    const ccLine  = 'CC: ' + (cc || '[ ]');
-    const actParts = [diet, voidS, gas, bm ? 'BMs (last ' + bm + ')' : '', amb].filter(Boolean);
-    const actLine  = actParts.length ? actParts.join(', ') : '[ ]';
-    const examParts = [exam, scd, isS].filter(Boolean);
-    const examLine  = 'Exam: ' + (examParts.length ? examParts.join(', ') : '[ ]');
-
+    const line = progBuildLine();
     const el = document.getElementById('progPreview');
-    if (el) el.textContent = ccLine + '\n' + actLine + '\n' + examLine;
+    if (el) el.textContent = line || '(empty — fill in fields above)';
 }
 
 function progInsertToViolin() {
     if (currentPatientIndex === -1) return;
+    progPI(); // sync text fields one last time
+
+    const line = progBuildLine();
+    if (!line) return;
 
     const patient = patientData[currentPatientIndex];
-    const cc    = _progState['cc']   || '[ ]';
-    const diet  = _progState['diet'] || '';
-    const voidS = _progState['void'] || '';
-    const gas   = _progState['gas']  || '';
-    const bm    = _progState['bm']   || '';
-    const amb   = _progState['amb']  || '';
-    const exam  = _progState['exam'] || '[ ]';
-    const scd   = _progState['scd']  || '';
-    const isS   = _progState['is']   || '';
-
-    const actParts  = [diet, voidS, gas, bm ? 'BMs (last ' + bm + ')' : '', amb].filter(Boolean);
-    const actLine   = actParts.join(', ') || '[ ]';
-    const examParts = [exam, scd, isS].filter(Boolean);
-    const examLine  = 'Exam: ' + (examParts.length ? examParts.join(', ') : '[ ]');
-    const note = 'CC: ' + cc + '\n' + actLine + '\n' + examLine + '\n';
-
     let violin = patient.VIOLIN || '';
+
     if (/^Subj:/.test(violin)) {
         const firstNL = violin.indexOf('\n');
+        // Insert as first line of content right after "Subj:\n"
         violin = firstNL !== -1
-            ? violin.substring(0, firstNL + 1) + note + violin.substring(firstNL + 1)
-            : violin + '\n' + note;
+            ? violin.substring(0, firstNL + 1) + line + '\n' + violin.substring(firstNL + 1)
+            : violin + '\n' + line + '\n';
     } else {
-        violin = 'Subj:\n' + note + '\n' + violin;
+        violin = 'Subj:\n' + line + '\n\n' + violin;
     }
 
     patient.VIOLIN = violin;
