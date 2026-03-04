@@ -13225,7 +13225,7 @@ function buildPDFVitalsHTML(patient) {
 
     let html = '';
 
-    // ── Vitals: parse each sign to its own line ───────────
+    // ── Vitals: one line with colons ──────────────────────
     const violin = patient.VIOLIN || '';
     let vitalsRaw = '';
     violin.split('\n').some(function(line) {
@@ -13238,11 +13238,33 @@ function buildPDFVitalsHTML(patient) {
     });
 
     if (vitalsRaw) {
-        // Match individual vital tokens: e.g. "T 98.6", "HR 72 (60-80)", "O2 98%-*NC*@2L"
-        const tokens = vitalsRaw.match(/(?:T|HR|SBP|DBP|MAP|RR|O2)\s+[^\s,]+(?:\s*\([^)]+\))?(?:-[^\s,@]+)?(?:@[^\s,]+)?/g) || [vitalsRaw];
-        tokens.forEach(function(tok) {
-            html += '<div class="vitals-line">' + esc(tok.trim()) + '</div>';
-        });
+        function vVal(key, src) {
+            const re = new RegExp(key + '\\s+([^\\s,]+(?:\\s*\\([^)]+\\))?(?:-[^\\s,@]+)?(?:@[^\\s,]+)?)');
+            const m = src.match(re);
+            return m ? m[1] : null;
+        }
+        const parts = [];
+        const tV   = vVal('T',   vitalsRaw); if (tV)   parts.push('T: '    + tV);
+        const sbpV = vVal('SBP', vitalsRaw);
+        const dbpV = vVal('DBP', vitalsRaw);
+        if (sbpV) parts.push('BP: ' + sbpV + (dbpV ? '/' + dbpV : ''));
+        const mapV = vVal('MAP', vitalsRaw); if (mapV) parts.push('MAP: '  + mapV);
+        const hrV  = vVal('HR',  vitalsRaw); if (hrV)  parts.push('HR: '   + hrV);
+        const rrV  = vVal('RR',  vitalsRaw); if (rrV)  parts.push('RR: '   + rrV);
+        const o2V  = vVal('O2',  vitalsRaw); if (o2V)  parts.push('SpO2: ' + o2V);
+
+        if (parts.length > 0) {
+            html += '<div class="fishbone">' + esc(parts.join('  ')) + '</div>';
+        }
+    }
+
+    // ── I/O ────────────────────────────────────────────────
+    const ioInM  = violin.match(/^I:\s*([\d.]+)/m);
+    const ioOutM = violin.match(/^O:\s*([\d.]+)/m);
+    if (ioInM || ioOutM) {
+        const ioIn  = ioInM  ? Math.round(parseFloat(ioInM[1]))  : null;
+        const ioOut = ioOutM ? Math.round(parseFloat(ioOutM[1])) : null;
+        html += '<div class="fishbone">I/O: ' + (ioIn !== null ? ioIn : '--') + '/' + (ioOut !== null ? ioOut : '--') + 'mL</div>';
     }
 
     // ── Labs ─────────────────────────────────────────────
