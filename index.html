@@ -13126,6 +13126,28 @@ function exportPDF() {
         return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    function buildPDFOrdersHTML(patient) {
+        const ordersRaw = (patient.ORDERS || '').trim();
+        const medsRaw   = (patient.Meds   || '').trim();
+        let html = '';
+
+        if (ordersRaw) {
+            const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+            const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
+            const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
+            const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
+            const all   = main.concat(ltd).concat(dispo);
+            html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
+        }
+
+        if (medsRaw) {
+            html += '<div class="hm-hdr">Home Meds:</div>';
+            html += '<div class="orders-list">' + esc(medsRaw).replace(/\n/g,'<br>') + '</div>';
+        }
+
+        return html || '<span style="color:#aaa">&mdash;</span>';
+    }
+
     let rows = '';
     patientData.forEach(function(patient) {
         const name     = patient.Name     || '';
@@ -13133,7 +13155,7 @@ function exportPDF() {
         const mrn      = patient.MRN      || '';
         const problems = (patient.Problems || '').trim();
         const vitalsHTML = buildPDFVitalsHTML(patient);
-        const orders   = (patient.ORDERS   || '').trim();
+        const ordersHTML = buildPDFOrdersHTML(patient);
         const todo     = (patient['To do'] || '').trim();
 
         rows += `<tr>
@@ -13144,7 +13166,7 @@ function exportPDF() {
             </td>
             <td class="col-prob">${esc(problems).replace(/\n/g,'<br>')}</td>
             <td class="col-vitals">${vitalsHTML}</td>
-            <td class="col-orders">${esc(orders).replace(/\n/g,'<br>')}</td>
+            <td class="col-orders">${ordersHTML}</td>
             <td class="col-blank"></td>
             <td class="col-todo"><strong>To Do:</strong><br>${esc(todo).replace(/\n/g,'<br>')}</td>
         </tr>`;
@@ -13159,7 +13181,7 @@ function exportPDF() {
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: 'Courier New', Courier, monospace; font-size: 7.5pt; line-height: 1.25; color: #000; }
 table { width:100%; border-collapse:collapse; table-layout:fixed; }
-th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; overflow:hidden; word-wrap:break-word; }
+th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; }
 th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3px 2px;
      -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .col-id     { width:10%; }
@@ -13174,6 +13196,8 @@ th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3
 .vitals-line { margin-bottom:1px; }
 .fishbone { font-family:'Courier New', Courier, monospace; font-size:7pt; white-space:pre; line-height:1.3; }
 .ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
+.orders-list { font-family:'Courier New',Courier,monospace; font-size:5.5pt; line-height:1.2; word-wrap:break-word; overflow-wrap:break-word; white-space:normal; }
+.hm-hdr { font-size:5.5pt; font-weight:bold; margin-top:2px; padding-top:1px; border-top:1px solid #999; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; font-family:Arial,sans-serif; }
