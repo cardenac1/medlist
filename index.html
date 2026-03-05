@@ -3619,9 +3619,14 @@ const helpContent = {
         }
 
         // Serialize structured items back to plain text
+        // Output order matches visual sort: plain lines → pending tasks → done tasks
         function serializeTodoItems(tasks, suggestions) {
+            const plains  = tasks.filter(t => t.type !== 'task');
+            const pending = tasks.filter(t => t.type === 'task' && !t.done);
+            const done    = tasks.filter(t => t.type === 'task' &&  t.done);
+            const sorted  = plains.concat(pending).concat(done);
             const lines = [];
-            for (const item of tasks) {
+            for (const item of sorted) {
                 if (item.type === 'task') {
                     lines.push((item.done ? '[x] ' : '[ ] ') + item.text);
                 } else {
@@ -7162,11 +7167,51 @@ function showImportModal() {
 		function processImportedData() {
     const importText = document.getElementById('importData').value;
     if (!importText) return;
-    
-    console.log('Processing new import data...');
-    
-    // FORCE CLEAR ALL CACHED DATA
+
     const patient = patientData[currentPatientIndex];
+
+    // ---- Name failsafe ----
+    const nameLineMatch = importText.match(/NAME:\s*\[([^\]]+)\]/i);
+    if (nameLineMatch) {
+        const importedName = nameLineMatch[1].trim();
+        const importedLast = importedName.split(',')[0].trim().toLowerCase();
+        const currentName  = (patient.Name || '').toLowerCase().trim();
+        // Match if either name contains the other (handles last-name-only vs full-name stored)
+        const isMatch = currentName.length > 0 && (
+            currentName.includes(importedLast) ||
+            importedLast.includes(currentName)
+        );
+        if (!isMatch) {
+            // Show mismatch confirmation modal
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            overlay.innerHTML = `
+                <div style="background:#1e1e2e;border:1px solid rgba(255,255,255,0.15);border-radius:1rem;padding:1.5rem;max-width:400px;width:90%;font-family:inherit;">
+                    <div style="color:#f97316;font-weight:bold;font-size:1rem;margin-bottom:0.75rem;">⚠️ Patient Name Mismatch</div>
+                    <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.5rem;">The imported data does not match the currently loaded patient.</div>
+                    <div style="background:rgba(255,255,255,0.05);border-radius:0.5rem;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;">
+                        <div style="margin-bottom:0.3rem;"><span style="color:#94a3b8;">Imported data:</span> <strong style="color:#fbbf24;">${importedName}</strong></div>
+                        <div><span style="color:#94a3b8;">Loaded patient:</span> <strong style="color:#e2e8f0;">${patient.Name || '(no name)'}</strong></div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                        <button id="importMismatchCancel" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:1px solid rgba(255,255,255,0.15);padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;">Cancel Import</button>
+                        <button id="importMismatchOverride" style="background:rgba(234,88,12,0.8);color:#fff;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;font-weight:600;">Import Anyway</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            document.getElementById('importMismatchCancel').onclick   = () => overlay.remove();
+            document.getElementById('importMismatchOverride').onclick = () => { overlay.remove(); doActualImport(importText, patient); };
+            return;
+        }
+    }
+
+    doActualImport(importText, patient);
+}
+
+        function doActualImport(importText, patient) {
+    console.log('Processing new import data...');
+
+    // FORCE CLEAR ALL CACHED DATA
     patient.VIOLIN = '';
     patient.ImportedData = '';
     patient.LabData = '';
