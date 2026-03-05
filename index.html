@@ -5390,18 +5390,22 @@ function displayRows(data = patientData) {
 		function searchRows() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     if (!searchTerm) {
-        clearSearch();
+        displayRows(); // show all rows without collapsing search bar
         return;
     }
 
-    // Filter from patientData using the same fields you normally show
+    // Support multi-word: all terms must match somewhere in the patient
+    const terms = searchTerm.split(/\s+/).filter(Boolean);
     const filtered = patientData.filter(patient =>
-        Object.values(patient).some(value =>
-            (value || '').toString().toLowerCase().includes(searchTerm)
+        terms.every(term =>
+            Object.values(patient).some(value => {
+                if (value === null || value === undefined) return false;
+                const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                return str.toLowerCase().includes(term);
+            })
         )
     );
 
-    // Render using the same row logic but only with filtered data
     displayRows(filtered);
 }
 
@@ -13159,22 +13163,81 @@ function exportPDF() {
     }
 
     function buildPDFOrdersHTML(patient) {
-        const ordersRaw = (patient.ORDERS || '').trim();
-        const medsRaw   = (patient.Meds   || '').trim();
+        const ordersRaw    = (patient.ORDERS       || '').trim();
+        const importedData = (patient.ImportedData || '').trim();
         let html = '';
 
-        if (ordersRaw) {
-            const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
-            const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
-            const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
-            const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
-            const all   = main.concat(ltd).concat(dispo);
-            html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
-        }
+        if (importedData) {
+            // ---- Extract full current medications from ImportedData ----
+            const medsMatch = importedData.match(/Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=(?:\n\n)?(?:DIET ORDER:|CONSULTATION:|PROCEDURE:|IMAGING:|LABS:|$))/i);
+            const fullMedsText = medsMatch ? medsMatch[1] : '';
+            const medsLines = fullMedsText.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
 
-        if (medsRaw) {
-            html += '<div class="hm-hdr">Home Meds:</div>';
-            html += '<div class="orders-list">' + esc(medsRaw).replace(/\n/g,'<br>') + '</div>';
+            var schedLines = [], prnLines = [], contLines = [];
+            medsLines.forEach(function(l) {
+                if (/\bPRN\b/i.test(l))        prnLines.push(l);
+                else if (/\bContinuous\b/i.test(l)) contLines.push(l);
+                else                            schedLines.push(l);
+            });
+
+            // ---- Diet order ----
+            const dietMatch = importedData.match(/DIET ORDER:\s*([^\n]+)/i);
+            const dietLine  = dietMatch ? dietMatch[1].trim() : '';
+
+            // ---- LTD and DISPO from patient.ORDERS ----
+            const ltdMatch   = ordersRaw.match(/LTD\s*:\s*([^\n]*)/i);
+            const dispoMatch = ordersRaw.match(/DISPO\s*:\s*([^\n]*)/i);
+            const ltdText    = ltdMatch   ? ltdMatch[1].trim()   : '';
+            const dispoText  = dispoMatch ? dispoMatch[1].trim() : '';
+
+            // ---- Home meds from ImportedData ----
+            var homeMeds = '';
+            const hmIdx = importedData.search(/<HOME MEDICATIONS>/i);
+            if (hmIdx !== -1) {
+                const afterHM = importedData.substring(hmIdx);
+                const hmMatch = afterHM.match(/Active\s*\n([\s\S]*?)(?=\n<[A-Z]|$)/i);
+                if (hmMatch) {
+                    homeMeds = hmMatch[1].split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; }).join('\n');
+                }
+            }
+
+            if (schedLines.length) {
+                html += '<div class="pdf-med-sec"><strong>Scheduled:</strong><br>' + schedLines.map(esc).join('<br>') + '</div>';
+            }
+            if (contLines.length) {
+                html += '<div class="pdf-med-sec"><strong>Continuous:</strong><br>' + contLines.map(esc).join('<br>') + '</div>';
+            }
+            if (prnLines.length) {
+                html += '<div class="pdf-med-sec"><strong>PRN:</strong><br>' + prnLines.map(esc).join('<br>') + '</div>';
+            }
+            if (dietLine) {
+                html += '<div class="pdf-med-sec"><strong>Diet:</strong> ' + esc(dietLine) + '</div>';
+            }
+            if (ltdText || ltdMatch) {
+                html += '<div class="pdf-med-sec pdf-ltd"><strong>LTD:</strong> ' + esc(ltdText) + '</div>';
+            }
+            if (dispoText || dispoMatch) {
+                html += '<div class="pdf-med-sec pdf-dispo"><strong>DISPO:</strong> ' + esc(dispoText) + '</div>';
+            }
+            if (homeMeds) {
+                html += '<div class="hm-hdr">Home Meds:</div>';
+                html += '<div class="orders-list">' + esc(homeMeds).replace(/\n/g,'<br>') + '</div>';
+            }
+        } else {
+            // Fallback: no ImportedData — use abbreviated ORDERS
+            if (ordersRaw) {
+                const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+                const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
+                const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
+                const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
+                const all   = main.concat(ltd).concat(dispo);
+                html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
+            }
+            const medsRaw = (patient.Meds || '').trim();
+            if (medsRaw) {
+                html += '<div class="hm-hdr">Home Meds:</div>';
+                html += '<div class="orders-list">' + esc(medsRaw).replace(/\n/g,'<br>') + '</div>';
+            }
         }
 
         return html || '<span style="color:#aaa">&mdash;</span>';
@@ -13230,6 +13293,9 @@ th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3
 .ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
 .orders-list { font-family:'Courier New',Courier,monospace; font-size:5.5pt; line-height:1.2; word-wrap:break-word; overflow-wrap:break-word; white-space:normal; }
 .hm-hdr { font-size:5.5pt; font-weight:bold; margin-top:2px; padding-top:1px; border-top:1px solid #999; }
+.pdf-med-sec { font-size:5.5pt; line-height:1.25; margin-bottom:2px; word-wrap:break-word; overflow-wrap:break-word; }
+.pdf-ltd  { margin-top:2px; padding-top:1px; border-top:1px dotted #999; }
+.pdf-dispo { color:#006600; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; font-family:Arial,sans-serif; }
