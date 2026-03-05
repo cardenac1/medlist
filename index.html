@@ -3956,10 +3956,14 @@ const helpContent = {
             const todoText = patient['To do'] || '';
 
             if (todoViewMode === 'raw') {
-                // Raw textarea mode
+                // Raw textarea mode — display text sorted the same way as interactive mode:
+                // plain lines → pending tasks → completed tasks (then suggestions)
+                const parsedRaw = parseTodoText(todoText);
+                const sortedRawText = serializeTodoItems(parsedRaw.tasks, parsedRaw.suggestions);
+
                 const textarea = document.createElement('textarea');
                 textarea.id = 'field_To_do';
-                textarea.value = todoText;
+                textarea.value = sortedRawText;
                 textarea.style.cssText = 'width:100%;margin:0;min-height:60px;resize:none;overflow:hidden;box-sizing:border-box;word-wrap:break-word;white-space:pre-wrap;';
                 function autoSizeRawTodo() {
                     textarea.style.height = 'auto';
@@ -3971,6 +3975,11 @@ const helpContent = {
                     autoSizeRawTodo();
                 });
                 container.appendChild(textarea);
+                // Persist the sorted order back to patient data immediately
+                if (sortedRawText !== todoText) {
+                    patient['To do'] = sortedRawText;
+                    saveToLocalStorage();
+                }
                 setTimeout(autoSizeRawTodo, 0);
                 return;
             }
@@ -5399,11 +5408,15 @@ function displayRows(data = patientData) {
         return;
     }
 
-    // Support multi-word: all terms must match somewhere in the patient
+    // Search key clinical fields only (not internal data like LabData, ImportedData)
+    const SEARCH_FIELDS = ['Name', 'RM', 'MRN', 'Att', 'A/G', 'CC', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do', 'Priority', 'Meds', 'All'];
+
+    // Support multi-word: all terms must match somewhere in key fields
     const terms = searchTerm.split(/\s+/).filter(Boolean);
     const filtered = patientData.filter(patient =>
         terms.every(term =>
-            Object.values(patient).some(value => {
+            SEARCH_FIELDS.some(field => {
+                const value = patient[field];
                 if (value === null || value === undefined) return false;
                 const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
                 return str.toLowerCase().includes(term);
@@ -5412,6 +5425,15 @@ function displayRows(data = patientData) {
     );
 
     displayRows(filtered);
+
+    // Show "no results" feedback if nothing matched
+    if (filtered.length === 0) {
+        const rowList = document.getElementById('rowList');
+        const msg = document.createElement('li');
+        msg.style.cssText = 'text-align:center;color:var(--text-secondary);padding:2rem;font-size:0.9rem;';
+        msg.textContent = `No patients match "${document.getElementById('searchInput').value}"`;
+        rowList.appendChild(msg);
+    }
 }
 
 function clearSearch() {
@@ -7171,39 +7193,58 @@ function showImportModal() {
     const patient = patientData[currentPatientIndex];
 
     // ---- Name failsafe ----
-    const nameLineMatch = importText.match(/NAME:\s*\[([^\]]+)\]/i);
-    if (nameLineMatch) {
-        const importedName = nameLineMatch[1].trim();
-        const importedLast = importedName.split(',')[0].trim().toLowerCase();
-        const currentName  = (patient.Name || '').toLowerCase().trim();
-        // Match if either name contains the other (handles last-name-only vs full-name stored)
-        const isMatch = currentName.length > 0 && (
-            currentName.includes(importedLast) ||
-            importedLast.includes(currentName)
-        );
-        if (!isMatch) {
-            // Show mismatch confirmation modal
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
-            overlay.innerHTML = `
-                <div style="background:#1e1e2e;border:1px solid rgba(255,255,255,0.15);border-radius:1rem;padding:1.5rem;max-width:400px;width:90%;font-family:inherit;">
-                    <div style="color:#f97316;font-weight:bold;font-size:1rem;margin-bottom:0.75rem;">⚠️ Patient Name Mismatch</div>
-                    <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.5rem;">The imported data does not match the currently loaded patient.</div>
-                    <div style="background:rgba(255,255,255,0.05);border-radius:0.5rem;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;">
-                        <div style="margin-bottom:0.3rem;"><span style="color:#94a3b8;">Imported data:</span> <strong style="color:#fbbf24;">${importedName}</strong></div>
-                        <div><span style="color:#94a3b8;">Loaded patient:</span> <strong style="color:#e2e8f0;">${patient.Name || '(no name)'}</strong></div>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
-                        <button id="importMismatchCancel" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:1px solid rgba(255,255,255,0.15);padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;">Cancel Import</button>
-                        <button id="importMismatchOverride" style="background:rgba(234,88,12,0.8);color:#fff;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;font-weight:600;">Import Anyway</button>
-                    </div>
-                </div>`;
-            document.body.appendChild(overlay);
-            document.getElementById('importMismatchCancel').onclick   = () => overlay.remove();
-            document.getElementById('importMismatchOverride').onclick = () => { overlay.remove(); doActualImport(importText, patient); };
-            return;
+    // Try NAME: [LASTNAME, FIRSTNAME] with brackets first, then without brackets
+    var nameLineMatch = importText.match(/NAME:\s*\[([^\]]+)\]/i)
+                     || importText.match(/NAME:\s*([A-Z][^,\n]+,[^\n]+)/i);
+    // Also try first non-empty line as fallback if it looks like "LASTNAME, FIRSTNAME"
+    if (!nameLineMatch) {
+        var firstLines = importText.split('\n').slice(0, 5);
+        for (var fl = 0; fl < firstLines.length; fl++) {
+            var fl_m = firstLines[fl].match(/^([A-Z][A-Z'\-]+),\s*([A-Z][a-zA-Z'\- ]+)/);
+            if (fl_m) { nameLineMatch = [null, firstLines[fl].trim()]; break; }
         }
     }
+    if (nameLineMatch) {
+        const importedName = nameLineMatch[1].trim();
+        // Last name is before the first comma; normalize to lower-case, strip punctuation
+        const importedLast = importedName.split(',')[0].trim().toLowerCase().replace(/[^a-z]/g, '');
+        const currentName  = (patient.Name || '').toLowerCase().trim().replace(/[^a-z, ]/g, '');
+        const currentLast  = currentName.split(',')[0].trim().replace(/[^a-z]/g, '');
+
+        // If no name is stored yet, skip the check and just import
+        if (currentName.length === 0) {
+            // no name to compare — proceed silently
+        } else {
+            // Match if last names share ≥4 chars prefix OR one contains the other
+            const minLen = Math.min(importedLast.length, currentLast.length);
+            const prefixMatch = minLen >= 3 && importedLast.substring(0, Math.min(minLen, 5)) === currentLast.substring(0, Math.min(minLen, 5));
+            const isMatch = prefixMatch
+                         || currentName.includes(importedLast)
+                         || importedLast.includes(currentLast);
+            if (!isMatch) {
+                // Show mismatch confirmation modal
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                overlay.innerHTML = `
+                    <div style="background:#1e1e2e;border:1px solid rgba(255,255,255,0.15);border-radius:1rem;padding:1.5rem;max-width:400px;width:90%;font-family:inherit;">
+                        <div style="color:#f97316;font-weight:bold;font-size:1rem;margin-bottom:0.75rem;">⚠️ Patient Name Mismatch</div>
+                        <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.5rem;">The imported data does not match the currently loaded patient.</div>
+                        <div style="background:rgba(255,255,255,0.05);border-radius:0.5rem;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;">
+                            <div style="margin-bottom:0.3rem;"><span style="color:#94a3b8;">Imported data:</span> <strong style="color:#fbbf24;">${importedName}</strong></div>
+                            <div><span style="color:#94a3b8;">Loaded patient:</span> <strong style="color:#e2e8f0;">${patient.Name || '(no name)'}</strong></div>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                            <button id="importMismatchCancel" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:1px solid rgba(255,255,255,0.15);padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;">Cancel Import</button>
+                            <button id="importMismatchOverride" style="background:rgba(234,88,12,0.8);color:#fff;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;font-weight:600;">Import Anyway</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                document.getElementById('importMismatchCancel').onclick   = () => overlay.remove();
+                document.getElementById('importMismatchOverride').onclick = () => { overlay.remove(); doActualImport(importText, patient); };
+                return;
+            } // end if(!isMatch)
+        } // end else (currentName not empty)
+    } // end if(nameLineMatch)
 
     doActualImport(importText, patient);
 }
@@ -13214,38 +13255,78 @@ function exportPDF() {
 
         if (importedData) {
             // ---- Extract full current medications from ImportedData ----
-            const medsMatch = importedData.match(/Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=(?:\n\n)?(?:DIET ORDER:|CONSULTATION:|PROCEDURE:|IMAGING:|LABS:|$))/i);
-            const fullMedsText = medsMatch ? medsMatch[1] : '';
-            const medsLines = fullMedsText.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+            // Try multiple patterns to capture the active medications block
+            var fullMedsText = '';
 
+            // Pattern 1: "Medications (N) Active" header followed by med lines
+            var medsMatch = importedData.match(/Medications[^\n]*\bActive\b[^\n]*\n([\s\S]*?)(?=\n{2,}[A-Z ]{3,}:|DIET ORDER:|CONSULTATION:|PROCEDURE:|IMAGING:|LABS:|<[A-Z]|$)/i);
+            if (medsMatch) { fullMedsText = medsMatch[1]; }
+
+            // Pattern 2: fallback — any block starting with "Active Medications" or "Current Medications"
+            if (!fullMedsText) {
+                medsMatch = importedData.match(/(?:Active|Current)\s+Medications[^\n]*\n([\s\S]*?)(?=\n{2,}[A-Z ]{3,}:|DIET ORDER:|<[A-Z]|$)/i);
+                if (medsMatch) { fullMedsText = medsMatch[1]; }
+            }
+
+            // Pattern 3: broadest fallback — everything between "Medications" header and next major section
+            if (!fullMedsText) {
+                medsMatch = importedData.match(/\bMedications\b[^\n]*\n([\s\S]*?)(?=\n{2,}(?:DIET ORDER:|DIET:|LABS:|IMAGING:|CONSULTATION:|$))/i);
+                if (medsMatch) { fullMedsText = medsMatch[1]; }
+            }
+
+            // Clean and split medication lines
+            var medsLines = fullMedsText
+                ? fullMedsText.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 1; })
+                : [];
+
+            // Categorize by frequency type
             var schedLines = [], prnLines = [], contLines = [];
             medsLines.forEach(function(l) {
-                if (/\bPRN\b/i.test(l))        prnLines.push(l);
-                else if (/\bContinuous\b/i.test(l)) contLines.push(l);
-                else                            schedLines.push(l);
+                if (/\bPRN\b/i.test(l))              prnLines.push(l);
+                else if (/\bContinuous\b/i.test(l))  contLines.push(l);
+                else                                  schedLines.push(l);
             });
 
-            // ---- Diet order ----
-            const dietMatch = importedData.match(/DIET ORDER:\s*([^\n]+)/i);
-            const dietLine  = dietMatch ? dietMatch[1].trim() : '';
+            // ---- Diet orders (may have multiple lines) ----
+            var dietLines = [];
+            // Match multi-line diet section
+            var dietSecMatch = importedData.match(/DIET\s*(?:ORDER)?S?\s*:\s*([^\n]+(?:\n(?![A-Z ]{2,}:)[^\n]+)*)/i);
+            if (dietSecMatch) {
+                dietLines = dietSecMatch[1].split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+            } else {
+                // Fallback: single diet line
+                var dietMatch = importedData.match(/DIET\s*(?:ORDER)?:\s*([^\n]+)/i);
+                if (dietMatch) dietLines = [dietMatch[1].trim()];
+            }
 
             // ---- LTD and DISPO from patient.ORDERS ----
-            const ltdMatch   = ordersRaw.match(/LTD\s*:\s*([^\n]*)/i);
-            const dispoMatch = ordersRaw.match(/DISPO\s*:\s*([^\n]*)/i);
-            const ltdText    = ltdMatch   ? ltdMatch[1].trim()   : '';
-            const dispoText  = dispoMatch ? dispoMatch[1].trim() : '';
+            // Also try multi-line extraction
+            var ltdText = '', dispoText = '';
+            var ltdMatch = ordersRaw.match(/LTD\s*:\s*([\s\S]*?)(?=\n[A-Z]{2,}\s*:|$)/i);
+            if (ltdMatch) ltdText = ltdMatch[1].replace(/\n/g, ', ').trim();
+            var dispoMatch = ordersRaw.match(/DISPO\s*:\s*([\s\S]*?)(?=\n[A-Z]{2,}\s*:|$)/i);
+            if (dispoMatch) dispoText = dispoMatch[1].replace(/\n/g, ', ').trim();
 
             // ---- Home meds from ImportedData ----
             var homeMeds = '';
-            const hmIdx = importedData.search(/<HOME MEDICATIONS>/i);
+            // Try <HOME MEDICATIONS> tag first
+            var hmIdx = importedData.search(/<HOME MEDICATIONS>/i);
             if (hmIdx !== -1) {
-                const afterHM = importedData.substring(hmIdx);
-                const hmMatch = afterHM.match(/Active\s*\n([\s\S]*?)(?=\n<[A-Z]|$)/i);
+                var afterHM = importedData.substring(hmIdx);
+                var hmMatch = afterHM.match(/Active[^\n]*\n([\s\S]*?)(?=\n<[A-Z]|$)/i);
                 if (hmMatch) {
                     homeMeds = hmMatch[1].split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; }).join('\n');
                 }
             }
+            // Fallback: "Home Medications" section
+            if (!homeMeds) {
+                var hmMatch2 = importedData.match(/Home\s+Medications?[^\n]*\n([\s\S]*?)(?=\n{2,}[A-Z]|<[A-Z]|$)/i);
+                if (hmMatch2) {
+                    homeMeds = hmMatch2[1].split('\n').map(function(l){ return l.trim(); }).filter(Boolean).join('\n');
+                }
+            }
 
+            // ---- Render sections ----
             if (schedLines.length) {
                 html += '<div class="pdf-med-sec"><strong>Scheduled:</strong><br>' + schedLines.map(esc).join('<br>') + '</div>';
             }
@@ -13255,26 +13336,26 @@ function exportPDF() {
             if (prnLines.length) {
                 html += '<div class="pdf-med-sec"><strong>PRN:</strong><br>' + prnLines.map(esc).join('<br>') + '</div>';
             }
-            if (dietLine) {
-                html += '<div class="pdf-med-sec"><strong>Diet:</strong> ' + esc(dietLine) + '</div>';
+            if (dietLines.length) {
+                html += '<div class="pdf-med-sec"><strong>Diet:</strong> ' + dietLines.map(esc).join('; ') + '</div>';
             }
-            if (ltdText || ltdMatch) {
-                html += '<div class="pdf-med-sec pdf-ltd"><strong>LTD:</strong> ' + esc(ltdText) + '</div>';
-            }
-            if (dispoText || dispoMatch) {
-                html += '<div class="pdf-med-sec pdf-dispo"><strong>DISPO:</strong> ' + esc(dispoText) + '</div>';
-            }
+            // Always show LTD section (even if empty, so it's visible on the printed list)
+            html += '<div class="pdf-med-sec pdf-ltd"><strong>LTD:</strong> ' + esc(ltdText || '—') + '</div>';
+            // Always show DISPO section
+            html += '<div class="pdf-med-sec pdf-dispo"><strong>DISPO:</strong> ' + esc(dispoText || '—') + '</div>';
+
             if (homeMeds) {
                 html += '<div class="hm-hdr">Home Meds:</div>';
                 html += '<div class="orders-list">' + esc(homeMeds).replace(/\n/g,'<br>') + '</div>';
             }
         } else {
-            // Fallback: no ImportedData — use abbreviated ORDERS
+            // No ImportedData — render directly from ORDERS field with full text, LTD, DISPO last
             if (ordersRaw) {
                 const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
                 const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
                 const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
                 const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
+                // main orders first, then LTD, then DISPO
                 const all   = main.concat(ltd).concat(dispo);
                 html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
             }
