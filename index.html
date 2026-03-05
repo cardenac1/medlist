@@ -409,11 +409,28 @@ const VIOLIN_DASHBOARD_CSS = `
 
         /* Controls */
   /* Controls */
+.controls-wrap {
+    margin-bottom: 0.5rem;
+}
+.controls-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(10,10,10,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0.5rem;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    margin-bottom: 0.25rem;
+}
+.controls-toggle:hover { color: #e2e8f0; background: rgba(30,30,30,0.7); }
 .controls {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
     padding: 0.75rem;
     background: rgba(10, 10, 10, 0.7);
     backdrop-filter: blur(12px);
@@ -3127,20 +3144,25 @@ async function testOCRAvailability() {
 
     <div class="container">
         <!-- Controls -->
-        <div class="controls">
-            <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".json,.csv">
-                <label for="fileInput" class="file-input-label">
-                    📁 Import
-                </label>
+        <div class="controls-wrap">
+            <button class="controls-toggle" id="controlsToggle" onclick="toggleControls()">
+                ⚙ Tools <span id="controlsArrow" style="display:inline-block;transition:transform 200ms ease;">▸</span>
+            </button>
+            <div class="controls" id="controlsBar" style="display:none;">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" accept=".json,.csv">
+                    <label for="fileInput" class="file-input-label">
+                        📁 Import
+                    </label>
+                </div>
+                <button onclick="toggleColumnDropdown()">Column Options</button>
+                <select id="columnSelect" onchange="sortRows()">
+                    <option value="">Sort by</option>
+                </select>
+                <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
+                <button onclick="toggleSearch()">🔍 Search</button>
+                <button id="exportButtonMain" onclick="exportData()">Export</button>
             </div>
-            <button onclick="toggleColumnDropdown()">Column Options</button>
-            <select id="columnSelect" onchange="sortRows()">
-                <option value="">Sort by</option>
-            </select>
-               <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
-            <button onclick="toggleSearch()">🔍</button>
-            <button id="exportButtonMain" onclick="exportData()">Export</button>
         </div>
 
         <!-- Column Dropdown -->
@@ -3151,9 +3173,10 @@ async function testOCRAvailability() {
         <!-- Search Container -->
         <div class="search-wrapper">
             <div id="searchContainer" class="search-container">
-                <input type="text" id="searchInput" placeholder="Search entries..." />
-                <button onclick="searchRows()">Search</button>
-                <button onclick="clearSearch()">Clear</button>
+                <input type="text" id="searchInput" placeholder="Search entries..."
+                    oninput="searchRows()"
+                    onkeydown="if(event.key==='Escape') clearSearch()" />
+                <button onclick="clearSearch()">✕ Clear</button>
             </div>
         </div>
 
@@ -3596,9 +3619,14 @@ const helpContent = {
         }
 
         // Serialize structured items back to plain text
+        // Output order matches visual sort: plain lines → pending tasks → done tasks
         function serializeTodoItems(tasks, suggestions) {
+            const plains  = tasks.filter(t => t.type !== 'task');
+            const pending = tasks.filter(t => t.type === 'task' && !t.done);
+            const done    = tasks.filter(t => t.type === 'task' &&  t.done);
+            const sorted  = plains.concat(pending).concat(done);
             const lines = [];
-            for (const item of tasks) {
+            for (const item of sorted) {
                 if (item.type === 'task') {
                     lines.push((item.done ? '[x] ' : '[ ] ') + item.text);
                 } else {
@@ -5337,6 +5365,15 @@ function displayRows(data = patientData) {
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         }
 
+        // ============ CONTROLS COLLAPSE ============
+        function toggleControls() {
+            const bar = document.getElementById('controlsBar');
+            const arrow = document.getElementById('controlsArrow');
+            const isOpen = bar.style.display !== 'none';
+            bar.style.display = isOpen ? 'none' : 'flex';
+            arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+        }
+
         // ============ SEARCH FUNCTIONS ============
         function toggleSearch() {
             const searchContainer = document.getElementById('searchContainer');
@@ -5358,18 +5395,22 @@ function displayRows(data = patientData) {
 		function searchRows() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     if (!searchTerm) {
-        clearSearch();
+        displayRows(); // show all rows without collapsing search bar
         return;
     }
 
-    // Filter from patientData using the same fields you normally show
+    // Support multi-word: all terms must match somewhere in the patient
+    const terms = searchTerm.split(/\s+/).filter(Boolean);
     const filtered = patientData.filter(patient =>
-        Object.values(patient).some(value =>
-            (value || '').toString().toLowerCase().includes(searchTerm)
+        terms.every(term =>
+            Object.values(patient).some(value => {
+                if (value === null || value === undefined) return false;
+                const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                return str.toLowerCase().includes(term);
+            })
         )
     );
 
-    // Render using the same row logic but only with filtered data
     displayRows(filtered);
 }
 
@@ -7126,11 +7167,51 @@ function showImportModal() {
 		function processImportedData() {
     const importText = document.getElementById('importData').value;
     if (!importText) return;
-    
-    console.log('Processing new import data...');
-    
-    // FORCE CLEAR ALL CACHED DATA
+
     const patient = patientData[currentPatientIndex];
+
+    // ---- Name failsafe ----
+    const nameLineMatch = importText.match(/NAME:\s*\[([^\]]+)\]/i);
+    if (nameLineMatch) {
+        const importedName = nameLineMatch[1].trim();
+        const importedLast = importedName.split(',')[0].trim().toLowerCase();
+        const currentName  = (patient.Name || '').toLowerCase().trim();
+        // Match if either name contains the other (handles last-name-only vs full-name stored)
+        const isMatch = currentName.length > 0 && (
+            currentName.includes(importedLast) ||
+            importedLast.includes(currentName)
+        );
+        if (!isMatch) {
+            // Show mismatch confirmation modal
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            overlay.innerHTML = `
+                <div style="background:#1e1e2e;border:1px solid rgba(255,255,255,0.15);border-radius:1rem;padding:1.5rem;max-width:400px;width:90%;font-family:inherit;">
+                    <div style="color:#f97316;font-weight:bold;font-size:1rem;margin-bottom:0.75rem;">⚠️ Patient Name Mismatch</div>
+                    <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.5rem;">The imported data does not match the currently loaded patient.</div>
+                    <div style="background:rgba(255,255,255,0.05);border-radius:0.5rem;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;">
+                        <div style="margin-bottom:0.3rem;"><span style="color:#94a3b8;">Imported data:</span> <strong style="color:#fbbf24;">${importedName}</strong></div>
+                        <div><span style="color:#94a3b8;">Loaded patient:</span> <strong style="color:#e2e8f0;">${patient.Name || '(no name)'}</strong></div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                        <button id="importMismatchCancel" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:1px solid rgba(255,255,255,0.15);padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;">Cancel Import</button>
+                        <button id="importMismatchOverride" style="background:rgba(234,88,12,0.8);color:#fff;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.85rem;font-weight:600;">Import Anyway</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            document.getElementById('importMismatchCancel').onclick   = () => overlay.remove();
+            document.getElementById('importMismatchOverride').onclick = () => { overlay.remove(); doActualImport(importText, patient); };
+            return;
+        }
+    }
+
+    doActualImport(importText, patient);
+}
+
+        function doActualImport(importText, patient) {
+    console.log('Processing new import data...');
+
+    // FORCE CLEAR ALL CACHED DATA
     patient.VIOLIN = '';
     patient.ImportedData = '';
     patient.LabData = '';
@@ -13127,22 +13208,81 @@ function exportPDF() {
     }
 
     function buildPDFOrdersHTML(patient) {
-        const ordersRaw = (patient.ORDERS || '').trim();
-        const medsRaw   = (patient.Meds   || '').trim();
+        const ordersRaw    = (patient.ORDERS       || '').trim();
+        const importedData = (patient.ImportedData || '').trim();
         let html = '';
 
-        if (ordersRaw) {
-            const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
-            const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
-            const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
-            const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
-            const all   = main.concat(ltd).concat(dispo);
-            html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
-        }
+        if (importedData) {
+            // ---- Extract full current medications from ImportedData ----
+            const medsMatch = importedData.match(/Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=(?:\n\n)?(?:DIET ORDER:|CONSULTATION:|PROCEDURE:|IMAGING:|LABS:|$))/i);
+            const fullMedsText = medsMatch ? medsMatch[1] : '';
+            const medsLines = fullMedsText.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
 
-        if (medsRaw) {
-            html += '<div class="hm-hdr">Home Meds:</div>';
-            html += '<div class="orders-list">' + esc(medsRaw).replace(/\n/g,'<br>') + '</div>';
+            var schedLines = [], prnLines = [], contLines = [];
+            medsLines.forEach(function(l) {
+                if (/\bPRN\b/i.test(l))        prnLines.push(l);
+                else if (/\bContinuous\b/i.test(l)) contLines.push(l);
+                else                            schedLines.push(l);
+            });
+
+            // ---- Diet order ----
+            const dietMatch = importedData.match(/DIET ORDER:\s*([^\n]+)/i);
+            const dietLine  = dietMatch ? dietMatch[1].trim() : '';
+
+            // ---- LTD and DISPO from patient.ORDERS ----
+            const ltdMatch   = ordersRaw.match(/LTD\s*:\s*([^\n]*)/i);
+            const dispoMatch = ordersRaw.match(/DISPO\s*:\s*([^\n]*)/i);
+            const ltdText    = ltdMatch   ? ltdMatch[1].trim()   : '';
+            const dispoText  = dispoMatch ? dispoMatch[1].trim() : '';
+
+            // ---- Home meds from ImportedData ----
+            var homeMeds = '';
+            const hmIdx = importedData.search(/<HOME MEDICATIONS>/i);
+            if (hmIdx !== -1) {
+                const afterHM = importedData.substring(hmIdx);
+                const hmMatch = afterHM.match(/Active\s*\n([\s\S]*?)(?=\n<[A-Z]|$)/i);
+                if (hmMatch) {
+                    homeMeds = hmMatch[1].split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; }).join('\n');
+                }
+            }
+
+            if (schedLines.length) {
+                html += '<div class="pdf-med-sec"><strong>Scheduled:</strong><br>' + schedLines.map(esc).join('<br>') + '</div>';
+            }
+            if (contLines.length) {
+                html += '<div class="pdf-med-sec"><strong>Continuous:</strong><br>' + contLines.map(esc).join('<br>') + '</div>';
+            }
+            if (prnLines.length) {
+                html += '<div class="pdf-med-sec"><strong>PRN:</strong><br>' + prnLines.map(esc).join('<br>') + '</div>';
+            }
+            if (dietLine) {
+                html += '<div class="pdf-med-sec"><strong>Diet:</strong> ' + esc(dietLine) + '</div>';
+            }
+            if (ltdText || ltdMatch) {
+                html += '<div class="pdf-med-sec pdf-ltd"><strong>LTD:</strong> ' + esc(ltdText) + '</div>';
+            }
+            if (dispoText || dispoMatch) {
+                html += '<div class="pdf-med-sec pdf-dispo"><strong>DISPO:</strong> ' + esc(dispoText) + '</div>';
+            }
+            if (homeMeds) {
+                html += '<div class="hm-hdr">Home Meds:</div>';
+                html += '<div class="orders-list">' + esc(homeMeds).replace(/\n/g,'<br>') + '</div>';
+            }
+        } else {
+            // Fallback: no ImportedData — use abbreviated ORDERS
+            if (ordersRaw) {
+                const lines = ordersRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+                const ltd   = lines.filter(function(l){ return /^LTD\s*:/i.test(l);   });
+                const dispo = lines.filter(function(l){ return /^DISPO\s*:/i.test(l);  });
+                const main  = lines.filter(function(l){ return !/^(LTD|DISPO)\s*:/i.test(l); });
+                const all   = main.concat(ltd).concat(dispo);
+                html += '<div class="orders-list">' + all.map(function(l){ return esc(l); }).join('<br>') + '</div>';
+            }
+            const medsRaw = (patient.Meds || '').trim();
+            if (medsRaw) {
+                html += '<div class="hm-hdr">Home Meds:</div>';
+                html += '<div class="orders-list">' + esc(medsRaw).replace(/\n/g,'<br>') + '</div>';
+            }
         }
 
         return html || '<span style="color:#aaa">&mdash;</span>';
@@ -13198,6 +13338,9 @@ th { background:#1a1a2e; color:#fff; font-size:7pt; text-align:center; padding:3
 .ts  { font-size:6pt; color:#555; font-style:italic; margin-bottom:1px; }
 .orders-list { font-family:'Courier New',Courier,monospace; font-size:5.5pt; line-height:1.2; word-wrap:break-word; overflow-wrap:break-word; white-space:normal; }
 .hm-hdr { font-size:5.5pt; font-weight:bold; margin-top:2px; padding-top:1px; border-top:1px solid #999; }
+.pdf-med-sec { font-size:5.5pt; line-height:1.25; margin-bottom:2px; word-wrap:break-word; overflow-wrap:break-word; }
+.pdf-ltd  { margin-top:2px; padding-top:1px; border-top:1px dotted #999; }
+.pdf-dispo { color:#006600; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; font-family:Arial,sans-serif; }
