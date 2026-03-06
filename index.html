@@ -393,13 +393,20 @@ const VIOLIN_DASHBOARD_CSS = `
 
 		
 
+        .controls .file-input-wrapper {
+            width: auto;
+            display: inline-flex;
+        }
         .controls .file-input-label {
-            padding: 0.75rem 1rem;
-            border: none;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.75rem;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             font-weight: 500;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
         }
 
         .controls .file-input-wrapper:hover .file-input-label {
@@ -2109,29 +2116,37 @@ textarea, input[type="text"] {
 
 	    /* ===== TABLET AND MOBILE STYLES ===== */
 @media (max-width: 768px) {
-  /* MAIN PAGE BUTTON GRIDS – 2-column snap grid */
+  /* MAIN PAGE BUTTON GRIDS – compact 3-column grid on mobile */
   .controls {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    padding: 0.5rem;
-    background: rgba(30, 30, 30, 0.2);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem;
+    background: rgba(10, 10, 10, 0.7);
   }
   .controls > * {
     width: 100%;
   }
+  /* controls .file-input-wrapper must fill its cell */
+  .controls .file-input-wrapper {
+    width: 100% !important;
+    display: flex !important;
+  }
   .controls button,
   .controls .file-input-label,
   .controls select {
-    padding: 0.4rem 0.3rem;
-    font-size: 0.75rem;
+    min-height: unset !important;
+    height: 2.2rem;
+    padding: 0.3rem 0.25rem !important;
+    font-size: 0.72rem !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
+    border-radius: 0.5rem;
   }
 
 
