@@ -1,0 +1,595 @@
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const S = {
+  patients: [],       // full list from Sheets
+  filtered: [],       // after search/sort
+  editingId: null,    // null = new patient, string = editing existing
+  detailId: null,     // patient open in detail modal
+  sortOn: true,       // sort by priority
+  sheetUrl: null,
+  fieldEditKey: null  // which field is being inline-edited
+};
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const v = this.value.trim();
+    document.getElementById('clearSearchBtn').style.display = v ? 'inline' : 'none';
+    applyFilterSort();
+  });
+  loadPatients();
+  google.script.run.withSuccessHandler(u => { S.sheetUrl = u; }).getSpreadsheetUrl();
+});
+
+// ============================================================
+//  SERVER CALLS
+// ============================================================
+function loadPatients() {
+  setStatus('Loading from Google Sheets…');
+  showLoading(true);
+  google.script.run
+    .withSuccessHandler(onLoaded)
+    .withFailureHandler(onErr)
+    .getPatients();
+}
+
+function refreshPatients() {
+  const btn = document.getElementById('refreshBtn') || document.querySelector('[onclick="refreshPatients()"]');
+  if (btn) { btn.style.opacity = '.4'; btn.disabled = true; }
+  loadPatients();
+  setTimeout(() => { if (btn) { btn.style.opacity = ''; btn.disabled = false; } }, 1500);
+}
+
+function onLoaded(data) {
+  showLoading(false);
+  if (data && data.error) { showToast(data.error, 'err'); setStatus('Error loading'); return; }
+  S.patients = data || [];
+  applyFilterSort();
+  setStatus('Ready · ' + S.patients.length + ' patient' + (S.patients.length !== 1 ? 's' : ''));
+}
+
+function onErr(e) {
+  showLoading(false);
+  showToast('Server error: ' + e.message, 'err');
+  setStatus('Error — check console');
+}
+
+// ============================================================
+//  PRIORITY HELPERS
+// ============================================================
+const PCOL = { 1:'--p1',2:'--p2',3:'--p3',4:'--p4',5:'--p5',6:'--p6',7:'--p7',8:'--p8',9:'--p9',10:'--p10' };
+const PLBL = { 1:'Urgent',2:'High',3:'Med-High',4:'Medium',5:'Med-Low',6:'Low-Med',7:'Low',8:'Very Low',9:'Minimal',10:'Lowest',C:'Complete' };
+
+function pColor(p) {
+  const s = String(p||'').trim().toUpperCase();
+  if (!s) return '#444';
+  if (s === 'C') return 'var(--pc)';
+  const n = parseInt(s);
+  if (!isNaN(n) && PCOL[n]) return 'var(' + PCOL[n] + ')';
+  if (/urgent|stat/i.test(s)) return 'var(--p1)';
+  if (/high/i.test(s)) return 'var(--p3)';
+  if (/med/i.test(s)) return 'var(--p5)';
+  if (/low/i.test(s)) return 'var(--p7)';
+  if (/done|complete/i.test(s)) return 'var(--pc)';
+  return '#555';
+}
+
+function pLabel(p) {
+  const s = String(p||'').trim().toUpperCase();
+  if (!s) return '';
+  if (PLBL[s]) return PLBL[s];
+  const n = parseInt(s);
+  if (!isNaN(n) && PLBL[n]) return PLBL[n];
+  return s;
+}
+
+function pSort(p) {
+  const s = String(p||'').trim().toUpperCase();
+  if (!s) return 999;
+  if (s === 'C') return 100;
+  const n = parseInt(s);
+  return isNaN(n) ? 500 : n;
+}
+
+function pClass(p) {
+  const s = String(p||'').trim().toUpperCase();
+  if (!s) return '';
+  const n = parseInt(s);
+  if (!isNaN(n)) return `pc-${n}`;
+  if (s === 'C') return 'pc-C';
+  return '';
+}
+
+function pLabelClass(p) {
+  const s = String(p||'').trim().toUpperCase();
+  if (!s) return '';
+  const n = parseInt(s);
+  if (!isNaN(n)) return `pl-${n}`;
+  if (s === 'C') return 'pl-C';
+  return '';
+}
+
+// ============================================================
+//  SEARCH / SORT / RENDER
+// ============================================================
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearSearchBtn').style.display = 'none';
+  applyFilterSort();
+}
+
+function toggleSort() {
+  S.sortOn = !S.sortOn;
+  const btn = document.getElementById('sortBtn');
+  btn.classList.toggle('active', S.sortOn);
+  btn.title = S.sortOn ? 'Sorted by priority (click to reset)' : 'Sort by priority';
+  applyFilterSort();
+}
+
+function applyFilterSort() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  let list = [...S.patients];
+
+  if (q) {
+    list = list.filter(p =>
+      [p.Name, p.RM, p.MRN, p.Att, p.Priority, p.Problems, p.Todo, p.AG]
+        .some(v => (v||'').toLowerCase().includes(q))
+    );
+  }
+
+  if (S.sortOn) {
+    list.sort((a, b) => pSort(a.Priority) - pSort(b.Priority));
+  }
+
+  S.filtered = list;
+  renderList();
+
+  const fm = document.getElementById('filteredMsg');
+  fm.textContent = q ? `${list.length} of ${S.patients.length} shown` : '';
+}
+
+function renderList() {
+  const el = document.getElementById('patientList');
+  const empty = document.getElementById('emptyState');
+  document.getElementById('patientCount').textContent = S.patients.length;
+
+  if (S.filtered.length === 0) {
+    el.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+  el.style.display = 'grid';
+  el.innerHTML = S.filtered.map(renderCard).join('');
+}
+
+function renderCard(p) {
+  const color = pColor(p.Priority);
+  const lbl   = pLabel(p.Priority);
+  const pCls  = pClass(p.Priority);
+  const plCls = pLabelClass(p.Priority);
+
+  // Badges
+  const rmBadge  = p.RM  ? `<button class="badge badge-rm"  onclick="event.stopPropagation();copyText('${esc(p.RM)}','Room copied')"  title="Copy room">RM ${esc(p.RM)}</button>` : '';
+  const mrnBadge = p.MRN ? `<button class="badge badge-mrn" onclick="event.stopPropagation();copyText('${esc(p.MRN)}','MRN copied')"  title="Copy MRN">MRN ${esc(p.MRN)}</button>` : '';
+  const copyAll  = p.Name ? `<button class="badge badge-copy" onclick="event.stopPropagation();copyNameBadge('${esc(p.ID)}')" title="Copy Name / RM / MRN">📋</button>` : '';
+
+  // AG + Att line
+  const agAtt = [p.AG, p.Att ? 'Att: '+p.Att : ''].filter(Boolean).join(' · ');
+
+  // VIOLIN preview (first 3 lines)
+  const violinPrev = p.VIOLIN ? p.VIOLIN.split('\n').slice(0,3).join('\n') : '';
+
+  // Todo quick view
+  const { total, done, items } = parseTodo(p.Todo || '');
+  let todoHTML = '';
+  if (total > 0) {
+    const ratioClass = done === total ? 'ratio-done' : done > 0 ? 'ratio-partial' : 'ratio-none';
+    const topItems = items.filter(i => i.kind === 'check').slice(0, 4);
+    const miniItems = topItems.map(i =>
+      `<div class="mini-todo ${i.done?'tdone':''}">
+        <div class="mini-chk ${i.done?'done':''}">${i.done?'✓':''}</div>
+        <span>${esc(i.text.slice(0,40))}</span>
+      </div>`
+    ).join('');
+    todoHTML = `
+      <div class="card-todo" onclick="event.stopPropagation();openDetail('${esc(p.ID)}')">
+        <span class="todo-ratio ${ratioClass}">${done}/${total}</span>
+        <div class="card-mini-todos">${miniItems}</div>
+      </div>`;
+  }
+
+  return `
+    <div class="patient-card ${pCls}" onclick="openDetail('${esc(p.ID)}')" data-id="${esc(p.ID)}">
+      <div class="card-body">
+        <div class="card-name-row">
+          <span class="card-name">${esc(p.Name||'Unnamed')}</span>
+          ${lbl ? `<span class="card-priority-pill ${plCls}">${esc(lbl)}</span>` : ''}
+        </div>
+        <div class="badge-row">${rmBadge}${mrnBadge}${copyAll}</div>
+        ${agAtt ? `<div class="card-ag-att">${esc(agAtt)}</div>` : ''}
+        ${p.Problems ? `<div class="card-problems">${esc(p.Problems)}</div>` : ''}
+        ${violinPrev ? `<div class="card-violin">${esc(violinPrev)}</div>` : ''}
+        ${todoHTML}
+      </div>
+      <div class="card-footer" onclick="event.stopPropagation()">
+        <button class="card-btn" onclick="openDetail('${esc(p.ID)}')" title="View">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          View
+        </button>
+        <button class="card-btn" onclick="openEditModal('${esc(p.ID)}')" title="Edit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="card-btn del" onclick="deletePatientConfirm('${esc(p.ID)}')" title="Delete">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+//  ADD / EDIT MODAL
+// ============================================================
+function openAddModal() {
+  S.editingId = null;
+  document.getElementById('addModalTitle').textContent = 'Add Patient';
+  document.getElementById('saveBtnLabel').textContent = 'Add Patient';
+  clearForm();
+  showModal('addModal');
+  setTimeout(() => document.getElementById('fName').focus(), 100);
+}
+
+function openEditModal(id) {
+  const p = S.patients.find(x => x.ID === id);
+  if (!p) return;
+  S.editingId = id;
+  document.getElementById('addModalTitle').textContent = 'Edit Patient';
+  document.getElementById('saveBtnLabel').textContent = 'Save Changes';
+  fillForm(p);
+  showModal('addModal');
+}
+
+function editCurrentPatient() {
+  if (S.detailId) openEditModal(S.detailId);
+  closeDetailModal();
+}
+
+function closeAddModal() { hideModal('addModal'); }
+
+function clearForm() {
+  ['fType','fPriority','fName','fRM','fMRN','fAtt','fAG','fProblems','fICS','fVIOLIN','fORDERS','fTodo']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = el.tagName === 'SELECT' ? (id === 'fType' ? 'Patient' : '') : '';
+    });
+}
+
+function fillForm(p) {
+  document.getElementById('fType').value     = p.Type || 'Patient';
+  document.getElementById('fPriority').value = p.Priority || '';
+  document.getElementById('fName').value     = p.Name || '';
+  document.getElementById('fRM').value       = p.RM || '';
+  document.getElementById('fMRN').value      = p.MRN || '';
+  document.getElementById('fAtt').value      = p.Att || '';
+  document.getElementById('fAG').value       = p.AG || '';
+  document.getElementById('fProblems').value = p.Problems || '';
+  document.getElementById('fICS').value      = p.ICS || '';
+  document.getElementById('fVIOLIN').value   = p.VIOLIN || '';
+  document.getElementById('fORDERS').value   = p.ORDERS || '';
+  document.getElementById('fTodo').value     = p.Todo || '';
+}
+
+function readForm() {
+  return {
+    Type:     document.getElementById('fType').value,
+    Priority: document.getElementById('fPriority').value,
+    Name:     document.getElementById('fName').value.trim(),
+    RM:       document.getElementById('fRM').value.trim(),
+    MRN:      document.getElementById('fMRN').value.trim(),
+    Att:      document.getElementById('fAtt').value.trim(),
+    AG:       document.getElementById('fAG').value.trim(),
+    Problems: document.getElementById('fProblems').value.trim(),
+    ICS:      document.getElementById('fICS').value.trim(),
+    VIOLIN:   document.getElementById('fVIOLIN').value.trim(),
+    ORDERS:   document.getElementById('fORDERS').value.trim(),
+    Todo:     document.getElementById('fTodo').value
+  };
+}
+
+function savePatient() {
+  const data = readForm();
+  if (!data.Name) { showToast('Name is required', 'err'); document.getElementById('fName').focus(); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  document.getElementById('saveBtnLabel').textContent = 'Saving…';
+
+  if (S.editingId) {
+    google.script.run
+      .withSuccessHandler(res => { btn.disabled = false; onSaved(res, 'update'); })
+      .withFailureHandler(e   => { btn.disabled = false; onErr(e); })
+      .updatePatient(S.editingId, data);
+  } else {
+    google.script.run
+      .withSuccessHandler(res => { btn.disabled = false; onSaved(res, 'add'); })
+      .withFailureHandler(e   => { btn.disabled = false; onErr(e); })
+      .addPatient(data);
+  }
+}
+
+function onSaved(res, mode) {
+  if (res && res.error) { showToast(res.error, 'err'); document.getElementById('saveBtnLabel').textContent = mode === 'add' ? 'Add Patient' : 'Save Changes'; return; }
+  closeAddModal();
+  showToast(mode === 'add' ? 'Patient added' : 'Changes saved', 'ok');
+  loadPatients();
+}
+
+// ============================================================
+//  DELETE
+// ============================================================
+function deletePatientConfirm(id) {
+  const p = S.patients.find(x => x.ID === id);
+  if (!p) return;
+  if (!confirm(`Delete ${p.Name || 'this patient'}?\n\nThis cannot be undone.`)) return;
+  google.script.run
+    .withSuccessHandler(res => {
+      if (res && res.error) { showToast(res.error, 'err'); return; }
+      showToast('Patient deleted', 'info');
+      loadPatients();
+    })
+    .withFailureHandler(onErr)
+    .deletePatient(id);
+}
+
+// ============================================================
+//  DETAIL / CHART-CHECK MODAL
+// ============================================================
+function openDetail(id) {
+  const p = S.patients.find(x => x.ID === id);
+  if (!p) return;
+  S.detailId = id;
+
+  // Header
+  document.getElementById('dName').textContent = p.Name || 'Unnamed';
+
+  // Badges
+  const rm  = p.RM  ? `<button class="badge badge-rm"  onclick="copyText('${esc(p.RM)}','Room copied')"  title="Copy">RM ${esc(p.RM)}</button>` : '';
+  const mrn = p.MRN ? `<button class="badge badge-mrn" onclick="copyText('${esc(p.MRN)}','MRN copied')"  title="Copy">MRN ${esc(p.MRN)}</button>` : '';
+  const all = `<button class="badge badge-copy" onclick="copyNameBadge('${esc(id)}')" title="Copy Name + RM + MRN">📋 Copy All</button>`;
+  document.getElementById('dBadges').innerHTML = rm + mrn + all;
+
+  // Priority pill
+  const pill = document.getElementById('dPriorityPill');
+  const lbl  = pLabel(p.Priority);
+  if (lbl) {
+    pill.textContent = lbl;
+    pill.style.color = pColor(p.Priority);
+    pill.style.borderColor = pColor(p.Priority);
+    pill.style.display = '';
+  } else {
+    pill.style.display = 'none';
+  }
+
+  // Clinical sections
+  document.getElementById('dVIOLIN').textContent   = p.VIOLIN   || '—';
+  document.getElementById('dProblems').textContent = p.Problems || '—';
+  document.getElementById('dICS').textContent      = p.ICS      || '—';
+  document.getElementById('dORDERS').textContent   = p.ORDERS   || '—';
+
+  // To-do
+  renderTodoList(p.Todo || '');
+
+  showModal('detailModal');
+}
+
+function closeDetailModal() { hideModal('detailModal'); S.detailId = null; }
+
+// ============================================================
+//  TODO MANAGEMENT (inside detail modal)
+// ============================================================
+function parseTodo(text) {
+  if (!text) return { total: 0, done: 0, items: [] };
+  const items = text.split('\n').map(line => {
+    const t = line.trimEnd();
+    if (t.startsWith('[x] ') || t.startsWith('[X] ')) return { kind:'check', done:true,  text: t.slice(4) };
+    if (t.startsWith('[ ] '))                           return { kind:'check', done:false, text: t.slice(4) };
+    if (t.trim())                                       return { kind:'plain', done:null,  text: t };
+    return null;
+  }).filter(Boolean);
+  const checks = items.filter(i => i.kind === 'check');
+  return { total: checks.length, done: checks.filter(i => i.done).length, items };
+}
+
+function serializeTodo(items) {
+  return items.map(i => {
+    if (i.kind === 'check') return (i.done ? '[x] ' : '[ ] ') + i.text;
+    return i.text;
+  }).join('\n');
+}
+
+function renderTodoList(todoText) {
+  const { total, done, items } = parseTodo(todoText);
+
+  // Progress bar
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('todoPct').textContent = total > 0 ? `${done}/${total}` : '';
+  document.getElementById('todoBar').style.width = pct + '%';
+
+  // List
+  const list = document.getElementById('todoList');
+  list.innerHTML = items.map((item, idx) => {
+    if (item.kind === 'plain') {
+      return `<div class="todo-plain">${esc(item.text)}</div>`;
+    }
+    return `
+      <div class="todo-item" data-idx="${idx}">
+        <div class="todo-chk ${item.done?'checked':''}" onclick="toggleTodo(${idx})" title="${item.done?'Mark incomplete':'Mark complete'}">
+          ${item.done ? '✓' : ''}
+        </div>
+        <span class="todo-text ${item.done?'done':''}">${esc(item.text)}</span>
+        <button class="todo-del" onclick="deleteTodoItem(${idx})" title="Delete">✕</button>
+      </div>`;
+  }).join('');
+}
+
+function toggleTodo(idx) {
+  const p = S.patients.find(x => x.ID === S.detailId);
+  if (!p) return;
+  const { items } = parseTodo(p.Todo || '');
+  if (!items[idx] || items[idx].kind !== 'check') return;
+  items[idx].done = !items[idx].done;
+  const newTodo = serializeTodo(items);
+  saveTodoToSheet(newTodo);
+}
+
+function deleteTodoItem(idx) {
+  const p = S.patients.find(x => x.ID === S.detailId);
+  if (!p) return;
+  const { items } = parseTodo(p.Todo || '');
+  items.splice(idx, 1);
+  saveTodoToSheet(serializeTodo(items));
+}
+
+function startAddTodo() {
+  document.getElementById('todoInputRow').style.display = 'flex';
+  const inp = document.getElementById('newTodoText');
+  inp.value = '';
+  inp.focus();
+}
+
+function commitTodo() {
+  const text = document.getElementById('newTodoText').value.trim();
+  if (!text) { cancelTodo(); return; }
+  const p = S.patients.find(x => x.ID === S.detailId);
+  if (!p) return;
+  const { items } = parseTodo(p.Todo || '');
+  items.push({ kind: 'check', done: false, text });
+  saveTodoToSheet(serializeTodo(items));
+  cancelTodo();
+}
+
+function cancelTodo() {
+  document.getElementById('todoInputRow').style.display = 'none';
+  document.getElementById('newTodoText').value = '';
+}
+
+function saveTodoToSheet(newTodo) {
+  const p = S.patients.find(x => x.ID === S.detailId);
+  if (!p) return;
+  p.Todo = newTodo;                  // optimistic local update
+  renderTodoList(newTodo);           // re-render immediately
+  renderList();                      // update card
+  google.script.run
+    .withSuccessHandler(res => { if (res && res.error) { showToast('Save error: '+res.error,'err'); loadPatients(); } })
+    .withFailureHandler(onErr)
+    .updatePatient(S.detailId, { Todo: newTodo });
+}
+
+// ============================================================
+//  INLINE FIELD EDIT (from detail modal)
+// ============================================================
+const FIELD_LABELS = { VIOLIN:'VIOLIN', Problems:'Problems', ICS:'ICS', ORDERS:'Orders' };
+
+function openFieldEdit(key) {
+  const p = S.patients.find(x => x.ID === S.detailId);
+  if (!p) return;
+  S.fieldEditKey = key;
+  document.getElementById('fieldModalTitle').textContent = 'Edit: ' + (FIELD_LABELS[key] || key);
+  document.getElementById('fieldEditTA').value = p[key] || '';
+  showModal('fieldModal');
+  setTimeout(() => document.getElementById('fieldEditTA').focus(), 80);
+}
+
+function saveFieldEdit() {
+  const p = S.patients.find(x => x.ID === S.detailId);
+  if (!p || !S.fieldEditKey) return;
+  const val = document.getElementById('fieldEditTA').value;
+  p[S.fieldEditKey] = val;           // optimistic
+  document.getElementById('d' + S.fieldEditKey).textContent = val || '—';
+  renderList();
+  closeFieldEdit();
+  google.script.run
+    .withSuccessHandler(res => { if (res && res.error) { showToast('Save error: '+res.error,'err'); loadPatients(); } })
+    .withFailureHandler(onErr)
+    .updatePatient(S.detailId, { [S.fieldEditKey]: val });
+  showToast('Saved', 'ok');
+}
+
+function closeFieldEdit() { hideModal('fieldModal'); S.fieldEditKey = null; }
+
+// ============================================================
+//  COPY HELPERS
+// ============================================================
+function copyText(text, msg) {
+  navigator.clipboard.writeText(text).then(() => showToast(msg || 'Copied!', 'ok'))
+    .catch(() => {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); showToast(msg || 'Copied!', 'ok'); } catch(e) { showToast('Copy failed','err'); }
+      document.body.removeChild(ta);
+    });
+}
+
+function copyNameBadge(id) {
+  const p = S.patients.find(x => x.ID === id);
+  if (!p) return;
+  const parts = [p.Name, p.RM ? 'RM: '+p.RM : '', p.MRN ? 'MRN: '+p.MRN : ''].filter(Boolean);
+  copyText(parts.join('  |  '), 'Name + RM + MRN copied');
+}
+
+function openSheet() {
+  if (S.sheetUrl) window.open(S.sheetUrl, '_blank');
+  else showToast('Sheet URL not available', 'info');
+}
+
+// ============================================================
+//  MODAL HELPERS
+// ============================================================
+function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function overlayClose(e, id) {
+  if (e.target === document.getElementById(id)) hideModal(id);
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function showLoading(on) {
+  document.getElementById('loadingState').style.display = on ? 'flex' : 'none';
+  document.getElementById('patientList').style.display  = on ? 'none' : (S.filtered.length ? 'grid' : 'none');
+}
+
+function setStatus(msg) {
+  document.getElementById('statusMsg').textContent = msg;
+}
+
+function showToast(msg, type) {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast t-' + (type || 'info');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(30px)'; el.style.transition = '.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// HTML-escape user content to prevent XSS
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// uuid fallback (server provides real UUID, this is just for display purposes)
+function uuid() {
+  return 'xxxx-xxxx-xxxx'.replace(/x/g, () => (Math.random()*16|0).toString(16));
+}
+</script>

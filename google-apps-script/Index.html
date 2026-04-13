@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>MedList</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="count-block">
+      <span id="patientCount" class="patient-count">0</span>
+      <span class="count-label">pts</span>
+    </div>
+    <div class="header-brand">
+      <span class="brand-main">MedList</span>
+    </div>
+  </div>
+
+  <div class="header-center">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search patients…" class="search-input" autocomplete="off" spellcheck="false">
+      <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <button class="hdr-btn" id="sortBtn" onclick="toggleSort()" title="Sort by priority">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="16" y2="12"/><line x1="3" y1="18" x2="11" y2="18"/></svg>
+      <span class="btn-label">Sort</span>
+    </button>
+    <button class="hdr-btn hdr-btn-primary" onclick="openAddModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="btn-label">Add</span>
+    </button>
+    <button class="hdr-btn" onclick="refreshPatients()" title="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+    <button class="hdr-btn" onclick="openSheet()" title="Open Google Sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ===== STATUS BAR ===== -->
+<div class="status-bar">
+  <span id="statusMsg">Loading…</span>
+  <span id="filteredMsg" class="filtered-msg"></span>
+</div>
+
+<!-- ===== MAIN ===== -->
+<main class="main-content">
+  <div id="loadingState" class="loading-state">
+    <div class="spinner"></div>
+    <span>Connecting to Google Sheets…</span>
+  </div>
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="empty-icon">🏥</div>
+    <div class="empty-title">No patients yet</div>
+    <div class="empty-sub">Tap <strong>+ Add</strong> to create your first entry.</div>
+  </div>
+  <div id="patientList" class="patient-list" style="display:none"></div>
+</main>
+
+<!-- ================================================
+     ADD / EDIT MODAL
+     ================================================ -->
+<div id="addModal" class="modal-overlay" style="display:none" onclick="overlayClose(event,'addModal')">
+  <div class="modal-box modal-lg">
+    <div class="modal-hdr">
+      <h2 id="addModalTitle" class="modal-title">Add Patient</h2>
+      <button class="modal-x" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-grp">
+          <label class="form-lbl">Type</label>
+          <select id="fType" class="form-ctrl">
+            <option value="Patient">Patient</option>
+            <option value="Consult">Consult</option>
+          </select>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Priority</label>
+          <select id="fPriority" class="form-ctrl">
+            <option value="">— none —</option>
+            <option value="1">1 — Urgent</option>
+            <option value="2">2 — High</option>
+            <option value="3">3 — Medium-High</option>
+            <option value="4">4 — Medium</option>
+            <option value="5">5 — Medium-Low</option>
+            <option value="6">6 — Low-Medium</option>
+            <option value="7">7 — Low</option>
+            <option value="8">8 — Very Low</option>
+            <option value="9">9 — Minimal</option>
+            <option value="10">10 — Lowest</option>
+            <option value="C">C — Complete</option>
+          </select>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Name <span class="req">*</span></label>
+          <input type="text" id="fName" class="form-ctrl" placeholder="LAST, First" autocomplete="off">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Room (RM)</label>
+          <input type="text" id="fRM" class="form-ctrl" placeholder="e.g. 5NE 531B" autocomplete="off">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">MRN</label>
+          <input type="text" id="fMRN" class="form-ctrl" placeholder="Medical Record #" autocomplete="off">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Attending</label>
+          <input type="text" id="fAtt" class="form-ctrl" placeholder="Attending physician" autocomplete="off">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Age / Gender</label>
+          <input type="text" id="fAG" class="form-ctrl" placeholder="e.g. 65M" autocomplete="off">
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Problems / Diagnosis</label>
+        <textarea id="fProblems" class="form-ctrl" rows="3" placeholder="Chief complaint, diagnoses, PMH…"></textarea>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">ICS — Imaging · Consults · Studies</label>
+        <textarea id="fICS" class="form-ctrl" rows="2" placeholder="Pending imaging, consults, studies…"></textarea>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">VIOLIN — Vitals · I&amp;O · Labs · Orders · Notes</label>
+        <textarea id="fVIOLIN" class="form-ctrl mono-input" rows="5" placeholder="Clinical summary / fishbone…"></textarea>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Orders / Medications</label>
+        <textarea id="fORDERS" class="form-ctrl" rows="3" placeholder="Active meds and key orders…"></textarea>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">To-Do List</label>
+        <p class="hint-text">Use <code>[ ]</code> for pending, <code>[x]</code> for done, or plain text for notes.</p>
+        <textarea id="fTodo" class="form-ctrl mono-input" rows="6" placeholder="[ ] Check morning labs&#10;[ ] Post-op note&#10;[x] NPO order placed&#10;Call family re: discharge"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="savePatient()">
+        <span id="saveBtnLabel">Add Patient</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================
+     PATIENT DETAIL / TODO MODAL
+     ================================================ -->
+<div id="detailModal" class="modal-overlay" style="display:none" onclick="overlayClose(event,'detailModal')">
+  <div class="modal-box modal-xl">
+
+    <!-- Header -->
+    <div class="modal-hdr detail-hdr">
+      <div class="detail-hdr-info">
+        <div id="dName" class="detail-name"></div>
+        <div class="badge-row" id="dBadges"></div>
+      </div>
+      <div class="detail-hdr-right">
+        <span id="dPriorityPill" class="priority-pill"></span>
+        <button class="btn btn-secondary btn-sm" onclick="editCurrentPatient()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="modal-x" onclick="closeDetailModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- Body: two columns -->
+    <div class="detail-layout">
+
+      <!-- Left: clinical fields -->
+      <div class="detail-main">
+
+        <!-- VIOLIN -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-title violin-col">VIOLIN</span>
+            <span class="sec-sub">Vitals · I&amp;O · Labs · Orders · Notes</span>
+            <button class="mini-btn" onclick="openFieldEdit('VIOLIN')">Edit</button>
+          </div>
+          <div id="dVIOLIN" class="sec-body mono-text"></div>
+        </div>
+
+        <!-- Problems -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-title problems-col">Problems</span>
+            <button class="mini-btn" onclick="openFieldEdit('Problems')">Edit</button>
+          </div>
+          <div id="dProblems" class="sec-body"></div>
+        </div>
+
+        <!-- ICS -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-title ics-col">ICS</span>
+            <span class="sec-sub">Imaging · Consults · Studies</span>
+            <button class="mini-btn" onclick="openFieldEdit('ICS')">Edit</button>
+          </div>
+          <div id="dICS" class="sec-body"></div>
+        </div>
+
+        <!-- Orders -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-title orders-col">Orders</span>
+            <button class="mini-btn" onclick="openFieldEdit('ORDERS')">Edit</button>
+          </div>
+          <div id="dORDERS" class="sec-body mono-text"></div>
+        </div>
+
+      </div><!-- end detail-main -->
+
+      <!-- Right: To-Do -->
+      <div class="detail-sidebar">
+        <div class="sec-card todo-card">
+          <div class="sec-hdr">
+            <span class="sec-title todo-col">To-Do</span>
+            <div class="todo-prog-wrap">
+              <span id="todoPct" class="todo-pct"></span>
+              <div class="todo-bar-bg"><div id="todoBar" class="todo-bar"></div></div>
+            </div>
+            <button class="mini-btn" onclick="startAddTodo()">+ Add</button>
+          </div>
+
+          <div id="todoList" class="todo-list"></div>
+
+          <div id="todoInputRow" class="todo-input-row" style="display:none">
+            <input type="text" id="newTodoText" class="form-ctrl" placeholder="New task…"
+              onkeydown="if(event.key==='Enter')commitTodo(); if(event.key==='Escape')cancelTodo();">
+            <button class="btn btn-primary btn-sm" onclick="commitTodo()">Add</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelTodo()">✕</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end detail-layout -->
+  </div>
+</div>
+
+<!-- ================================================
+     INLINE FIELD EDIT MODAL
+     ================================================ -->
+<div id="fieldModal" class="modal-overlay" style="display:none" onclick="overlayClose(event,'fieldModal')">
+  <div class="modal-box modal-md">
+    <div class="modal-hdr">
+      <h2 id="fieldModalTitle" class="modal-title">Edit</h2>
+      <button class="modal-x" onclick="closeFieldEdit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="fieldEditTA" class="form-ctrl mono-input" rows="14"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFieldEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFieldEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div id="toasts" class="toast-container"></div>
+
+<?!= include('JavaScript'); ?>
+</body>
+</html>
