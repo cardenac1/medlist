@@ -23,7 +23,7 @@ function onOpen() {
 // ── Setup ─────────────────────────────────────────────────
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ['Database','Details','Vitals & Labs','Orders'].forEach(n => {
+  ['Database','Details','Vitals & Labs','Orders','To Do'].forEach(n => {
     if (!ss.getSheetByName(n)) ss.insertSheet(n);
   });
   const db = ss.getSheetByName('Database');
@@ -119,6 +119,7 @@ function viewPatient(row) {
   buildDetails(p);
   buildVitalsLabs(p);
   buildOrders(p);
+  buildTodo(p);
   return '✓ ' + p.name + ' loaded into view sheets.';
 }
 
@@ -274,4 +275,103 @@ function getOrCreate(name) {
 }
 function tryJ(s, def) {
   try { return JSON.parse(s||'null') || def; } catch(e) { return def; }
+}
+
+// ── To Do sheet with native checkboxes ────────────────────
+function buildTodo(p) {
+  const sh = getOrCreate('To Do');
+  sh.clearContents(); sh.clearFormats(); sh.clearDataValidations();
+  sh.setColumnWidth(1, 55); sh.setColumnWidth(2, 460);
+
+  // Row 1: visible header
+  sh.getRange(1,1,1,2).merge().setValue('TO DO — '+(p.name||'')+' ('+p.rm+')')
+    .setBackground('#263238').setFontColor('#7ab4ff').setFontWeight('bold').setFontSize(12);
+
+  // Row 2: store MRN invisibly so onEdit knows which patient this belongs to
+  sh.getRange(2,1).setValue('_mrn_').setFontColor('#263238').setBackground('#263238');
+  sh.getRange(2,2).setValue(p.mrn).setFontColor('#263238').setBackground('#263238');
+  sh.setRowHeight(2, 4);
+
+  // Row 3: column headers
+  sh.getRange(3,1,1,2).setValues([['Done','Task']])
+    .setBackground('#37474f').setFontColor('#fff').setFontWeight('bold');
+
+  // Parse existing To Do text and write rows
+  const tasks = parseTodoText(p.todo||'');
+  if (!tasks.length) tasks.push({ done:false, text:'' }); // at least one blank row
+
+  tasks.forEach((task, i) => {
+    const row = 4 + i;
+    sh.getRange(row, 1).setDataValidation(
+      SpreadsheetApp.newDataValidation().requireCheckbox().build()
+    ).setValue(task.done);
+    sh.getRange(row, 2).setValue(task.text)
+      .setFontColor(task.done ? '#666' : '#eee')
+      .setFontStrikethrough(task.done)
+      .setWrap(true);
+  });
+
+  sh.activate();
+}
+
+// Parse "[x] task" / "[ ] task" / plain text → array of {done, text}
+function parseTodoText(text) {
+  return text.split('\n')
+    .map(l => l.trim()).filter(l => l)
+    .map(l => {
+      if (/^\[x\]/i.test(l)) return { done:true,  text:l.slice(3).trim() };
+      if (/^\[ \]/.test(l))  return { done:false, text:l.slice(3).trim() };
+      return { done:false, text:l };
+    });
+}
+
+// ── onEdit trigger — fires when checkbox is clicked OR text is typed ──
+// Install as a simple trigger (it's already auto-registered as onEdit).
+function onEdit(e) {
+  const sh = e.range.getSheet();
+  if (sh.getName() !== 'To Do') return;
+  const row = e.range.getRow();
+  const col = e.range.getColumn();
+  if (row < 4) return; // skip headers
+
+  // If user typed a new task in col B, add a checkbox to col A
+  if (col === 2 && (e.value||'').trim()) {
+    sh.getRange(row, 1).setDataValidation(
+      SpreadsheetApp.newDataValidation().requireCheckbox().build()
+    );
+  }
+
+  // Apply strikethrough styling immediately
+  if (col === 1) {
+    const done = sh.getRange(row, 1).getValue() === true;
+    sh.getRange(row, 2).setFontColor(done?'#666':'#eee').setFontStrikethrough(done);
+  }
+
+  // Save all tasks back to the Database
+  saveTodoBack(sh);
+}
+
+// Read the To Do sheet and save the text back to Database col TODO
+function saveTodoBack(sh) {
+  const mrn = sh.getRange(2, 2).getValue();
+  if (!mrn) return;
+  const lastRow = sh.getLastRow();
+  if (lastRow < 4) return;
+
+  const data = sh.getRange(4, 1, lastRow-3, 2).getValues();
+  const todoText = data
+    .map(r => ({ done: r[0]===true, text: String(r[1]||'').trim() }))
+    .filter(r => r.text)
+    .map(r => (r.done ? '[x] ' : '[ ] ') + r.text)
+    .join('\n');
+
+  const db = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Database');
+  if (!db) return;
+  const rows = db.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][C.MRN-1]) === String(mrn)) {
+      db.getRange(i+1, C.TODO).setValue(todoText);
+      break;
+    }
+  }
 }
