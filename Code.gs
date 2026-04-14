@@ -53,6 +53,33 @@ function getPatients() {
     .filter(p => p.name);
 }
 
+// ── Batch save (called from sidebar List tab) ─────────────
+function savePatients(arr) {
+  arr.forEach(p => savePatient(p));
+  return '✓ Imported ' + arr.length + ' patient(s).';
+}
+
+// ── Update detail only — preserves manually edited fields ─
+// Updates cols 9-14: ActiveMeds, HomeMeds, Orders, Vitals, Labs, I/O
+function saveDetail(mrn, d) {
+  const db = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Database');
+  if (!db) return 'Database sheet not found.';
+  const data = db.getDataRange().getValues();
+  let row = null;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][C.MRN-1]) === String(mrn)) { row = i+1; break; }
+  }
+  if (!row) return 'Patient not found (MRN: ' + mrn + '). Import from List tab first.';
+  db.getRange(row, C.AMEDS, 1, 6).setValues([[
+    d.activeMeds||'', d.homeMeds||'', d.orders||'',
+    JSON.stringify(d.vitals||[]),
+    JSON.stringify(d.labs||{}),
+    JSON.stringify(d.io||{})
+  ]]);
+  const name = data[row-1][C.NAME-1] || mrn;
+  return '✓ Detail saved for ' + name;
+}
+
 // ── Save / update patient ─────────────────────────────────
 function savePatient(p) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

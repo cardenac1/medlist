@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html><head>
 <style>
-* { box-sizing: border-box; margin:0; padding:0; }
+* { box-sizing:border-box; margin:0; padding:0; }
 body { font:12px sans-serif; background:#1e2530; color:#ccc; padding:8px; }
 h3   { color:#7ab4ff; font-size:13px; margin:0 0 6px; }
 label{ color:#999; font-size:11px; display:block; margin:5px 0 2px; }
@@ -10,93 +10,141 @@ textarea,input,select {
   border-radius:4px; padding:5px; font-size:11px;
 }
 textarea { resize:vertical; }
-button   { padding:7px 14px; border:none; border-radius:4px; cursor:pointer; font-size:11px; margin:3px 2px 0; }
+button { padding:7px 14px; border:none; border-radius:4px; cursor:pointer; font-size:11px; margin:3px 2px 0; }
 .btn1 { background:#1565c0; color:#fff; } .btn1:hover { background:#1976d2; }
 .btn2 { background:#37474f; color:#eee; } .btn2:hover { background:#455a64; }
 .card { background:#263038; border-radius:6px; padding:10px; margin:8px 0; }
 .tabs { display:flex; gap:2px; }
-.tab  { flex:1; background:#37474f; color:#999; border:none; padding:7px; border-radius:4px 4px 0 0; cursor:pointer; }
+.tab  { flex:1; background:#37474f; color:#999; border:none; padding:7px;
+        border-radius:4px 4px 0 0; cursor:pointer; font-size:11px; }
 .tab.on { background:#263038; color:#7ab4ff; }
-.row  { display:flex; gap:6px; }
-.row>div { flex:1; }
-.status { padding:7px; border-radius:4px; margin:6px 0; font-size:11px; display:none; }
+.preview { background:#1a2028; border:1px solid #333; border-radius:4px;
+           padding:6px; margin:6px 0; font-size:11px; max-height:130px;
+           overflow-y:auto; display:none; }
+.pat-row { padding:2px 0; border-bottom:1px solid #2a3038; color:#adf; }
+.status  { padding:7px; border-radius:4px; margin:6px 0; font-size:11px; display:none; }
 .ok  { background:#1a3a1e; color:#7dff7d; display:block!important; }
 .err { background:#3a1a1e; color:#ff7d7d; display:block!important; }
 </style>
 </head><body>
 
 <div class="tabs">
-  <button class="tab on" onclick="tab('imp')">Import</button>
-  <button class="tab"    onclick="tab('view')">View</button>
+  <button class="tab on"  onclick="tab('list')">1. List</button>
+  <button class="tab"     onclick="tab('det')">2. Detail</button>
+  <button class="tab"     onclick="tab('view')">3. View</button>
 </div>
 
-<!-- IMPORT TAB -->
-<div id="pImp" class="card">
-  <h3>Add / Update Patient</h3>
-  <label>Cerner List Line (paste one patient line):</label>
-  <textarea id="listLine" rows="2"
-    placeholder="SMITH, JOHN  Age72 yearsGenderM...MRN:123456 WMC 5N 501A"></textarea>
+<!-- ── TAB 1: Batch list import ────────────────────────── -->
+<div id="pList" class="card">
+  <h3>Batch Import Patient List</h3>
+  <label>Paste full Cerner patient list (all patients at once):</label>
+  <textarea id="listAll" rows="7"
+    placeholder="SMITH, JOHN  Age72 yearsGenderM...MRN:111111 WMC 5N 501A&#10;JONES, MARY  Age58 yearsGenderF...MRN:222222 WMC 5N 502B&#10;..."></textarea>
 
-  <div class="row">
-    <div><label>Name (manual):</label><input id="mName"></div>
-    <div><label>Room:</label><input id="mRm"></div>
-    <div><label>MRN:</label><input id="mMrn"></div>
-  </div>
+  <button class="btn2" onclick="previewList()">Preview</button>
+  <button class="btn1" onclick="importList()">Import All</button>
 
-  <label>Problems / Diagnosis:</label>
-  <input id="mProb" placeholder="e.g. Sepsis, CHF exacerbation">
+  <div id="listPreview" class="preview"></div>
+</div>
 
-  <label>Cerner Detail Data (vitals, labs, meds, I/O — paste full block):</label>
-  <textarea id="detail" rows="6"
-    placeholder="Paste the full Cerner patient detail text here (vitals, labs, medications, I/O)..."></textarea>
+<!-- ── TAB 2: Individual dotphrase per patient ──────────── -->
+<div id="pDet" class="card" style="display:none">
+  <h3>Add Cerner Dotphrase Detail</h3>
+  <label>Select patient:</label>
+  <select id="detSel"><option value="">Loading...</option></select>
+
+  <label>Paste full Cerner dotphrase output for this patient:</label>
+  <textarea id="dotphrase" rows="9"
+    placeholder="Paste the complete Cerner chart output here (vitals, labs, I/O, medications)...&#10;&#10;Parses: Temperature, Heart Rate, BP, O2 Sat, Oxygen Therapy,&#10;all lab values, Intake &amp; Output, Active Meds, Home Meds."></textarea>
 
   <div>
-    <button class="btn1" onclick="doImport()">Save Patient</button>
-    <button class="btn2" onclick="clear_()">Clear</button>
+    <button class="btn1" onclick="saveDetail()">Parse &amp; Save Detail</button>
+    <button class="btn2" onclick="document.getElementById('dotphrase').value=''">Clear</button>
   </div>
 </div>
 
-<!-- VIEW TAB -->
+<!-- ── TAB 3: View patient in sheets ────────────────────── -->
 <div id="pView" class="card" style="display:none">
   <h3>View Patient in Sheets</h3>
-  <select id="patSel"><option value="">Loading...</option></select>
+  <select id="viewSel"><option value="">Loading...</option></select>
   <div>
     <button class="btn1" onclick="doView()">Open in View Sheets</button>
-    <button class="btn2" onclick="loadPats()">Refresh List</button>
+    <button class="btn2" onclick="loadPats('view')">Refresh</button>
   </div>
 </div>
 
 <div id="status" class="status"></div>
 
 <script>
-// ── UI ────────────────────────────────────────────────────
+// ── UI helpers ────────────────────────────────────────────
 function tab(t) {
-  document.getElementById('pImp').style.display  = t==='imp'  ? '' : 'none';
-  document.getElementById('pView').style.display = t==='view' ? '' : 'none';
-  document.querySelectorAll('.tab').forEach((b,i) =>
-    b.className = 'tab'+(((t==='imp'&&i===0)||(t==='view'&&i===1))?' on':''));
-  if (t==='view') loadPats();
+  ['list','det','view'].forEach((n,i) => {
+    document.getElementById('p'+n.charAt(0).toUpperCase()+n.slice(1)).style.display = t===n?'':'none';
+    document.querySelectorAll('.tab')[i].className = 'tab'+(t===n?' on':'');
+  });
+  if (t==='det'||t==='view') loadPats(t);
 }
 function msg(txt, err) {
   const s = document.getElementById('status');
   s.textContent = txt;
   s.className = 'status '+(err?'err':'ok');
 }
-function clear_() {
-  ['listLine','detail','mName','mRm','mMrn','mProb'].forEach(id => {
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-}
-function loadPats() {
+function loadPats(which) {
+  const selId = which==='view' ? 'viewSel' : 'detSel';
   google.script.run.withSuccessHandler(pats => {
-    const sel = document.getElementById('patSel');
-    sel.innerHTML = pats.length
-      ? pats.map(p=>`<option value="${p.row}">${p.name} (${p.rm}) MRN:${p.mrn}</option>`).join('')
-      : '<option value="">No patients yet</option>';
+    document.getElementById(selId).innerHTML = pats.length
+      ? pats.map(p=>`<option value="${which==='view'?p.row:p.mrn}">${p.name} (${p.rm}) — MRN:${p.mrn}</option>`).join('')
+      : '<option value="">No patients imported yet</option>';
   }).getPatients();
 }
+
+// ── Tab 1: Batch list ─────────────────────────────────────
+function previewList() {
+  const text = document.getElementById('listAll').value.trim();
+  if (!text) return msg('Paste a patient list first', true);
+  const patients = parseBatchList(text);
+  const box = document.getElementById('listPreview');
+  if (!patients.length) { box.style.display='none'; return msg('No patients found in list', true); }
+  box.innerHTML = patients.map(p=>`<div class="pat-row">${p.name||'?'} — ${p.rm||'?'} — MRN: ${p.mrn||'?'}</div>`).join('');
+  box.style.display = 'block';
+  msg(patients.length + ' patient(s) found. Click Import All to save.', false);
+}
+function importList() {
+  const text = document.getElementById('listAll').value.trim();
+  if (!text) return msg('Paste a patient list first', true);
+  const patients = parseBatchList(text);
+  if (!patients.length) return msg('No patients found in list', true);
+  msg('Saving ' + patients.length + ' patient(s)...');
+  google.script.run
+    .withSuccessHandler(r => { msg(r); document.getElementById('listPreview').style.display='none'; })
+    .withFailureHandler(e => msg(e.message, true))
+    .savePatients(patients);
+}
+
+// ── Tab 2: Individual dotphrase ───────────────────────────
+function saveDetail() {
+  const mrn  = document.getElementById('detSel').value;
+  const text = document.getElementById('dotphrase').value.trim();
+  if (!mrn)  return msg('Select a patient', true);
+  if (!text) return msg('Paste dotphrase data first', true);
+  msg('Parsing dotphrase...');
+  const d = {
+    vitals:     parseVitals(text),
+    labs:       parseLabs(text),
+    io:         parseIO(text),
+    activeMeds: parseActiveMeds(text),
+    homeMeds:   parseHomeMeds(text),
+    orders:     ''  // preserved from existing row
+  };
+  google.script.run
+    .withSuccessHandler(r => { msg(r); document.getElementById('dotphrase').value=''; })
+    .withFailureHandler(e => msg(e.message, true))
+    .saveDetail(mrn, d);
+}
+
+// ── Tab 3: View ───────────────────────────────────────────
 function doView() {
-  const row = document.getElementById('patSel').value;
+  const row = document.getElementById('viewSel').value;
   if (!row) return msg('Select a patient', true);
   msg('Loading...');
   google.script.run
@@ -104,42 +152,33 @@ function doView() {
     .withFailureHandler(e => msg(e.message, true))
     .viewPatient(+row);
 }
-function doImport() {
-  const listLine = v('listLine'), detail = v('detail');
-  const mName = v('mName'), mRm = v('mRm'), mMrn = v('mMrn'), mProb = v('mProb');
-  if (!listLine && !mName && !mMrn) return msg('Enter a list line or patient name/MRN', true);
-  msg('Parsing...');
-  const p = listLine ? parseList(listLine) : {};
-  if (mName) p.name     = mName;
-  if (mRm)   p.rm       = mRm;
-  if (mMrn)  p.mrn      = mMrn;
-  if (mProb) p.problems = mProb;
-  if (detail) {
-    p.vitals     = parseVitals(detail);
-    p.labs       = parseLabs(detail);
-    p.io         = parseIO(detail);
-    p.activeMeds = parseActiveMeds(detail);
-    p.homeMeds   = parseHomeMeds(detail);
-  }
-  google.script.run
-    .withSuccessHandler(r => { msg(r); clear_(); })
-    .withFailureHandler(e => msg(e.message, true))
-    .savePatient(p);
-}
-function v(id) { return (document.getElementById(id)||{value:''}).value.trim(); }
 
 // ── PARSERS ───────────────────────────────────────────────
 
-// Parse Cerner list line → {name, rm, mrn}
-function parseList(text) {
+// Parse many lines → array of {name, rm, mrn}
+function parseBatchList(text) {
+  const patients = [];
+  text.split('\n').forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    const lc = line.toLowerCase();
+    if (lc.includes('patient list') || (lc.includes('room') && lc.includes('name'))) return;
+    const p = parseLine(line);
+    if (p.name || p.mrn) patients.push(p);
+  });
+  return patients;
+}
+
+// Parse one Cerner list line → {name, rm, mrn}
+function parseLine(text) {
   const p = {};
+  // Mobile Cerner format: NAME  Age## GenderM...MRN:###### ROOM
   const mrnM  = /MRN:?\s*(\d{4,10})/i.exec(text);
-  const nameM = /^(.+?)(?:\s{2,}|\s+(?=Age[\s\d]))/i.exec(text.trim());
+  const nameM = /^(.+?)(?:\s{2,}|\s+(?=Age[\s\d]|Gender|DOB|MRN))/i.exec(text.trim());
   const roomM = /MRN:?\s*\d+\s+(.+?)\s*$/i.exec(text.trim());
   p.mrn  = mrnM  ? mrnM[1].trim() : '';
   p.name = nameM ? nameM[1].trim() : '';
   if (roomM) {
-    // Take last 2 space-separated tokens as the room (e.g. "WMC 5N 501A" → "5N 501A")
     const parts = roomM[1].trim().split(/\s+/);
     p.rm = parts.length > 2 ? parts.slice(-2).join(' ') : roomM[1].trim();
   }
@@ -161,147 +200,108 @@ function ts(d, t) {
   const [h,m] = t.split(':').map(Number);
   return new Date(yr<100?2000+yr:yr, mo-1, dy, h, m);
 }
-
-// 7am cutoff for today (or yesterday if before 7am)
 function cutoff() {
   const c = new Date();
   if (c.getHours() < 7) c.setDate(c.getDate()-1);
-  c.setHours(7,0,0,0);
-  return c;
+  c.setHours(7,0,0,0); return c;
 }
 
 // ── Vitals ────────────────────────────────────────────────
 function parseVitals(text) {
   const cut = cutoff();
-
-  // Extract a timestamped series for a given regex pattern
   function series(re) {
     const arr=[]; let m;
-    const r = new RegExp(re, 'gi');
+    const r = new RegExp(re,'gi');
     while ((m=r.exec(text))!==null) {
-      const dt = ts(m[2],m[3]);
-      if (dt >= cut) arr.push({ val:m[1], dt, date:m[2], time:m[3].slice(0,5) });
+      const dt=ts(m[2],m[3]);
+      if (dt>=cut) arr.push({val:m[1],dt,date:m[2],time:m[3].slice(0,5)});
     }
     return arr.sort((a,b)=>a.dt-b.dt);
   }
-
   const temps = series('Temperature[^:]*:\\s*([\\d.]+)[^(]*\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)');
   const hrs   = series('Heart Rate[^:]*:\\s*(\\d+)[^(]*\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)');
   const sbps  = series('Systolic Blood Pressure[^:]*:\\s*(\\d+)[^(]*\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)');
   const dbps  = series('Diastolic Blood Pressure[^:]*:\\s*(\\d+)[^(]*\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)');
   const o2s   = series('O2 Saturation[^:]*:\\s*(\\d+)[^(]*\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)');
   const o2m   = parseO2Method(text);
-
-  const base = hrs.length ? hrs : sbps;
+  const base  = hrs.length ? hrs : sbps;
   if (!base.length) return [];
-
-  // Closest value in array to a given timestamp
-  function near(arr, dt) {
-    if (!arr.length) return '';
-    return arr.reduce((b,c) => Math.abs(c.dt-dt)<Math.abs(b.dt-dt)?c:b).val;
-  }
-
-  return base.slice(-12).map(e => ({
-    time:     e.date+' '+e.time,
-    temp:     near(temps, e.dt),
-    hr:       e.val,
-    bp:       (near(sbps,e.dt) && near(dbps,e.dt)) ? near(sbps,e.dt)+'/'+near(dbps,e.dt) : '',
-    o2:       near(o2s, e.dt),
-    o2method: o2m,
-    intake:   '',
-    output:   ''
+  function near(arr,dt){ return arr.length ? arr.reduce((b,c)=>Math.abs(c.dt-dt)<Math.abs(b.dt-dt)?c:b).val : ''; }
+  return base.slice(-12).map(e=>({
+    time: e.date+' '+e.time,
+    temp: near(temps,e.dt), hr: e.val,
+    bp:   near(sbps,e.dt)&&near(dbps,e.dt) ? near(sbps,e.dt)+'/'+near(dbps,e.dt) : '',
+    o2: near(o2s,e.dt), o2method: o2m, intake:'', output:''
   }));
 }
-
 function parseO2Method(text) {
   const arr=[]; let m;
-  const re = /Oxygen Therapy:\s*(.+?)\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-  while ((m=re.exec(text))!==null) arr.push({ v:m[1], t:ts(m[2],m[3]) });
+  const re=/Oxygen Therapy:\s*(.+?)\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while((m=re.exec(text))!==null) arr.push({v:m[1],t:ts(m[2],m[3])});
   if (!arr.length) return '';
-  const d = arr.sort((a,b)=>b.t-a.t)[0].v.toLowerCase();
-  if (/room air/i.test(d))              return 'RA';
-  if (/invasive mech/i.test(d))         return 'Vent';
+  const d=arr.sort((a,b)=>b.t-a.t)[0].v.toLowerCase();
+  if (/room air/i.test(d))                return 'RA';
+  if (/invasive mech/i.test(d))           return 'Vent';
   if (/bipap|cpap|non-invasive/i.test(d)) return 'BiPAP';
-  if (/high.?flow/i.test(d))            return 'HFNC';
-  if (/nasal cannula/i.test(d))         return 'NC';
-  if (/non-?rebreather/i.test(d))       return 'NRB';
+  if (/high.?flow/i.test(d))              return 'HFNC';
+  if (/nasal cannula/i.test(d))           return 'NC';
+  if (/non-?rebreather/i.test(d))         return 'NRB';
   return arr[0].v;
 }
 
 // ── Labs ──────────────────────────────────────────────────
-// Returns { wbc:[{val,date,time},…], hgb:[…], … }  (max 3, newest first)
 function parseLabs(text) {
-  const labs = {};
-  function ex(pat, key) {
-    const re = new RegExp(pat+'.*?([\\d.]+).*?\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)', 'gi');
+  const labs={};
+  function ex(pat,key) {
+    const re=new RegExp(pat+'.*?([\\d.]+).*?\\((\\d{2}/\\d{2}/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)','gi');
     const arr=[]; let m;
-    while ((m=re.exec(text))!==null) {
-      const v = m[0].match(/:\s*[<>]?\s*([\d.]+)/);
-      if (v) arr.push({ val:parseFloat(v[1]), date:m[2], time:m[3].slice(0,5), dt:ts(m[2],m[3]) });
+    while((m=re.exec(text))!==null){
+      const v=m[0].match(/:\s*[<>]?\s*([\d.]+)/);
+      if(v) arr.push({val:parseFloat(v[1]),date:m[2],time:m[3].slice(0,5),dt:ts(m[2],m[3])});
     }
-    if (arr.length) labs[key] = arr.sort((a,b)=>b.dt-a.dt).slice(0,3);
+    if(arr.length) labs[key]=arr.sort((a,b)=>b.dt-a.dt).slice(0,3);
   }
-  // CBC
   ex('WBC:','wbc'); ex('Hgb:','hgb'); ex('Platelet Count:','plt');
-  // Coags
   ex('Prothrombin Time:','pt'); ex('INR:','inr'); ex('APTT:','aptt'); ex('Fibrinogen:','fib');
-  // BMP
   ex('Glucose:','glu');
   ex('Glucose POC:|Glucose, POC:|Glucose Monitoring Result:|Capillary Blood Glucose:','gluPOC');
   ex('Sodium:','na'); ex('Potassium:','k'); ex('Chloride:','cl');
   ex('CO2:','co2'); ex('BUN:','bun'); ex('Creatinine:','cr');
-  // LFTs
   ex('AST:','ast'); ex('Alkaline Phosphatase:','alk'); ex('Total Bilirubin:','tbil');
   ex('Albumin:','albumin'); ex('Total Protein:','tprot'); ex('Direct Bilirubin:','dbil');
-  // Other
   ex('Inorganic Phosphorus:','phos'); ex('Calcium, Ionized:|Ionized Calcium:','ica');
   ex('Magnesium Level:','mg'); ex('Lactic Acid:','lactate');
   ex('Calcium:','ca'); ex('Tacrolimus:','tacro');
   return labs;
 }
 
-// ── Intake / Output ───────────────────────────────────────
+// ── I/O ───────────────────────────────────────────────────
 function parseIO(text) {
-  const ioM = text.match(/<Intake and Output Start>([\s\S]*?)<Intake and Output End>/i);
+  const ioM=text.match(/<Intake and Output Start>([\s\S]*?)<Intake and Output End>/i);
   if (!ioM) return {};
-  const cut  = cutoff();
-  const inS  = ioM[1].match(/Intake\s*\n([\s\S]*?)(?=Output|$)/i);
-  const outS = ioM[1].match(/Output\s*\n([\s\S]*?)$/i);
-  const re   = /(.+?):\s*(\d+)\s*mL[^(]*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/g;
-
-  function proc(section, totObj) {
-    let tot=0;
-    if (!section) return tot;
-    re.lastIndex=0; let m;
-    while ((m=re.exec(section[1]))!==null) {
-      if (ts(m[3],m[4]) >= cut) {
-        const type = m[1].trim().replace(/^.*-\s*/,'');
-        const vol  = parseInt(m[2]);
-        totObj[type] = (totObj[type]||0) + vol;
-        tot += vol;
-      }
-    }
-    return tot;
-  }
-
-  const inT={}, outT={};
-  const totalIn  = proc(inS,  inT);
-  const totalOut = proc(outS, outT);
-  return { totalIn, totalOut, balance: totalIn-totalOut, intakeTypes:inT, outputTypes:outT };
+  const cut=cutoff();
+  const inS=ioM[1].match(/Intake\s*\n([\s\S]*?)(?=Output|$)/i);
+  const outS=ioM[1].match(/Output\s*\n([\s\S]*?)$/i);
+  const re=/(.+?):\s*(\d+)\s*mL[^(]*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/g;
+  function proc(sec,tot){ let s=0; if(!sec) return s; re.lastIndex=0; let m;
+    while((m=re.exec(sec[1]))!==null){ if(ts(m[3],m[4])>=cut){
+      const t=m[1].trim().replace(/^.*-\s*/,''); const v=parseInt(m[2]);
+      tot[t]=(tot[t]||0)+v; s+=v; }} return s; }
+  const inT={},outT={};
+  const totalIn=proc(inS,inT), totalOut=proc(outS,outT);
+  return {totalIn,totalOut,balance:totalIn-totalOut,intakeTypes:inT,outputTypes:outT};
 }
 
-// ── Medications ───────────────────────────────────────────
+// ── Meds ──────────────────────────────────────────────────
 function parseActiveMeds(text) {
-  const m = text.match(/Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=Home Medications|Reconciled|DIET ORDER:|$)/i);
+  const m=text.match(/Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=Home Medications|Reconciled|DIET ORDER:|$)/i);
   if (!m) return '';
-  return m[1].split('\n')
-    .filter(l => l.trim() && !l.match(/^(Scheduled|PRN|Continuous):/i) && l.trim().length>3)
-    .join('\n');
+  return m[1].split('\n').filter(l=>l.trim()&&!l.match(/^(Scheduled|PRN|Continuous):/i)&&l.trim().length>3).join('\n');
 }
 function parseHomeMeds(text) {
-  const m = text.match(/Home Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=(?:Scheduled|PRN|Continuous)|^Medications|DIET ORDER:|Reconciled|$)/im);
+  const m=text.match(/Home Medications.*?\(\d+\)\s*Active([\s\S]*?)(?=(?:Scheduled|PRN|Continuous)|^Medications|DIET ORDER:|Reconciled|$)/im);
   if (!m) return '';
-  return m[1].split('\n').filter(l => l.trim() && l.trim().length>3).join('\n');
+  return m[1].split('\n').filter(l=>l.trim()&&l.trim().length>3).join('\n');
 }
 </script>
 </body></html>
