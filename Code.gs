@@ -5,8 +5,8 @@ function doGet() {
 }
 
 function getSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName('Patients');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Patients');
   if (!sh) {
     sh = ss.insertSheet('Patients');
     sh.getRange(1, 1, 1, 10).setValues([[
@@ -19,12 +19,14 @@ function getSheet() {
 
 function getPatients() {
   try {
-    const d = getSheet().getDataRange().getValues();
+    var d = getSheet().getDataRange().getValues();
     if (d.length < 2) return [];
-    const h = d[0];
+    var h = d[0];
     return d.slice(1).map(function(r) {
       var obj = {};
-      h.forEach(function(k, i) { obj[k] = r[i] || ''; });
+      h.forEach(function(k, i) {
+        obj[k] = (r[i] !== null && r[i] !== undefined) ? String(r[i]) : '';
+      });
       return obj;
     });
   } catch(e) {
