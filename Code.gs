@@ -4,8 +4,26 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+// Works whether script is bound to a sheet OR standalone
+function getSpreadsheet() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) return ss;
+  } catch(e) {}
+
+  // Standalone: reuse stored spreadsheet or create one
+  var props = PropertiesService.getScriptProperties();
+  var id    = props.getProperty('SS_ID');
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch(e) {}
+  }
+  var newSS = SpreadsheetApp.create('MedList Data');
+  props.setProperty('SS_ID', newSS.getId());
+  return newSS;
+}
+
 function getSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var sh = ss.getSheetByName('Patients');
   if (!sh) {
     sh = ss.insertSheet('Patients');
@@ -60,12 +78,9 @@ function savePatient(p) {
 
 function deletePatient(id) {
   var sh = getSheet();
-  var d = sh.getDataRange().getValues();
+  var d  = sh.getDataRange().getValues();
   for (var i = 1; i < d.length; i++) {
-    if (String(d[i][0]) === String(id)) {
-      sh.deleteRow(i + 1);
-      return true;
-    }
+    if (String(d[i][0]) === String(id)) { sh.deleteRow(i + 1); return true; }
   }
   return false;
 }
