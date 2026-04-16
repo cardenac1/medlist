@@ -14,22 +14,20 @@
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;display:flex;flex-direction:column}
 
-/* ── Header — always on top ── */
+/* Header — always on top */
 .hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative;z-index:200}
 .hdr h1{font-size:1rem;font-weight:700;flex:1}
 .census{font-size:.8rem;color:var(--muted)}
-
-/* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border:none;border-radius:7px;font-size:.83rem;font-weight:600;cursor:pointer;font-family:inherit;line-height:1;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .btn-blue{background:var(--primary);color:#fff}
 .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
 .btn-red{background:var(--danger);color:#fff}
 .btn-sm{padding:5px 10px;font-size:.78rem}
 
-/* ── App area — holds sidebar + detail ── */
+/* App layout */
 .app{flex:1;display:flex;overflow:hidden;position:relative;min-height:0}
 
-/* ── Sidebar ── */
+/* Sidebar */
 .sidebar{width:250px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .sb-title{padding:8px 12px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);flex-shrink:0}
 .pt-list{flex:1;overflow-y:auto;padding:5px;-webkit-overflow-scrolling:touch}
@@ -42,16 +40,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .dot-critical{background:var(--danger)}.dot-high{background:var(--orange)}
 .dot-medium{background:var(--warn)}.dot-stable{background:var(--success)}
 
-/* ── Detail panel ── */
+/* Detail panel */
 .detail{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;background:var(--bg)}
-
-/* ── Empty state ── */
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:8px;font-size:.9rem}
-
-/* ── Patient detail view ── */
 #detailView{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 
-/* ── Patient header ── */
+/* Patient header */
 .pt-hdr{padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;display:flex;align-items:flex-start;gap:8px}
 .pt-hdr-info{flex:1;min-width:0}
 .pt-hdr-name{font-size:1rem;font-weight:700}
@@ -61,15 +55,13 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .pri-critical{background:var(--danger)}.pri-high{background:var(--orange)}
 .pri-medium{background:var(--warn);color:#000}.pri-stable{background:var(--success);color:#000}
 
-/* ── Tabs ── */
+/* Tabs */
 .tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tab{padding:10px 16px;font-size:.84rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .tab.on{color:var(--primary);border-bottom-color:var(--primary)}
-
-/* ── Tab pane ── */
 .tab-pane{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
 
-/* ── Form fields ── */
+/* Form fields */
 .fg{margin-bottom:12px}
 .fl{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .fi{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:.88rem;font-family:inherit;resize:vertical;-webkit-appearance:none}
@@ -80,11 +72,33 @@ select.fi{cursor:pointer}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .save-bar{margin-top:6px}
 
-/* ── Placeholder ── */
+/* Placeholder */
 .ph{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:20px;text-align:center;color:var(--muted);font-size:.85rem;line-height:1.5}
 .ph strong{display:block;color:var(--text);margin-bottom:5px}
 
-/* ── Modal ── */
+/* ── Todo widget (same format as original) ── */
+.todo-wrap{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+.todo-list{display:flex;flex-direction:column;gap:0;margin-bottom:6px}
+.todo-item{display:flex;align-items:flex-start;gap:.4rem;padding:.18rem .25rem;border-radius:.3rem;position:relative;min-height:1.4rem}
+.todo-item:hover{background:rgba(255,255,255,.04)}
+.todo-item.completed{opacity:.5}
+.todo-item.completed .todo-text{text-decoration:line-through;color:#64748b}
+.todo-checkbox{width:16px;height:16px;min-width:16px;border:1.5px solid #475569;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:.15s;background:transparent;flex-shrink:0}
+.todo-checkbox:hover{border-color:#22c55e;background:rgba(34,197,94,.1)}
+.todo-checkbox.checked{background:#22c55e;border-color:#22c55e}
+.todo-checkbox.checked::after{content:'';width:4px;height:8px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg);margin-bottom:2px}
+.todo-text{flex:1;font-size:.83rem;line-height:1.45;color:var(--text);word-break:break-word;cursor:pointer}
+.todo-text-input{flex:1;background:rgba(0,0,0,.3);border:1px solid #22c55e;border-radius:.2rem;padding:.1rem .3rem;color:var(--text);font-family:inherit;font-size:.83rem;line-height:1.45;outline:none;resize:none;overflow:hidden;width:100%}
+.todo-del{width:18px;height:18px;min-width:18px;display:flex;align-items:center;justify-content:center;border-radius:3px;cursor:pointer;opacity:0;transition:.15s;color:#64748b;font-size:.8rem;flex-shrink:0;margin-top:2px}
+.todo-item:hover .todo-del{opacity:1}
+.todo-del:hover{background:rgba(239,68,68,.2);color:#ef4444}
+.todo-plain{font-size:.83rem;line-height:1.45;color:#94a3b8;padding:.18rem .25rem;word-break:break-word}
+.todo-add-row{display:flex;gap:.4rem;margin-top:2px}
+.todo-add-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.42rem .65rem;color:var(--text);font-family:inherit;font-size:.82rem;outline:none}
+.todo-add-input:focus{border-color:#22c55e}
+.todo-add-input::placeholder{color:rgba(148,163,184,.45);font-style:italic}
+
+/* Modal */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:12px}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:440px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
 .modal-hdr{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:.95rem;flex-shrink:0}
@@ -92,14 +106,13 @@ select.fi{cursor:pointer}
 .modal-ftr{padding:11px 14px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
 .x-btn{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1;padding:0 4px;font-family:inherit}
 
-/* ── Toast ── */
+/* Toast */
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.83rem;z-index:600;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap}
 .toast.show{opacity:1}
 
-/* ── Hidden utility ── */
 .hidden{display:none!important}
 
-/* ── Mobile — sidebar/detail fill .app, header stays above (z-index:200) ── */
+/* Mobile */
 @media(max-width:600px){
   .sidebar{position:absolute;inset:0;width:100%;border-right:none;z-index:10}
   .detail{position:absolute;inset:0;z-index:10}
@@ -112,7 +125,6 @@ select.fi{cursor:pointer}
 </head>
 <body>
 
-<!-- Header: z-index:200 keeps it above mobile panels -->
 <div class="hdr">
   <h1>&#9829; MedList</h1>
   <span class="census" id="censusLabel"></span>
@@ -121,7 +133,6 @@ select.fi{cursor:pointer}
 
 <div class="app">
 
-  <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="sb-title">Patients</div>
     <div class="pt-list" id="ptList">
@@ -129,16 +140,13 @@ select.fi{cursor:pointer}
     </div>
   </div>
 
-  <!-- Detail panel -->
   <div class="detail" id="detail">
 
-    <!-- Empty state (shown when no patient selected) -->
     <div class="empty-state" id="emptyState">
       <div style="font-size:2.5rem;opacity:.25">&#128203;</div>
       <div>Select a patient</div>
     </div>
 
-    <!-- Patient detail (hidden until patient selected) -->
     <div id="detailView" class="hidden">
 
       <div class="pt-hdr">
@@ -156,8 +164,8 @@ select.fi{cursor:pointer}
 
       <div class="tabs">
         <div class="tab on" id="t-details" onclick="goTab('details')">Details</div>
-        <div class="tab" id="t-vitals" onclick="goTab('vitals')">Vitals / Labs</div>
-        <div class="tab" id="t-orders" onclick="goTab('orders')">Orders</div>
+        <div class="tab" id="t-vitals"  onclick="goTab('vitals')">Vitals / Labs</div>
+        <div class="tab" id="t-orders"  onclick="goTab('orders')">Orders</div>
       </div>
 
       <!-- Details pane -->
@@ -176,7 +184,10 @@ select.fi{cursor:pointer}
           <div class="fg"><div class="fl">ICS / Team</div><input class="fi" id="fICS" type="text"></div>
         </div>
         <div class="fg"><div class="fl">Problems / Diagnoses</div><textarea class="fi" id="fProblems" rows="3"></textarea></div>
-        <div class="fg"><div class="fl">To Do</div><textarea class="fi" id="fToDo" rows="3"></textarea></div>
+        <div class="fg">
+          <div class="fl">To Do</div>
+          <div class="todo-wrap" id="todoContainer"></div>
+        </div>
         <div class="save-bar"><button class="btn btn-blue" onclick="saveDetails()">Save Details</button></div>
       </div>
 
@@ -192,17 +203,14 @@ select.fi{cursor:pointer}
         <div class="save-bar"><button class="btn btn-blue" onclick="saveOrders()">Save Orders</button></div>
       </div>
 
-    </div><!-- #detailView -->
-  </div><!-- .detail -->
-</div><!-- .app -->
+    </div>
+  </div>
+</div>
 
 <!-- Add Patient Modal -->
 <div class="overlay hidden" id="modal">
   <div class="modal">
-    <div class="modal-hdr">
-      Add Patient
-      <button class="x-btn" onclick="closeAdd()">&times;</button>
-    </div>
+    <div class="modal-hdr">Add Patient <button class="x-btn" onclick="closeAdd()">&times;</button></div>
     <div class="modal-body">
       <div class="g2">
         <div class="fg"><div class="fl">Name *</div><input class="fi" id="mName" type="text" placeholder="Last, First"></div>
@@ -233,17 +241,14 @@ var patients = [];
 var curId    = null;
 var mobile   = (window.innerWidth <= 600);
 
-// ── Init ──────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────
 window.onload = function() {
-  // On mobile: sidebar covers .app area, detail starts hidden
-  if (mobile) {
-    document.getElementById('detail').classList.add('hidden');
-  }
+  if (mobile) document.getElementById('detail').classList.add('hidden');
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAdd();
+  });
   google.script.run
-    .withSuccessHandler(function(data) {
-      patients = data || [];
-      renderList();
-    })
+    .withSuccessHandler(function(data) { patients = data || []; renderList(); })
     .withFailureHandler(function(e) {
       document.getElementById('ptList').innerHTML =
         '<div style="padding:16px;color:var(--muted)">Error: ' + e.message + '</div>';
@@ -251,7 +256,7 @@ window.onload = function() {
     .getPatients();
 };
 
-// ── Render patient list ────────────────────────────────────────
+// ── Patient list ──────────────────────────────────────────────
 function renderList() {
   var el = document.getElementById('ptList');
   var n  = patients.length;
@@ -266,18 +271,17 @@ function renderList() {
     var pri = (p.Priority || 'stable').toLowerCase();
     var sel = (String(p.ID) === String(curId)) ? ' sel' : '';
     html += '<div class="pt-card' + sel + '" onclick="selectPt(\'' + p.ID + '\')">' +
-            '<div class="pt-name"><span class="dot dot-' + pri + '"></span>' + x(p.Name || '—') + '</div>' +
-            '<div class="pt-sub">' + x(p.Room || '') + (p.MRN ? ' · ' + x(p.MRN) : '') + '</div>' +
+            '<div class="pt-name"><span class="dot dot-' + pri + '"></span>' + esc(p.Name || '—') + '</div>' +
+            '<div class="pt-sub">' + esc(p.Room || '') + (p.MRN ? ' · ' + esc(p.MRN) : '') + '</div>' +
             '</div>';
   }
   el.innerHTML = html;
 }
 
-// ── Select patient ────────────────────────────────────────────
+// ── Select / show patient ─────────────────────────────────────
 function selectPt(id) {
   curId = String(id);
-  var p = findPt(id);
-  if (!p) return;
+  var p = findPt(id); if (!p) return;
   renderList();
   showDetail(p);
   if (mobile) {
@@ -286,29 +290,27 @@ function selectPt(id) {
   }
 }
 
-// ── Show patient detail ────────────────────────────────────────
 function showDetail(p) {
   document.getElementById('emptyState').classList.add('hidden');
   document.getElementById('detailView').classList.remove('hidden');
 
   var pri = p.Priority || 'Stable';
-  document.getElementById('dhName').textContent  = p.Name || '—';
-  document.getElementById('dhRoom').textContent  = p.Room || 'No room';
-  document.getElementById('dhMRN').textContent   = 'MRN: ' + (p.MRN || '—');
+  document.getElementById('dhName').textContent = p.Name || '—';
+  document.getElementById('dhRoom').textContent = p.Room || 'No room';
+  document.getElementById('dhMRN').textContent  = 'MRN: ' + (p.MRN || '—');
   var pb = document.getElementById('dhPri');
   pb.textContent = pri;
   pb.className   = 'badge pri pri-' + pri.toLowerCase();
 
-  sv('fName', p.Name);   sv('fPri', p.Priority || 'Stable');
-  sv('fRoom', p.Room);   sv('fMRN', p.MRN);
-  sv('fICS', p.ICS);     sv('fProblems', p.Problems);
-  sv('fToDo', p.ToDo);   sv('fActiveMeds', p.ActiveMeds);
-  sv('fHomeMeds', p.HomeMeds);
+  sv('fName', p.Name); sv('fPri', p.Priority || 'Stable');
+  sv('fRoom', p.Room); sv('fMRN', p.MRN);
+  sv('fICS',  p.ICS);  sv('fProblems', p.Problems);
+  sv('fActiveMeds', p.ActiveMeds); sv('fHomeMeds', p.HomeMeds);
 
+  renderTodo(document.getElementById('todoContainer'), p);
   goTab('details');
 }
 
-// ── Back (mobile) ─────────────────────────────────────────────
 function goBack() {
   curId = null;
   document.getElementById('detail').classList.add('hidden');
@@ -325,20 +327,19 @@ function goTab(name) {
   }
 }
 
-// ── Save Details ──────────────────────────────────────────────
+// ── Save ──────────────────────────────────────────────────────
 function saveDetails() {
   var p = findPt(curId); if (!p) return;
   p.Name = gv('fName'); p.Priority = gv('fPri');
   p.Room = gv('fRoom'); p.MRN = gv('fMRN');
   p.ICS  = gv('fICS');  p.Problems = gv('fProblems');
-  p.ToDo = gv('fToDo');
+  // p.ToDo is kept current by the todo widget automatically
   google.script.run
     .withSuccessHandler(function() { renderList(); showDetail(p); toast('Saved'); })
     .withFailureHandler(function(e) { toast('Error: ' + e.message); })
     .savePatient(p);
 }
 
-// ── Save Orders ───────────────────────────────────────────────
 function saveOrders() {
   var p = findPt(curId); if (!p) return;
   p.ActiveMeds = gv('fActiveMeds');
@@ -349,7 +350,6 @@ function saveOrders() {
     .savePatient(p);
 }
 
-// ── Delete ────────────────────────────────────────────────────
 function confirmDelete() {
   var p = findPt(curId); if (!p) return;
   if (!confirm('Delete ' + (p.Name || 'patient') + '?')) return;
@@ -368,62 +368,182 @@ function confirmDelete() {
     .deletePatient(id);
 }
 
-// ── Add Patient Modal ─────────────────────────────────────────
+// ── Add modal ─────────────────────────────────────────────────
 function openAdd() {
-  ['mName','mRoom','mMRN','mICS','mProblems'].forEach(function(id) {
-    document.getElementById(id).value = '';
-  });
+  ['mName','mRoom','mMRN','mICS','mProblems'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('mPri').value = 'Stable';
   document.getElementById('modal').classList.remove('hidden');
   setTimeout(function() { document.getElementById('mName').focus(); }, 150);
 }
 function closeAdd() { document.getElementById('modal').classList.add('hidden'); }
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('modal').addEventListener('click', function(e) {
-    if (e.target === this) closeAdd();
-  });
-});
 
 function submitAdd() {
   var name = document.getElementById('mName').value.trim();
   if (!name) { toast('Name is required'); return; }
   var p = {
     Name: name, Priority: gv('mPri'),
-    Room: gv('mRoom'), MRN: gv('mMRN'),
-    ICS:  gv('mICS'),  Problems: gv('mProblems'),
-    ToDo: '', ActiveMeds: '', HomeMeds: ''
+    Room: gv('mRoom'), MRN: gv('mMRN'), ICS: gv('mICS'),
+    Problems: gv('mProblems'), ToDo: '', ActiveMeds: '', HomeMeds: ''
   };
   google.script.run
     .withSuccessHandler(function(newId) {
-      p.ID = String(newId);
-      patients.push(p);
-      closeAdd();
-      renderList();
-      selectPt(p.ID);
-      toast('Patient added');
+      p.ID = String(newId); patients.push(p);
+      closeAdd(); renderList(); selectPt(p.ID); toast('Patient added');
     })
     .withFailureHandler(function(e) { toast('Failed: ' + e.message); })
     .savePatient(p);
+}
+
+// ── Todo widget ───────────────────────────────────────────────
+// Format: "[ ] task" = pending, "[x] task" = done, plain text = note
+function parseTodo(text) {
+  if (!text) return { tasks: [], suggestions: [] };
+  var tasks = [];
+  var lines = String(text).split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (/^\[x\] /i.test(line)) {
+      tasks.push({ type: 'task', text: line.substring(4), done: true });
+    } else if (/^\[ \] /.test(line)) {
+      tasks.push({ type: 'task', text: line.substring(4), done: false });
+    } else if (line.trim()) {
+      tasks.push({ type: 'plain', text: line });
+    }
+  }
+  return { tasks: tasks };
+}
+
+function serializeTodo(tasks) {
+  var plains  = tasks.filter(function(t) { return t.type !== 'task'; });
+  var pending = tasks.filter(function(t) { return t.type === 'task' && !t.done; });
+  var done    = tasks.filter(function(t) { return t.type === 'task' && t.done; });
+  return plains.concat(pending).concat(done).map(function(t) {
+    return t.type === 'task' ? (t.done ? '[x] ' : '[ ] ') + t.text : t.text;
+  }).join('\n');
+}
+
+function renderTodo(container, p) {
+  if (!container) return;
+  container.innerHTML = '';
+  var parsed = parseTodo(p.ToDo);
+
+  function autoSave() {
+    p.ToDo = serializeTodo(parsed.tasks);
+    google.script.run.savePatient(p); // fire-and-forget auto-save
+  }
+
+  function startEdit(item, textEl) {
+    var inp = document.createElement('textarea');
+    inp.className = 'todo-text-input';
+    inp.value = item.text; inp.rows = 1;
+    function resize() { inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; }
+    inp.addEventListener('input', resize);
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        item.text = this.value.trim() || item.text;
+        autoSave(); renderTodo(container, p);
+      } else if (e.key === 'Escape') { renderTodo(container, p); }
+    });
+    inp.addEventListener('blur', function() {
+      item.text = this.value.trim() || item.text;
+      autoSave(); renderTodo(container, p);
+    });
+    textEl.replaceWith(inp); inp.focus(); inp.select(); resize();
+  }
+
+  var listEl = document.createElement('div');
+  listEl.className = 'todo-list';
+
+  var plains  = parsed.tasks.filter(function(t) { return t.type !== 'task'; });
+  var pending = parsed.tasks.filter(function(t) { return t.type === 'task' && !t.done; });
+  var done    = parsed.tasks.filter(function(t) { return t.type === 'task' && t.done; });
+
+  // Plain lines
+  plains.forEach(function(item) {
+    var el = document.createElement('div');
+    el.className = 'todo-item';
+    var cb = document.createElement('div');
+    cb.className = 'todo-checkbox'; cb.title = 'Convert to task';
+    cb.addEventListener('click', function(e) {
+      e.stopPropagation();
+      item.type = 'task'; item.done = false;
+      item.text = item.text.replace(/^-\s+/, '');
+      autoSave(); renderTodo(container, p);
+    });
+    var tx = document.createElement('span');
+    tx.className = 'todo-text'; tx.style.color = '#94a3b8'; tx.textContent = item.text;
+    tx.addEventListener('click', function(e) { e.stopPropagation(); startEdit(item, tx); });
+    var dl = makeDel(item, parsed, container, p, autoSave);
+    el.appendChild(cb); el.appendChild(tx); el.appendChild(dl);
+    listEl.appendChild(el);
+  });
+
+  // Task items (pending then done)
+  pending.concat(done).forEach(function(item) {
+    var el = document.createElement('div');
+    el.className = 'todo-item' + (item.done ? ' completed' : '');
+    var cb = document.createElement('div');
+    cb.className = 'todo-checkbox' + (item.done ? ' checked' : '');
+    cb.addEventListener('click', function(e) {
+      e.stopPropagation();
+      item.done = !item.done; autoSave(); renderTodo(container, p);
+    });
+    var tx = document.createElement('span');
+    tx.className = 'todo-text'; tx.textContent = item.text;
+    tx.addEventListener('click', function(e) { e.stopPropagation(); startEdit(item, tx); });
+    var dl = makeDel(item, parsed, container, p, autoSave);
+    el.appendChild(cb); el.appendChild(tx); el.appendChild(dl);
+    listEl.appendChild(el);
+  });
+
+  container.appendChild(listEl);
+
+  // Quick-add input
+  var addRow = document.createElement('div');
+  addRow.className = 'todo-add-row';
+  var addInp = document.createElement('input');
+  addInp.type = 'text'; addInp.className = 'todo-add-input';
+  addInp.placeholder = 'Add task… (Enter)';
+  addInp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value.trim()) {
+      e.preventDefault();
+      parsed.tasks.push({ type: 'task', text: this.value.trim(), done: false });
+      this.value = ''; autoSave(); renderTodo(container, p);
+      var ni = container.querySelector('.todo-add-input');
+      if (ni) ni.focus();
+    }
+  });
+  addRow.appendChild(addInp);
+  container.appendChild(addRow);
+}
+
+function makeDel(item, parsed, container, p, autoSave) {
+  var dl = document.createElement('div');
+  dl.className = 'todo-del'; dl.innerHTML = '&times;';
+  dl.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var idx = parsed.tasks.indexOf(item);
+    if (idx !== -1) parsed.tasks.splice(idx, 1);
+    autoSave(); renderTodo(container, p);
+  });
+  return dl;
 }
 
 // ── Helpers ───────────────────────────────────────────────────
 function findPt(id) {
   for (var i = 0; i < patients.length; i++) {
     if (String(patients[i].ID) === String(id)) return patients[i];
-  }
-  return null;
+  } return null;
 }
 function gv(id) { return document.getElementById(id).value.trim(); }
-function sv(id, val) { document.getElementById(id).value = val || ''; }
-function x(s) {
+function sv(id, v) { document.getElementById(id).value = v || ''; }
+function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-// ── Toast ─────────────────────────────────────────────────────
 function toast(msg) {
   var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   clearTimeout(t._t);
   t._t = setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
