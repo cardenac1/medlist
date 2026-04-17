@@ -4862,7 +4862,7 @@ function renderTodoInListRow(container, patient) {
         if (item.type === 'task') {
             const checkbox = document.createElement('div');
             checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
-            checkbox.style.cssText = 'width: 14px; height: 14px; min-width: 14px; flex-shrink: 0;';
+            checkbox.style.cssText = 'width: 18px; height: 18px; min-width: 18px; flex-shrink: 0;';
             checkbox.addEventListener('click', (e) => {
                 e.stopPropagation();
                 item.done = !item.done;
