@@ -4839,6 +4839,56 @@ function generateStatusIndicator(patient, index) {
 
 
 
+function renderTodoInListRow(container, patient) {
+    container.innerHTML = '';
+    const value = patient['To do'] || '';
+    if (!value) return;
+
+    const parsed = parseTodoText(value);
+    const allItems = parsed.tasks;
+
+    if (allItems.length === 0) {
+        const span = document.createElement('span');
+        span.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: \'Inter\', sans-serif; color: #ffffff; word-wrap: break-word; white-space: pre-wrap; overflow-wrap: break-word;';
+        span.textContent = value;
+        container.appendChild(span);
+        return;
+    }
+
+    allItems.forEach(item => {
+        const taskRow = document.createElement('div');
+        taskRow.style.cssText = 'display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.1rem;';
+
+        if (item.type === 'task') {
+            const checkbox = document.createElement('div');
+            checkbox.className = 'todo-checkbox' + (item.done ? ' checked' : '');
+            checkbox.style.cssText = 'width: 14px; height: 14px; min-width: 14px; flex-shrink: 0;';
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                item.done = !item.done;
+                patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                saveToLocalStorage();
+                renderTodoInListRow(container, patient);
+                updatePriorityLightFromTodos(patient);
+            });
+
+            const textEl = document.createElement('span');
+            textEl.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: \'Inter\', sans-serif; word-wrap: break-word; overflow-wrap: break-word; color: ' + (item.done ? '#6b7280' : '#ffffff') + '; text-decoration: ' + (item.done ? 'line-through' : 'none') + ';';
+            textEl.textContent = item.text;
+
+            taskRow.appendChild(checkbox);
+            taskRow.appendChild(textEl);
+        } else {
+            const textEl = document.createElement('span');
+            textEl.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: \'Inter\', sans-serif; color: #ffffff; word-wrap: break-word; overflow-wrap: break-word;';
+            textEl.textContent = item.text;
+            taskRow.appendChild(textEl);
+        }
+
+        container.appendChild(taskRow);
+    });
+}
+
 function displayRows(data = patientData) {
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
@@ -5029,18 +5079,9 @@ function displayRows(data = patientData) {
                 const header = MASTER_HEADERS[colIndex];
                 const value = patient[header] || '';
                 if (header === 'To do' && value) {
-                    const toDoSpan = document.createElement('span');
-                    toDoSpan.style.cssText = `
-                        font-size: 0.78rem;
-                        line-height: 1.2;
-                        font-family: 'Inter', sans-serif;
-                        color: #ffffff;
-                        word-wrap: break-word;
-                        white-space: pre-wrap;
-                        overflow-wrap: break-word;
-                    `;
-                    toDoSpan.textContent = value;
-                    toDoElement = toDoSpan;
+                    const todoWrapper = document.createElement('div');
+                    renderTodoInListRow(todoWrapper, patient);
+                    toDoElement = todoWrapper;
                 }
             });
         }
@@ -6457,7 +6498,63 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
         label.style.color = 'var(--text-secondary)';
         label.style.fontSize = '0.9rem';
         newEntryFields.appendChild(label);
-        
+
+        if (header === 'To do') {
+            const taskContainer = document.createElement('div');
+            taskContainer.id = 'newEntryTaskList';
+            taskContainer.style.marginBottom = '0.5rem';
+
+            const addTaskRow = () => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.4rem;';
+
+                const inp = document.createElement('input');
+                inp.placeholder = 'Enter task...';
+                inp.setAttribute('data-header', 'To do');
+                inp.setAttribute('data-task-item', 'true');
+                inp.style.cssText = 'flex: 1; margin-bottom: 0;';
+                inp.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTaskRow();
+                        taskContainer.lastElementChild.querySelector('input').focus();
+                    }
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.textContent = '×';
+                removeBtn.style.cssText = 'background: transparent; border: 1px solid #475569; color: #94a3b8; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 1.1rem; flex-shrink: 0;';
+                removeBtn.onclick = () => {
+                    const allRows = taskContainer.querySelectorAll('[data-task-item]');
+                    if (allRows.length > 1) {
+                        row.remove();
+                    } else {
+                        inp.value = '';
+                    }
+                };
+
+                row.appendChild(inp);
+                row.appendChild(removeBtn);
+                taskContainer.appendChild(row);
+            };
+
+            addTaskRow();
+
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.textContent = '+ Add task';
+            addBtn.style.cssText = 'background: transparent; border: 1px solid #334155; color: #94a3b8; border-radius: 6px; padding: 0.25rem 0.75rem; cursor: pointer; font-size: 0.85rem; width: 100%; margin-bottom: 0.75rem;';
+            addBtn.onclick = () => {
+                addTaskRow();
+                taskContainer.lastElementChild.querySelector('input').focus();
+            };
+
+            newEntryFields.appendChild(taskContainer);
+            newEntryFields.appendChild(addBtn);
+            return;
+        }
+
         const input = document.createElement('input');
         input.placeholder = `Enter ${header}...`;
         input.setAttribute('data-header', header);
@@ -6516,10 +6613,19 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
             }
             
             const fields = document.querySelectorAll('#newEntryFields input[data-header]');
+            const todoTasks = [];
             fields.forEach(field => {
                 const header = field.getAttribute('data-header');
-                newPatient[header] = field.value.trim();
+                if (header === 'To do') {
+                    const val = field.value.trim();
+                    if (val) todoTasks.push('[ ] ' + val);
+                } else {
+                    newPatient[header] = field.value.trim();
+                }
             });
+            if (todoTasks.length > 0) {
+                newPatient['To do'] = todoTasks.join('\n');
+            }
 
  if (newPatient['A/G']) {
         newPatient['Problems'] = newPatient['A/G'];
