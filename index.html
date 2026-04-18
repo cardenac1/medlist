@@ -3392,8 +3392,8 @@ async function testOCRAvailability() {
                 </div>
                 <div class="view-selector">
                     <button class="view-button active" onclick="switchView('basic')">Details</button>
-                    <button class="view-button" onclick="switchView('chartcheck')">📊 Chart Check</button>
-                    <button class="view-button" onclick="switchView('consult')">Consult Mode</button>
+                    <button class="view-button" onclick="switchView('vitals')">📊 Vitals/Labs</button>
+                    <button class="view-button" onclick="switchView('orders')">📋 Orders</button>
                 </div>
             </div>
 
@@ -3500,7 +3500,7 @@ async function testOCRAvailability() {
         // ============ GLOBAL VARIABLES ============
         let patientData = [];
         let currentPatientIndex = -1;
-        let currentViewMode = 'basic'; // basic, chartcheck, consult
+        let currentViewMode = 'basic'; // basic, vitals, orders
         let selectedColumns = [1, 2, 3, 19]; // Default to Name, RM, MRN, To do
         let filteredIndexes = [];
         let labData = {};
@@ -5648,10 +5648,10 @@ function switchView(mode) {
             headerCard.appendChild(shortFieldsRow);
             dashGrid.appendChild(headerCard);
 
-            // Dashboard cards for text fields
-            const cardIcons = { 'Problems': '', 'ICS': '', 'VIOLIN': '', 'ORDERS': '', 'To do': '', 'Priority': '' };
-            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'To do': '#22c55e', 'Priority': '#ef4444' };
-            const textFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do', 'Priority'];
+            // Dashboard cards for text fields (VIOLIN and ORDERS are in dedicated tabs)
+            const cardIcons = { 'Problems': '', 'ICS': '', 'To do': '', 'Priority': '' };
+            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'To do': '#22c55e', 'Priority': '#ef4444' };
+            const textFields = ['Problems', 'ICS', 'To do', 'Priority'];
 
             textFields.forEach(header => {
                 const card = document.createElement('div');
@@ -5796,22 +5796,20 @@ function switchView(mode) {
 
 
 
-case 'chartcheck': {
+case 'vitals': {
             isChartCheckMode = true;
 
-            // Modern two-panel ChartCheck layout
+            // Two-panel Vitals/Labs layout
             const ccLayout = document.createElement('div');
             ccLayout.className = 'chartcheck-layout';
             ccLayout.id = 'chartCheckMainContainer';
 
-            // LEFT: Main content with section cards
+            // LEFT: Main content
             const ccMain = document.createElement('div');
             ccMain.className = 'chartcheck-main';
 
-            const checkboxFields = ['Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do'];
-            const fieldsToShowChartCheck = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
-            const ccSectionIcons = { 'Name': '', 'RM': '', 'MRN': '', 'Att': '', 'Problems': '', 'ICS': '', 'VIOLIN': '', 'ORDERS': '', 'Priority': '' };
-            const ccSectionColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6', 'ORDERS': '#f59e0b', 'Priority': '#ef4444' };
+            const fieldsToShowChartCheck = ['Problems', 'ICS', 'VIOLIN'];
+            const ccSectionColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6' };
 
             fieldsToShowChartCheck.forEach(header => {
                 const section = document.createElement('div');
@@ -5821,7 +5819,7 @@ case 'chartcheck': {
                 const secHeader = document.createElement('div');
                 secHeader.className = 'chartcheck-section-header';
                 const iconColor = ccSectionColors[header] || '#94a3b8';
-                secHeader.innerHTML = '<span style="font-size:0.85rem;">' + (ccSectionIcons[header] || '') + '</span><span class="section-title" style="color:' + iconColor + '">' + header + '</span>';
+                secHeader.innerHTML = '<span class="section-title" style="color:' + iconColor + '">' + header + '</span>';
 
                 // Help button
                 if (helpContent[header]) {
@@ -5862,17 +5860,6 @@ case 'chartcheck': {
                     fishBtn.id = 'violinToggleBtn';
                     fishBtn.onclick = function(e) { e.preventDefault(); toggleViolinMode(); };
                     secHeader.appendChild(fishBtn);
-                } else if (header === 'ORDERS') {
-                    const abbrevBtn = document.createElement('button');
-                    abbrevBtn.className = 'inline-action-btn';
-                    abbrevBtn.textContent = 'Abbrev';
-                    abbrevBtn.onclick = function(e) { e.preventDefault(); updateOrders(); };
-                    secHeader.appendChild(abbrevBtn);
-                    const fullBtn = document.createElement('button');
-                    fullBtn.className = 'inline-action-btn';
-                    fullBtn.textContent = 'Full';
-                    fullBtn.onclick = function(e) { e.preventDefault(); toggleOrdersView(); };
-                    secHeader.appendChild(fullBtn);
                 }
 
                 section.appendChild(secHeader);
@@ -5881,46 +5868,42 @@ case 'chartcheck': {
                 const secBody = document.createElement('div');
                 secBody.className = 'chartcheck-section-body';
 
-                let input;
-                if (header === 'Name' || header === 'RM' || header === 'MRN' || header === 'Att' || header === 'Priority') {
-                    input = document.createElement('input');
-                    input.type = 'text';
-                } else {
-                    input = document.createElement('textarea');
-                }
+                const input = document.createElement('textarea');
                 input.id = `field_${header.replace(/\s+/g, '_')}`;
                 input.value = patient[header] || '';
                 input.style.cssText = 'margin:0;';
-                if (header === 'ORDERS') {
-                    input.placeholder = 'PAIN:\nAC:\nABX:\nN/F:\nLTD:\nDISPO:';
-                }
                 input.addEventListener('input', function() {
                     patient[header] = this.value;
-                    if (header === 'Name') {
-                        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
-                    }
                     saveToLocalStorage();
-                    if (input.tagName === 'TEXTAREA') autoResizeTextarea(this);
+                    autoResizeTextarea(this);
                 });
-
                 secBody.appendChild(input);
-
-                // Full orders display
-                if (header === 'ORDERS') {
-                    const fullOrdersDiv = document.createElement('div');
-                    fullOrdersDiv.id = 'fullOrdersDisplay';
-                    fullOrdersDiv.className = 'orders-section hidden';
-                    fullOrdersDiv.style.marginTop = '0.5rem';
-                    secBody.appendChild(fullOrdersDiv);
-                }
-
                 section.appendChild(secBody);
                 ccMain.appendChild(section);
-
-                if (input.tagName === 'TEXTAREA') {
-                    setTimeout(() => autoResizeTextarea(input), 0);
-                }
+                setTimeout(() => autoResizeTextarea(input), 0);
             });
+
+            // Inline Vitals / Labs / I&O table — always visible
+            const inlineTableSection = document.createElement('div');
+            inlineTableSection.className = 'chartcheck-section';
+            const inlineTableHdr = document.createElement('div');
+            inlineTableHdr.className = 'chartcheck-section-header';
+            inlineTableHdr.innerHTML = '<span class="section-title" style="color:#22c55e;">Vitals / Labs / I&amp;O</span>';
+            const refreshTableBtn = document.createElement('button');
+            refreshTableBtn.className = 'inline-action-btn';
+            refreshTableBtn.textContent = '↺ Refresh';
+            refreshTableBtn.onclick = function(e) { e.preventDefault(); if(window.refreshInlineLabsTable) refreshInlineLabsTable(); };
+            inlineTableHdr.appendChild(refreshTableBtn);
+            inlineTableSection.appendChild(inlineTableHdr);
+            const inlineTableBody = document.createElement('div');
+            inlineTableBody.className = 'chartcheck-section-body';
+            inlineTableBody.id = 'inlineLabsTableContainer';
+            inlineTableBody.style.cssText = 'overflow-x:auto;padding:0.25rem;';
+            inlineTableBody.innerHTML = (labData && Object.keys(labData).length > 0)
+                ? buildUnifiedTableHTML(labData, lastImportedData)
+                : '<p style="color:#64748b;padding:0.75rem;font-size:0.85rem;text-align:center;">No data yet — use Import above.</p>';
+            inlineTableSection.appendChild(inlineTableBody);
+            ccMain.appendChild(inlineTableSection);
 
             // RIGHT: Sidebar with checklist + to-do
             const ccSidebar = document.createElement('div');
@@ -5947,26 +5930,14 @@ case 'chartcheck': {
             ccLayout.appendChild(ccSidebar);
             form.appendChild(ccLayout);
 
-            // Update progress ring function
-            window.updateCCProgressRing = function() {
-                const items = document.querySelectorAll('.checklist-item');
-                const total = items.length;
-                const checked = document.querySelectorAll('.checklist-item.checked').length;
-                const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
-                const circle = document.getElementById('ccProgressCircle');
-                const text = document.getElementById('ccProgressText');
-                if (circle && text) {
-                    const offset = ringCircumference - (pct / 100) * ringCircumference;
-                    circle.style.strokeDashoffset = offset;
-                    circle.style.stroke = pct === 100 ? '#22c55e' : '#3b82f6';
-                    text.textContent = pct + '%';
-                }
+            // Expose refresh function so import can update the inline table
+            window.refreshInlineLabsTable = function() {
+                const container = document.getElementById('inlineLabsTableContainer');
+                if (!container) return;
+                container.innerHTML = (labData && Object.keys(labData).length > 0)
+                    ? buildUnifiedTableHTML(labData, lastImportedData)
+                    : '<p style="color:#64748b;padding:0.75rem;font-size:0.85rem;text-align:center;">No data yet — use Import above.</p>';
             };
-
-            setTimeout(() => {
-                updateChartCheckProgress();
-                if (window.updateCCProgressRing) updateCCProgressRing();
-            }, 100);
 
             break;
         }
@@ -6017,23 +5988,110 @@ case 'chartcheck': {
 
 
                     
-                case 'consult':
-                    // Show consult fields
-                    if (patient.Type === 'Consult') {
-                        fieldsToShow = ['Name', 'RM', 'MRN', 'A/G', 'CC', 'HPI', 'ROS', 'PMH', 'Meds', 'All', 'Surg hx', 'FSH', 'VIOLIN', 'PE', 'To do', 'Priority'];
-                    } else {
-                        fieldsToShow = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'To do', 'Priority'];
+                case 'orders': {
+                    // Two-panel Orders layout
+                    const ordLayout = document.createElement('div');
+                    ordLayout.className = 'chartcheck-layout';
+                    ordLayout.id = 'ordersMainContainer';
+
+                    // LEFT: Orders panel
+                    const ordMain = document.createElement('div');
+                    ordMain.className = 'chartcheck-main';
+
+                    // ORDERS textarea section
+                    const ordSection = document.createElement('div');
+                    ordSection.className = 'chartcheck-section';
+                    const ordHdr = document.createElement('div');
+                    ordHdr.className = 'chartcheck-section-header';
+                    ordHdr.innerHTML = '<span class="section-title" style="color:#f59e0b;">Orders</span>';
+                    const autoFillBtn = document.createElement('button');
+                    autoFillBtn.className = 'inline-action-btn';
+                    autoFillBtn.textContent = 'Auto-fill';
+                    autoFillBtn.title = 'Auto-populate from imported data';
+                    autoFillBtn.onclick = function(e) { e.preventDefault(); updateOrders(); };
+                    ordHdr.appendChild(autoFillBtn);
+                    if (helpContent && helpContent['ORDERS']) {
+                        const helpBtn = document.createElement('button');
+                        helpBtn.className = 'inline-action-btn';
+                        helpBtn.textContent = '?';
+                        helpBtn.style.cssText = 'padding:0.15rem 0.4rem;font-size:0.7rem;';
+                        helpBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); showHelpModal('ORDERS'); };
+                        ordHdr.appendChild(helpBtn);
                     }
-                    document.getElementById('consultControls').classList.remove('hidden');
-                    updateConvertButton();
+                    ordSection.appendChild(ordHdr);
+                    const ordBody = document.createElement('div');
+                    ordBody.className = 'chartcheck-section-body';
+                    const ordInput = document.createElement('textarea');
+                    ordInput.id = 'field_ORDERS';
+                    ordInput.value = patient['ORDERS'] || '';
+                    ordInput.style.cssText = 'margin:0;';
+                    ordInput.placeholder = 'PAIN:\nAC:\nABX:\nN/F:\nLTD:\nDISPO:';
+                    ordInput.addEventListener('input', function() {
+                        patient['ORDERS'] = this.value;
+                        saveToLocalStorage();
+                        autoResizeTextarea(this);
+                    });
+                    ordBody.appendChild(ordInput);
+                    ordSection.appendChild(ordBody);
+                    ordMain.appendChild(ordSection);
+                    setTimeout(() => autoResizeTextarea(ordInput), 0);
+
+                    // Current Medications & Diet — always visible, not hidden behind toggle
+                    const fullOrdSection = document.createElement('div');
+                    fullOrdSection.className = 'chartcheck-section';
+                    const fullOrdHdr = document.createElement('div');
+                    fullOrdHdr.className = 'chartcheck-section-header';
+                    fullOrdHdr.innerHTML = '<span class="section-title" style="color:#fb923c;">Current Medications &amp; Diet</span>';
+                    fullOrdSection.appendChild(fullOrdHdr);
+                    const fullOrdBody = document.createElement('div');
+                    fullOrdBody.className = 'chartcheck-section-body';
+                    fullOrdBody.style.padding = '0.25rem';
+                    const fullOrdersDiv = document.createElement('div');
+                    fullOrdersDiv.id = 'fullOrdersDisplay';
+                    fullOrdersDiv.className = 'orders-section';
+                    fullOrdBody.appendChild(fullOrdersDiv);
+                    fullOrdSection.appendChild(fullOrdBody);
+                    ordMain.appendChild(fullOrdSection);
+
+                    // RIGHT: Sidebar with to-do
+                    const ordSidebar = document.createElement('div');
+                    ordSidebar.className = 'chartcheck-sidebar';
+                    const ordTodoCard = document.createElement('div');
+                    ordTodoCard.className = 'chartcheck-section';
+                    ordTodoCard.style.cssText = 'display:flex;flex-direction:column;';
+                    const ordTodoHdr = document.createElement('div');
+                    ordTodoHdr.className = 'chartcheck-section-header chartcheck-todo-header-sticky';
+                    ordTodoHdr.innerHTML = '<span style="font-size:0.85rem;">&#x2705;</span><span class="section-title" style="color:#22c55e;">To Do</span><span id="todoBadge" class="todo-count-badge" style="display:none;"></span>';
+                    injectTodoModeButtons(ordTodoHdr);
+                    ordTodoCard.appendChild(ordTodoHdr);
+                    const ordTodoBody = document.createElement('div');
+                    ordTodoBody.className = 'chartcheck-section-body';
+                    ordTodoBody.id = 'todoContainer';
+                    ordTodoBody.style.cssText = 'padding:0.5rem 0.6rem;';
+                    renderTodoList(ordTodoBody, patient);
+                    ordTodoCard.appendChild(ordTodoBody);
+                    ordSidebar.appendChild(ordTodoCard);
+
+                    ordLayout.appendChild(ordMain);
+                    ordLayout.appendChild(ordSidebar);
+                    form.appendChild(ordLayout);
+
+                    // Render full orders table immediately (no toggle needed)
+                    setTimeout(() => {
+                        showFullOrders = true;
+                        renderOrdersTable();
+                        autoResizeTextarea(ordInput);
+                    }, 0);
+
                     break;
+                }
             }
 
 
 			fieldsToShow.forEach(header => {
     const label = document.createElement('label');
 
-if (currentViewMode === 'consult' && CONSULT_MODE_LABELS[header]) {
+if (currentViewMode === 'orders' && CONSULT_MODE_LABELS[header]) {
     if (helpContent[header]) {
         label.innerHTML = `${CONSULT_MODE_LABELS[header]}<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('${header}')">?</button>`;
     } else {
@@ -6047,8 +6105,8 @@ if (currentViewMode === 'consult' && CONSULT_MODE_LABELS[header]) {
     }
 }
 
-// Add toggle buttons for ORDERS and VIOLIN in basic/consult mode
-if (currentViewMode !== 'chartcheck') {
+// Add toggle buttons for ORDERS and VIOLIN in basic mode (vitals/orders have dedicated panels)
+if (currentViewMode !== 'vitals' && currentViewMode !== 'orders') {
     if (header === 'ORDERS') {
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'help-button';
@@ -6086,8 +6144,8 @@ if (currentViewMode !== 'chartcheck') {
 
 		    
                 
-                // Add buttons for specific fields in chart check mode
-                if (currentViewMode === 'chartcheck') {
+                // Add buttons for specific fields in vitals mode
+                if (currentViewMode === 'vitals') {
                     if (header === 'Problems') {
                         const podBtn = document.createElement('button');
                         podBtn.textContent = 'Update POD';
@@ -6834,7 +6892,7 @@ const CONSULT_MODE_LABELS = {
                 patient.Problems = patient.HPI;
             }
             saveToLocalStorage();
-            switchView('consult');
+            switchView('basic');
             displayRows();
         }
     } else {
@@ -6852,7 +6910,7 @@ const CONSULT_MODE_LABELS = {
             }
             
             saveToLocalStorage();
-            switchView('consult');
+            switchView('basic');
             displayRows();
         }
     }
@@ -7316,8 +7374,9 @@ setTimeout(() => {
     }
     
     // Refresh chart check display if in that mode
-    if (currentViewMode === 'chartcheck') {
+    if (currentViewMode === 'vitals') {
         refreshViolinDisplay();
+        if (window.refreshInlineLabsTable) refreshInlineLabsTable();
     }
     
     // Also try to refresh basic mode fishbone
@@ -14990,11 +15049,11 @@ function closeTableModal() {
 
 
 		function ensureChartCheckSync() {
-    if (currentViewMode === 'chartcheck' && currentPatientIndex !== -1) {
+    if (currentViewMode === 'vitals' && currentPatientIndex !== -1) {
         const patient = patientData[currentPatientIndex];
-        
+
         // Update all visible fields with current patient data
-        const allFields = ['Name', 'RM', 'MRN', 'Att', 'Problems', 'ICS', 'VIOLIN', 'ORDERS', 'Priority'];
+        const allFields = ['Problems', 'ICS', 'VIOLIN'];
         
         allFields.forEach(field => {
             const element = document.getElementById(`field_${field.replace(/\s+/g, '_')}`);
