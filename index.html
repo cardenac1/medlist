@@ -5533,23 +5533,7 @@ function clearSearch() {
         return;
     }
 
-    document.getElementById('stickyTextContainer').textContent = patient.Name || 'Unnamed Patient';
-
-    // Populate mobile sticky meta badges (RM + MRN)
-    const stickyBadges = document.getElementById('stickyMetaBadges');
-    stickyBadges.innerHTML = '';
-    if (patient.RM) {
-        const rmBadge = document.createElement('span');
-        rmBadge.className = 'sticky-badge sticky-badge-rm';
-        rmBadge.textContent = patient.RM;
-        stickyBadges.appendChild(rmBadge);
-    }
-    if (patient.MRN) {
-        const mrnBadge = document.createElement('span');
-        mrnBadge.className = 'sticky-badge sticky-badge-mrn';
-        mrnBadge.textContent = patient.MRN;
-        stickyBadges.appendChild(mrnBadge);
-    }
+    updateStickyHeader(patient);
 
     // Reset view mode to basic if it's invalid
     if (!currentViewMode) currentViewMode = 'basic';
@@ -5566,7 +5550,17 @@ function clearSearch() {
     updateNavButtons();
 
 }
- 
+
+function updateStickyHeader(patient) {
+    const el = document.getElementById('stickyTextContainer');
+    const sep = '<span style="color:#475569;font-weight:400;"> | </span>';
+    const name = patient.Name || 'Unnamed Patient';
+    let html = `<span style="color:#60a5fa;">${name}</span>`;
+    if (patient.RM)  html += sep + `<span style="color:#34d399;">${patient.RM}</span>`;
+    if (patient.MRN) html += sep + `<span style="color:#f59e0b;">${patient.MRN}</span>`;
+    el.innerHTML = html;
+    document.getElementById('stickyMetaBadges').innerHTML = '';
+}
 
 
 
@@ -5626,67 +5620,33 @@ function switchView(mode) {
             // Patient header card
             const headerCard = document.createElement('div');
             headerCard.className = 'patient-header-card';
-            const pNameDisplay = document.createElement('div');
-            pNameDisplay.className = 'patient-name-display';
-            pNameDisplay.textContent = patient['Name'] || 'Unnamed Patient';
-            headerCard.appendChild(pNameDisplay);
 
-            const metaRow = document.createElement('div');
-            metaRow.className = 'patient-meta';
-            ['RM', 'MRN', 'Att', 'Priority'].forEach(key => {
-                if (patient[key]) {
-                    const badge = document.createElement('span');
-                    badge.className = 'meta-badge';
-                    badge.textContent = key + ': ' + patient[key];
-                    metaRow.appendChild(badge);
-                }
-            });
-            headerCard.appendChild(metaRow);
-
-            // Editable short fields row inside header
+            // Input fields with labels only — NAME | RM | MRN shown in sticky header above
             const shortFieldsRow = document.createElement('div');
-            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.65rem;';
-            ['Name', 'RM', 'MRN'].forEach(header => {
-                const fieldWrap = document.createElement('div');
-                fieldWrap.style.cssText = 'width:100%;';
+            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;';
+            [['Name', 'Patient name'], ['RM', 'Room number'], ['MRN', 'MRN']].forEach(([header, placeholder]) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
                 const lbl = document.createElement('label');
-                lbl.textContent = header;
-                lbl.style.cssText = 'margin-top:0;';
+                lbl.textContent = header + ':';
+                lbl.style.cssText = 'margin:0;min-width:2.8rem;font-size:0.78rem;color:#94a3b8;white-space:nowrap;';
                 const inp = document.createElement('input');
                 inp.type = 'text';
                 inp.id = `field_${header.replace(/\s+/g, '_')}`;
                 inp.value = patient[header] || '';
-                inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
+                inp.placeholder = placeholder;
+                inp.style.cssText = 'margin:0;padding:0.35rem 0.6rem;font-size:0.8rem;flex:1;';
                 inp.addEventListener('input', function() {
                     patient[header] = this.value;
-                    if (header === 'Name') {
-                        pNameDisplay.textContent = this.value || 'Unnamed Patient';
-                        document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
-                    }
-                    // Update sticky RM/MRN badges on mobile
-                    if (header === 'RM' || header === 'MRN') {
-                        const stickyBadges = document.getElementById('stickyMetaBadges');
-                        stickyBadges.innerHTML = '';
-                        if (patient.RM) {
-                            const rmB = document.createElement('span');
-                            rmB.className = 'sticky-badge sticky-badge-rm';
-                            rmB.textContent = patient.RM;
-                            stickyBadges.appendChild(rmB);
-                        }
-                        if (patient.MRN) {
-                            const mrnB = document.createElement('span');
-                            mrnB.className = 'sticky-badge sticky-badge-mrn';
-                            mrnB.textContent = patient.MRN;
-                            stickyBadges.appendChild(mrnB);
-                        }
-                    }
+                    updateStickyHeader(patient);
                     saveToLocalStorage();
                 });
-                fieldWrap.appendChild(lbl);
-                fieldWrap.appendChild(inp);
-                shortFieldsRow.appendChild(fieldWrap);
+                wrap.appendChild(lbl);
+                wrap.appendChild(inp);
+                shortFieldsRow.appendChild(wrap);
             });
             headerCard.appendChild(shortFieldsRow);
+
             dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
@@ -6327,8 +6287,8 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
     input.addEventListener('input', function() {
         patient[header] = this.value;
 
-        if (header === 'Name') {
-            document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+        if (header === 'Name' || header === 'RM' || header === 'MRN') {
+            updateStickyHeader(patient);
         }
         saveToLocalStorage();
 
