@@ -5627,45 +5627,57 @@ function switchView(mode) {
             const headerCard = document.createElement('div');
             headerCard.className = 'patient-header-card';
 
-            const pNameDisplay = document.createElement('div');
+            // Large display line: NAME | RM | MRN
+            const pHeaderLine = document.createElement('div');
+            pHeaderLine.style.cssText = 'display:flex;align-items:baseline;gap:0.6rem;flex-wrap:wrap;';
+
+            const pNameDisplay = document.createElement('span');
             pNameDisplay.className = 'patient-name-display';
+            pNameDisplay.style.cssText = 'margin:0;';
             pNameDisplay.textContent = patient['Name'] || 'Unnamed Patient';
-            headerCard.appendChild(pNameDisplay);
 
-            const pRMRNDisplay = document.createElement('div');
-            pRMRNDisplay.style.cssText = 'display:flex;gap:1rem;margin-top:0.3rem;font-size:0.9rem;color:#94a3b8;font-weight:500;';
-            const pRMSpan = document.createElement('span');
-            pRMSpan.id = 'headerRMDisplay';
-            pRMSpan.textContent = patient['RM'] ? 'Room: ' + patient['RM'] : '';
-            const pMRNSpan = document.createElement('span');
-            pMRNSpan.id = 'headerMRNDisplay';
-            pMRNSpan.textContent = patient['MRN'] ? 'MRN: ' + patient['MRN'] : '';
-            pRMRNDisplay.appendChild(pRMSpan);
-            pRMRNDisplay.appendChild(pMRNSpan);
-            headerCard.appendChild(pRMRNDisplay);
+            const pRMDisplay = document.createElement('span');
+            pRMDisplay.id = 'headerRMDisplay';
+            pRMDisplay.style.cssText = 'font-size:1.15rem;font-weight:600;color:#94a3b8;';
+            pRMDisplay.textContent = patient['RM'] || '';
 
-            const metaRow = document.createElement('div');
-            metaRow.className = 'patient-meta';
-            ['Att', 'Priority'].forEach(key => {
-                if (patient[key]) {
-                    const badge = document.createElement('span');
-                    badge.className = 'meta-badge';
-                    badge.textContent = key + ': ' + patient[key];
-                    metaRow.appendChild(badge);
-                }
-            });
-            headerCard.appendChild(metaRow);
+            const pMRNDisplay = document.createElement('span');
+            pMRNDisplay.id = 'headerMRNDisplay';
+            pMRNDisplay.style.cssText = 'font-size:1.15rem;font-weight:600;color:#94a3b8;';
+            pMRNDisplay.textContent = patient['MRN'] || '';
 
-            // Editable short fields row inside header (no labels — placeholders used instead)
+            pHeaderLine.appendChild(pNameDisplay);
+            if (patient['RM'] || patient['MRN']) {
+                const sep1 = document.createElement('span');
+                sep1.style.cssText = 'color:#475569;font-size:1rem;';
+                sep1.textContent = '|';
+                pHeaderLine.appendChild(sep1);
+            }
+            pHeaderLine.appendChild(pRMDisplay);
+            if (patient['RM'] && patient['MRN']) {
+                const sep2 = document.createElement('span');
+                sep2.style.cssText = 'color:#475569;font-size:1rem;';
+                sep2.textContent = '|';
+                pHeaderLine.appendChild(sep2);
+            }
+            pHeaderLine.appendChild(pMRNDisplay);
+            headerCard.appendChild(pHeaderLine);
+
+            // Input fields with labels
             const shortFieldsRow = document.createElement('div');
-            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.65rem;';
-            [['Name', 'Name'], ['RM', 'Room #'], ['MRN', 'MRN']].forEach(([header, placeholder]) => {
+            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.75rem;';
+            [['Name', 'Patient name'], ['RM', 'Room number'], ['MRN', 'MRN']].forEach(([header, placeholder]) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
+                const lbl = document.createElement('label');
+                lbl.textContent = header + ':';
+                lbl.style.cssText = 'margin:0;min-width:2.8rem;font-size:0.78rem;color:#94a3b8;white-space:nowrap;';
                 const inp = document.createElement('input');
                 inp.type = 'text';
                 inp.id = `field_${header.replace(/\s+/g, '_')}`;
                 inp.value = patient[header] || '';
                 inp.placeholder = placeholder;
-                inp.style.cssText = 'margin:0;padding:0.45rem 0.65rem;font-size:0.8rem;width:100%;box-sizing:border-box;';
+                inp.style.cssText = 'margin:0;padding:0.35rem 0.6rem;font-size:0.8rem;flex:1;';
                 inp.addEventListener('input', function() {
                     patient[header] = this.value;
                     if (header === 'Name') {
@@ -5673,12 +5685,13 @@ function switchView(mode) {
                         document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
                     }
                     if (header === 'RM') {
-                        pRMSpan.textContent = this.value ? 'Room: ' + this.value : '';
+                        pRMDisplay.textContent = this.value || '';
+                        updateHeaderSeps();
                     }
                     if (header === 'MRN') {
-                        pMRNSpan.textContent = this.value ? 'MRN: ' + this.value : '';
+                        pMRNDisplay.textContent = this.value || '';
+                        updateHeaderSeps();
                     }
-                    // Update sticky RM/MRN badges on mobile
                     if (header === 'RM' || header === 'MRN') {
                         const stickyBadges = document.getElementById('stickyMetaBadges');
                         stickyBadges.innerHTML = '';
@@ -5697,15 +5710,59 @@ function switchView(mode) {
                     }
                     saveToLocalStorage();
                 });
-                shortFieldsRow.appendChild(inp);
+                wrap.appendChild(lbl);
+                wrap.appendChild(inp);
+                shortFieldsRow.appendChild(wrap);
             });
             headerCard.appendChild(shortFieldsRow);
+
+            // Priority badge in header
+            const { color } = getPriorityStatus(patient);
+            const priorityBadgeRow = document.createElement('div');
+            priorityBadgeRow.style.cssText = 'margin-top:0.6rem;';
+            const priorityBtn = document.createElement('button');
+            priorityBtn.id = 'detailPriorityBtn';
+            priorityBtn.style.cssText = `padding:0.4rem 0.85rem;font-size:0.82rem;background:var(--card-bg);border:2px solid ${color};border-radius:0.5rem;color:var(--text-primary);cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;`;
+            const colorBox = document.createElement('div');
+            colorBox.id = 'detailPriorityColorBox';
+            colorBox.style.cssText = `width:13px;height:13px;border-radius:0.2rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
+            const priorityText = document.createElement('span');
+            priorityText.id = 'detailPriorityText';
+            priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
+            priorityBtn.appendChild(colorBox);
+            priorityBtn.appendChild(priorityText);
+            priorityBtn.onclick = (e) => { e.preventDefault(); showStatusSelector(patient, currentPatientIndex, priorityBtn); };
+            priorityBadgeRow.appendChild(priorityBtn);
+            headerCard.appendChild(priorityBadgeRow);
+
+            // Helper to show/hide separators based on RM/MRN values
+            function updateHeaderSeps() {
+                const seps = pHeaderLine.querySelectorAll('span[data-sep]');
+                seps.forEach(s => s.remove());
+                const hasRM = !!patient['RM'];
+                const hasMRN = !!patient['MRN'];
+                if (hasRM || hasMRN) {
+                    const s1 = document.createElement('span');
+                    s1.dataset.sep = '1';
+                    s1.style.cssText = 'color:#475569;font-size:1rem;';
+                    s1.textContent = '|';
+                    pNameDisplay.after(s1);
+                }
+                if (hasRM && hasMRN) {
+                    const s2 = document.createElement('span');
+                    s2.dataset.sep = '2';
+                    s2.style.cssText = 'color:#475569;font-size:1rem;';
+                    s2.textContent = '|';
+                    pRMDisplay.after(s2);
+                }
+            }
+
             dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
-            const cardIcons = { 'Problems': '', 'ICS': '', 'To do': '', 'Priority': '' };
-            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'To do': '#22c55e', 'Priority': '#ef4444' };
-            const textFields = ['Problems', 'ICS', 'To do', 'Priority'];
+            const cardIcons = { 'Problems': '', 'ICS': '', 'To do': '' };
+            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'To do': '#22c55e' };
+            const textFields = ['Problems', 'ICS', 'To do'];
 
             textFields.forEach(header => {
                 const card = document.createElement('div');
