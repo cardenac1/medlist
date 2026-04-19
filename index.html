@@ -5914,7 +5914,7 @@ case 'vitals': {
             inlineTableBody.className = 'chartcheck-section-body';
             inlineTableBody.id = 'inlineLabsTableContainer';
             inlineTableBody.style.cssText = 'overflow-x:auto;padding:0.25rem;';
-            inlineTableBody.innerHTML = lastImportedData
+            inlineTableBody.innerHTML = (labData && Object.keys(labData).length > 0)
                 ? buildUnifiedTableHTML(labData, lastImportedData)
                 : '<p style="color:#64748b;padding:0.75rem;font-size:0.85rem;text-align:center;">No data yet — use Import above.</p>';
             inlineTableSection.appendChild(inlineTableBody);
@@ -5949,7 +5949,7 @@ case 'vitals': {
             window.refreshInlineLabsTable = function() {
                 const container = document.getElementById('inlineLabsTableContainer');
                 if (!container) return;
-                container.innerHTML = lastImportedData
+                container.innerHTML = (labData && Object.keys(labData).length > 0)
                     ? buildUnifiedTableHTML(labData, lastImportedData)
                     : '<p style="color:#64748b;padding:0.75rem;font-size:0.85rem;text-align:center;">No data yet — use Import above.</p>';
             };
@@ -7483,7 +7483,9 @@ saveToLocalStorage();
         function buildUnifiedTableHTML(labDataArg, lastImportedDataArg) {
             var labData = labDataArg;
             var lastImportedData = lastImportedDataArg;
-            // Don't bail early — vitals/IO render from lastImportedData even without labs
+            if (!labData || Object.keys(labData).length === 0) {
+                return '<p style="color:#94a3b8;padding:1rem;">No lab data available.</p>';
+            }
 
             // ── TIME BOUNDARIES ──────────────────────────────────────────────────
             var _now = new Date();
