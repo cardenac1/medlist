@@ -5862,11 +5862,18 @@ case 'vitals': {
                     secHeader.appendChild(fishBtn);
                 }
 
+                // Collapse toggle on header — starts collapsed
+                const ccCollapseArrow = document.createElement('span');
+                ccCollapseArrow.textContent = '▾';
+                ccCollapseArrow.style.cssText = 'margin-left:auto;color:#64748b;font-size:0.75rem;transition:transform 200ms ease;cursor:pointer;';
+                ccCollapseArrow.style.transform = 'rotate(-90deg)'; // collapsed state
+                secHeader.appendChild(ccCollapseArrow);
                 section.appendChild(secHeader);
 
-                // Section body with input
+                // Section body — collapsed by default
                 const secBody = document.createElement('div');
                 secBody.className = 'chartcheck-section-body';
+                secBody.style.display = 'none';
 
                 const input = document.createElement('textarea');
                 input.id = `field_${header.replace(/\s+/g, '_')}`;
@@ -5880,7 +5887,15 @@ case 'vitals': {
                 secBody.appendChild(input);
                 section.appendChild(secBody);
                 ccMain.appendChild(section);
-                setTimeout(() => autoResizeTextarea(input), 0);
+
+                secHeader.style.cursor = 'pointer';
+                secHeader.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'BUTTON') return;
+                    const isHidden = secBody.style.display === 'none';
+                    secBody.style.display = isHidden ? '' : 'none';
+                    ccCollapseArrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+                    if (isHidden) setTimeout(() => autoResizeTextarea(input), 0);
+                });
             });
 
             // Inline Vitals / Labs / I&O table — always visible
@@ -5899,7 +5914,7 @@ case 'vitals': {
             inlineTableBody.className = 'chartcheck-section-body';
             inlineTableBody.id = 'inlineLabsTableContainer';
             inlineTableBody.style.cssText = 'overflow-x:auto;padding:0.25rem;';
-            inlineTableBody.innerHTML = (labData && Object.keys(labData).length > 0)
+            inlineTableBody.innerHTML = lastImportedData
                 ? buildUnifiedTableHTML(labData, lastImportedData)
                 : '<p style="color:#64748b;padding:0.75rem;font-size:0.85rem;text-align:center;">No data yet — use Import above.</p>';
             inlineTableSection.appendChild(inlineTableBody);
@@ -5934,7 +5949,7 @@ case 'vitals': {
             window.refreshInlineLabsTable = function() {
                 const container = document.getElementById('inlineLabsTableContainer');
                 if (!container) return;
-                container.innerHTML = (labData && Object.keys(labData).length > 0)
+                container.innerHTML = lastImportedData
                     ? buildUnifiedTableHTML(labData, lastImportedData)
                     : '<p style="color:#64748b;padding:0.75rem;font-size:0.85rem;text-align:center;">No data yet — use Import above.</p>';
             };
@@ -6018,9 +6033,16 @@ case 'vitals': {
                         helpBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); showHelpModal('ORDERS'); };
                         ordHdr.appendChild(helpBtn);
                     }
+                    // Collapse toggle — starts collapsed
+                    const ordCollapseArrow = document.createElement('span');
+                    ordCollapseArrow.textContent = '▾';
+                    ordCollapseArrow.style.cssText = 'margin-left:auto;color:#64748b;font-size:0.75rem;transition:transform 200ms ease;cursor:pointer;';
+                    ordCollapseArrow.style.transform = 'rotate(-90deg)';
+                    ordHdr.appendChild(ordCollapseArrow);
                     ordSection.appendChild(ordHdr);
                     const ordBody = document.createElement('div');
                     ordBody.className = 'chartcheck-section-body';
+                    ordBody.style.display = 'none';
                     const ordInput = document.createElement('textarea');
                     ordInput.id = 'field_ORDERS';
                     ordInput.value = patient['ORDERS'] || '';
@@ -6034,7 +6056,14 @@ case 'vitals': {
                     ordBody.appendChild(ordInput);
                     ordSection.appendChild(ordBody);
                     ordMain.appendChild(ordSection);
-                    setTimeout(() => autoResizeTextarea(ordInput), 0);
+                    ordHdr.style.cursor = 'pointer';
+                    ordHdr.addEventListener('click', function(e) {
+                        if (e.target.tagName === 'BUTTON') return;
+                        const isHidden = ordBody.style.display === 'none';
+                        ordBody.style.display = isHidden ? '' : 'none';
+                        ordCollapseArrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+                        if (isHidden) setTimeout(() => autoResizeTextarea(ordInput), 0);
+                    });
 
                     // Current Medications & Diet — always visible, not hidden behind toggle
                     const fullOrdSection = document.createElement('div');
@@ -7454,9 +7483,7 @@ saveToLocalStorage();
         function buildUnifiedTableHTML(labDataArg, lastImportedDataArg) {
             var labData = labDataArg;
             var lastImportedData = lastImportedDataArg;
-            if (!labData || Object.keys(labData).length === 0) {
-                return '<p style="color:#94a3b8;padding:1rem;">No lab data available.</p>';
-            }
+            // Don't bail early — vitals/IO render from lastImportedData even without labs
 
             // ── TIME BOUNDARIES ──────────────────────────────────────────────────
             var _now = new Date();
@@ -7547,11 +7574,11 @@ saveToLocalStorage();
                     ? 'background:rgba(239,68,68,0.2);color:#ff6b6b;font-weight:700;'
                     : 'color:#6ee7b7;';
                 var dtLine = dt ? '<div style="font-size:0.6em;color:#999;white-space:nowrap;text-align:center;">' + dt + '</div>' : '';
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
+                return '<td style="padding:4px 7px;font-size:0.88rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
             }
             function emptyCell() { return '<td></td>'; }
             function sectionHdr(label, color) {
-                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">' + label + '</td></tr>';
+                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;padding:5px 10px;text-transform:uppercase;">' + label + '</td></tr>';
             }
             function demarcRow(label) {
                 return '<tr><td colspan="' + (maxValues + 1) + '" style="background:#2d1f00;color:#fbbf24;font-size:0.72rem;font-weight:700;padding:6px 10px;text-align:center;border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b;letter-spacing:0.05em;">' + label + '</td></tr>';
@@ -7570,13 +7597,13 @@ saveToLocalStorage();
             }
             function histDataCell(val, dt, unit) {
                 unit = unit || '';
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#a78bfa;background:rgba(139,92,246,0.08);">' +
+                return '<td style="padding:4px 7px;font-size:0.88rem;text-align:center;color:#a78bfa;background:rgba(139,92,246,0.08);">' +
                     '<div>' + val + unit + '</div>' +
                     (dt ? '<div style="font-size:0.6em;color:#6b7280;white-space:nowrap;text-align:center;">' + dt + '</div>' : '') +
                     '</td>';
             }
             function totalCell(content) {
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#fbbf24;font-weight:700;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;">' + content + '</td>';
+                return '<td style="padding:4px 7px;font-size:0.88rem;text-align:center;color:#fbbf24;font-weight:700;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;">' + content + '</td>';
             }
             function emptyTotalCell() {
                 return '<td style="background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:0;"></td>';
