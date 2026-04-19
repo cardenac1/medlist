@@ -5552,10 +5552,13 @@ function clearSearch() {
 }
 
 function updateStickyHeader(patient) {
-    const parts = [patient.Name || 'Unnamed Patient'];
-    if (patient.RM)  parts.push(patient.RM);
-    if (patient.MRN) parts.push(patient.MRN);
-    document.getElementById('stickyTextContainer').textContent = parts.join('  |  ');
+    const el = document.getElementById('stickyTextContainer');
+    const sep = '<span style="color:#475569;font-weight:400;"> | </span>';
+    const name = patient.Name || 'Unnamed Patient';
+    let html = `<span style="color:#60a5fa;">${name}</span>`;
+    if (patient.RM)  html += sep + `<span style="color:#34d399;">${patient.RM}</span>`;
+    if (patient.MRN) html += sep + `<span style="color:#f59e0b;">${patient.MRN}</span>`;
+    el.innerHTML = html;
     document.getElementById('stickyMetaBadges').innerHTML = '';
 }
 
