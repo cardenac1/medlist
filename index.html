@@ -5626,14 +5626,27 @@ function switchView(mode) {
             // Patient header card
             const headerCard = document.createElement('div');
             headerCard.className = 'patient-header-card';
+
             const pNameDisplay = document.createElement('div');
             pNameDisplay.className = 'patient-name-display';
             pNameDisplay.textContent = patient['Name'] || 'Unnamed Patient';
             headerCard.appendChild(pNameDisplay);
 
+            const pRMRNDisplay = document.createElement('div');
+            pRMRNDisplay.style.cssText = 'display:flex;gap:1rem;margin-top:0.3rem;font-size:0.9rem;color:#94a3b8;font-weight:500;';
+            const pRMSpan = document.createElement('span');
+            pRMSpan.id = 'headerRMDisplay';
+            pRMSpan.textContent = patient['RM'] ? 'Room: ' + patient['RM'] : '';
+            const pMRNSpan = document.createElement('span');
+            pMRNSpan.id = 'headerMRNDisplay';
+            pMRNSpan.textContent = patient['MRN'] ? 'MRN: ' + patient['MRN'] : '';
+            pRMRNDisplay.appendChild(pRMSpan);
+            pRMRNDisplay.appendChild(pMRNSpan);
+            headerCard.appendChild(pRMRNDisplay);
+
             const metaRow = document.createElement('div');
             metaRow.className = 'patient-meta';
-            ['RM', 'MRN', 'Att', 'Priority'].forEach(key => {
+            ['Att', 'Priority'].forEach(key => {
                 if (patient[key]) {
                     const badge = document.createElement('span');
                     badge.className = 'meta-badge';
@@ -5643,25 +5656,27 @@ function switchView(mode) {
             });
             headerCard.appendChild(metaRow);
 
-            // Editable short fields row inside header
+            // Editable short fields row inside header (no labels — placeholders used instead)
             const shortFieldsRow = document.createElement('div');
             shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.65rem;';
-            ['Name', 'RM', 'MRN'].forEach(header => {
-                const fieldWrap = document.createElement('div');
-                fieldWrap.style.cssText = 'width:100%;';
-                const lbl = document.createElement('label');
-                lbl.textContent = header;
-                lbl.style.cssText = 'margin-top:0;';
+            [['Name', 'Name'], ['RM', 'Room #'], ['MRN', 'MRN']].forEach(([header, placeholder]) => {
                 const inp = document.createElement('input');
                 inp.type = 'text';
                 inp.id = `field_${header.replace(/\s+/g, '_')}`;
                 inp.value = patient[header] || '';
-                inp.style.cssText = 'margin:0.2rem 0 0;padding:0.45rem 0.65rem;font-size:0.8rem;';
+                inp.placeholder = placeholder;
+                inp.style.cssText = 'margin:0;padding:0.45rem 0.65rem;font-size:0.8rem;width:100%;box-sizing:border-box;';
                 inp.addEventListener('input', function() {
                     patient[header] = this.value;
                     if (header === 'Name') {
                         pNameDisplay.textContent = this.value || 'Unnamed Patient';
                         document.getElementById('stickyTextContainer').textContent = this.value || 'Unnamed Patient';
+                    }
+                    if (header === 'RM') {
+                        pRMSpan.textContent = this.value ? 'Room: ' + this.value : '';
+                    }
+                    if (header === 'MRN') {
+                        pMRNSpan.textContent = this.value ? 'MRN: ' + this.value : '';
                     }
                     // Update sticky RM/MRN badges on mobile
                     if (header === 'RM' || header === 'MRN') {
@@ -5682,9 +5697,7 @@ function switchView(mode) {
                     }
                     saveToLocalStorage();
                 });
-                fieldWrap.appendChild(lbl);
-                fieldWrap.appendChild(inp);
-                shortFieldsRow.appendChild(fieldWrap);
+                shortFieldsRow.appendChild(inp);
             });
             headerCard.appendChild(shortFieldsRow);
             dashGrid.appendChild(headerCard);
