@@ -5621,45 +5621,9 @@ function switchView(mode) {
             const headerCard = document.createElement('div');
             headerCard.className = 'patient-header-card';
 
-            // Large display line: NAME | RM | MRN
-            const pHeaderLine = document.createElement('div');
-            pHeaderLine.style.cssText = 'display:flex;align-items:baseline;gap:0.6rem;flex-wrap:wrap;';
-
-            const pNameDisplay = document.createElement('span');
-            pNameDisplay.className = 'patient-name-display';
-            pNameDisplay.style.cssText = 'margin:0;';
-            pNameDisplay.textContent = patient['Name'] || 'Unnamed Patient';
-
-            const pRMDisplay = document.createElement('span');
-            pRMDisplay.id = 'headerRMDisplay';
-            pRMDisplay.style.cssText = 'font-size:1.15rem;font-weight:600;color:#94a3b8;';
-            pRMDisplay.textContent = patient['RM'] || '';
-
-            const pMRNDisplay = document.createElement('span');
-            pMRNDisplay.id = 'headerMRNDisplay';
-            pMRNDisplay.style.cssText = 'font-size:1.15rem;font-weight:600;color:#94a3b8;';
-            pMRNDisplay.textContent = patient['MRN'] || '';
-
-            pHeaderLine.appendChild(pNameDisplay);
-            if (patient['RM'] || patient['MRN']) {
-                const sep1 = document.createElement('span');
-                sep1.style.cssText = 'color:#475569;font-size:1rem;';
-                sep1.textContent = '|';
-                pHeaderLine.appendChild(sep1);
-            }
-            pHeaderLine.appendChild(pRMDisplay);
-            if (patient['RM'] && patient['MRN']) {
-                const sep2 = document.createElement('span');
-                sep2.style.cssText = 'color:#475569;font-size:1rem;';
-                sep2.textContent = '|';
-                pHeaderLine.appendChild(sep2);
-            }
-            pHeaderLine.appendChild(pMRNDisplay);
-            headerCard.appendChild(pHeaderLine);
-
-            // Input fields with labels
+            // Input fields with labels only — NAME | RM | MRN shown in sticky header above
             const shortFieldsRow = document.createElement('div');
-            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-top:0.75rem;';
+            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;';
             [['Name', 'Patient name'], ['RM', 'Room number'], ['MRN', 'MRN']].forEach(([header, placeholder]) => {
                 const wrap = document.createElement('div');
                 wrap.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
@@ -5674,17 +5638,6 @@ function switchView(mode) {
                 inp.style.cssText = 'margin:0;padding:0.35rem 0.6rem;font-size:0.8rem;flex:1;';
                 inp.addEventListener('input', function() {
                     patient[header] = this.value;
-                    if (header === 'Name') {
-                        pNameDisplay.textContent = this.value || 'Unnamed Patient';
-                    }
-                    if (header === 'RM') {
-                        pRMDisplay.textContent = this.value || '';
-                        updateHeaderSeps();
-                    }
-                    if (header === 'MRN') {
-                        pMRNDisplay.textContent = this.value || '';
-                        updateHeaderSeps();
-                    }
                     updateStickyHeader(patient);
                     saveToLocalStorage();
                 });
@@ -5693,47 +5646,6 @@ function switchView(mode) {
                 shortFieldsRow.appendChild(wrap);
             });
             headerCard.appendChild(shortFieldsRow);
-
-            // Priority badge in header
-            const { color } = getPriorityStatus(patient);
-            const priorityBadgeRow = document.createElement('div');
-            priorityBadgeRow.style.cssText = 'margin-top:0.6rem;';
-            const priorityBtn = document.createElement('button');
-            priorityBtn.id = 'detailPriorityBtn';
-            priorityBtn.style.cssText = `padding:0.4rem 0.85rem;font-size:0.82rem;background:var(--card-bg);border:2px solid ${color};border-radius:0.5rem;color:var(--text-primary);cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;`;
-            const colorBox = document.createElement('div');
-            colorBox.id = 'detailPriorityColorBox';
-            colorBox.style.cssText = `width:13px;height:13px;border-radius:0.2rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
-            const priorityText = document.createElement('span');
-            priorityText.id = 'detailPriorityText';
-            priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
-            priorityBtn.appendChild(colorBox);
-            priorityBtn.appendChild(priorityText);
-            priorityBtn.onclick = (e) => { e.preventDefault(); showStatusSelector(patient, currentPatientIndex, priorityBtn); };
-            priorityBadgeRow.appendChild(priorityBtn);
-            headerCard.appendChild(priorityBadgeRow);
-
-            // Helper to show/hide separators based on RM/MRN values
-            function updateHeaderSeps() {
-                const seps = pHeaderLine.querySelectorAll('span[data-sep]');
-                seps.forEach(s => s.remove());
-                const hasRM = !!patient['RM'];
-                const hasMRN = !!patient['MRN'];
-                if (hasRM || hasMRN) {
-                    const s1 = document.createElement('span');
-                    s1.dataset.sep = '1';
-                    s1.style.cssText = 'color:#475569;font-size:1rem;';
-                    s1.textContent = '|';
-                    pNameDisplay.after(s1);
-                }
-                if (hasRM && hasMRN) {
-                    const s2 = document.createElement('span');
-                    s2.dataset.sep = '2';
-                    s2.style.cssText = 'color:#475569;font-size:1rem;';
-                    s2.textContent = '|';
-                    pRMDisplay.after(s2);
-                }
-            }
 
             dashGrid.appendChild(headerCard);
 
