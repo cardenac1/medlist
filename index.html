@@ -5808,8 +5808,8 @@ case 'vitals': {
             const ccMain = document.createElement('div');
             ccMain.className = 'chartcheck-main';
 
-            const fieldsToShowChartCheck = ['Problems', 'ICS', 'VIOLIN'];
-            const ccSectionColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'VIOLIN': '#8b5cf6' };
+            const fieldsToShowChartCheck = ['VIOLIN'];
+            const ccSectionColors = { 'VIOLIN': '#8b5cf6' };
 
             fieldsToShowChartCheck.forEach(header => {
                 const section = document.createElement('div');
@@ -15053,7 +15053,7 @@ function closeTableModal() {
         const patient = patientData[currentPatientIndex];
 
         // Update all visible fields with current patient data
-        const allFields = ['Problems', 'ICS', 'VIOLIN'];
+        const allFields = ['VIOLIN'];
         
         allFields.forEach(field => {
             const element = document.getElementById(`field_${field.replace(/\s+/g, '_')}`);
