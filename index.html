@@ -5891,6 +5891,7 @@ case 'chartcheck': {
 
             const inlineTableBody = document.createElement('div');
             inlineTableBody.className = 'chartcheck-section-body';
+            inlineTableBody.id = 'inlineLabTableBody';
             inlineTableBody.style.cssText = 'padding:0.5rem;overflow-x:auto;';
             if (labData && Object.keys(labData).length > 0) {
                 inlineTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
@@ -7455,6 +7456,12 @@ setTimeout(() => {
         updateViolinDisplay();
     }, 100);
 
+
+// Refresh inline vitals/labs table if visible on chartcheck tab
+const inlineLabTableBody = document.getElementById('inlineLabTableBody');
+if (inlineLabTableBody) {
+    inlineLabTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+}
 
 showFullOrders = true;
 renderOrdersTable();
