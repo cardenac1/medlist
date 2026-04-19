@@ -5735,9 +5735,9 @@ function switchView(mode) {
             dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
-            const cardIcons = { 'Problems': '', 'ICS': '', 'To do': '' };
-            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'To do': '#22c55e' };
-            const textFields = ['Problems', 'ICS', 'To do'];
+            const cardIcons = { 'Problems': '', 'ICS': '', 'To do': '', 'Priority': '' };
+            const cardColors = { 'Problems': '#3b82f6', 'ICS': '#06b6d4', 'To do': '#22c55e', 'Priority': '#ef4444' };
+            const textFields = ['Problems', 'ICS', 'To do', 'Priority'];
 
             textFields.forEach(header => {
                 const card = document.createElement('div');
