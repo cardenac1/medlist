@@ -542,6 +542,79 @@ const VIOLIN_DASHBOARD_CSS = `
         }
 
         /* Modal */
+        /* ---- Supabase Auth / Sync UI ---- */
+        .sync-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            display: none;
+        }
+        .sync-status.spinning { animation: spinIcon 1s linear infinite; display: inline-block; }
+        @keyframes spinIcon { to { transform: rotate(360deg); } }
+        #authBtn {
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.4);
+            color: #60a5fa;
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        #authBtn:hover { background: rgba(59,130,246,0.3); }
+        #manualSyncBtn {
+            background: rgba(16,185,129,0.15);
+            border: 1px solid rgba(16,185,129,0.4);
+            color: #6ee7b7;
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: none;
+        }
+        #manualSyncBtn:hover { background: rgba(16,185,129,0.3); }
+        .auth-modal-box {
+            background: #0d0d0d;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 360px;
+            margin: auto;
+            animation: modalSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .auth-modal-box h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #fff; }
+        .auth-modal-box input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 0.5rem;
+            color: #fff;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            box-sizing: border-box;
+        }
+        .auth-modal-box input:focus { outline: none; border-color: #3b82f6; }
+        .auth-btn-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .auth-btn-row button {
+            flex: 1;
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+        }
+        .auth-btn-login { background: #3b82f6; color: #fff; }
+        .auth-btn-signup { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.15) !important; }
+        .auth-btn-cancel { background: transparent; color: #888; border: 1px solid rgba(255,255,255,0.1) !important; }
+        #authError { font-size: 0.82rem; min-height: 1rem; margin-top: 0.4rem; color: #ef4444; }
+        /* ---- end Supabase ---- */
+
         .modal {
             display: none;
             position: fixed;
@@ -3154,6 +3227,9 @@ async function testOCRAvailability() {
             <div class="census">
                 Census: <span class="census-number" id="censusCount">0</span>
             </div>
+            <span id="syncStatus" class="sync-status" title="Sync status"></span>
+            <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑ Sync</button>
+            <button id="authBtn" onclick="openAuthModal()">☁ Login</button>
         </div>
     </div>
 
@@ -3495,6 +3571,7 @@ async function testOCRAvailability() {
 
     <!-- Include Papa Parse and Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         // ============ GLOBAL VARIABLES ============
@@ -4372,7 +4449,7 @@ const helpContent = {
 					checklistStates: tempChecklistStates  // ADD THIS LINE
                 };
                 localStorage.setItem('ultimatePatientList', JSON.stringify(dataToSave));
-                
+                if (typeof scheduleSync === 'function') scheduleSync();
 
             } catch (e) {
                 console.error('Error saving to localStorage:', e);
@@ -17077,6 +17154,174 @@ function showIOHourlyPopup(label, entries, color) {
 
 
 
+    </script>
+
+    <!-- Supabase Auth Modal -->
+    <div id="authModal" class="modal" style="display:none;align-items:center;justify-content:center;" onclick="if(event.target===this)closeAuthModal()">
+        <div class="auth-modal-box">
+            <h2>☁ Cloud Sync</h2>
+            <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
+            <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password"
+                onkeydown="if(event.key==='Enter')login()" />
+            <div id="authError"></div>
+            <div class="auth-btn-row">
+                <button class="auth-btn-login" onclick="login()">Log In</button>
+                <button class="auth-btn-signup" onclick="signup()">Sign Up</button>
+                <button class="auth-btn-cancel" onclick="closeAuthModal()">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============ SUPABASE INTEGRATION ============
+    const SUPABASE_URL = 'https://ccuvvwpyxpbgvjoatgvj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdXZ2d3B5eHBiZ3Zqb2F0Z3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTEwNDAsImV4cCI6MjA5MjI2NzA0MH0.7RmqTBI5M3Gvd35389m7mI9P-OuApBAjGLwDBb3tQ3w';
+    const SB_TABLE = 'medlist';
+
+    let _sbClient = null;
+    let currentUser = null;
+    let _syncTimer = null;
+
+    function getSB() {
+        if (!_sbClient) _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        return _sbClient;
+    }
+
+    function _genId() {
+        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    }
+
+    function showSyncStatus(state) {
+        const el = document.getElementById('syncStatus');
+        if (!el) return;
+        if (state === 'syncing') { el.textContent = '↻'; el.style.color = '#60a5fa'; el.classList.add('spinning'); el.style.display = 'inline'; }
+        else if (state === 'ok') { el.textContent = '☁✓'; el.style.color = '#10b981'; el.classList.remove('spinning'); el.style.display = 'inline'; }
+        else if (state === 'error') { el.textContent = '☁✗'; el.style.color = '#ef4444'; el.classList.remove('spinning'); el.style.display = 'inline'; }
+    }
+
+    function updateAuthUI() {
+        const btn = document.getElementById('authBtn');
+        const syncBtn = document.getElementById('manualSyncBtn');
+        const statusEl = document.getElementById('syncStatus');
+        if (!btn) return;
+        if (currentUser) {
+            btn.textContent = '👤 ' + (currentUser.email.split('@')[0]);
+            btn.title = currentUser.email + ' — click to log out';
+            if (syncBtn) syncBtn.style.display = '';
+            if (statusEl) statusEl.style.display = '';
+        } else {
+            btn.textContent = '☁ Login';
+            btn.title = 'Login to enable cloud sync';
+            if (syncBtn) syncBtn.style.display = 'none';
+            if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
+        }
+    }
+
+    async function syncToCloud() {
+        if (!currentUser) return;
+        try {
+            showSyncStatus('syncing');
+            const rows = (typeof patientData !== 'undefined' ? patientData : []).map(p => {
+                if (!p._pid) p._pid = _genId();
+                return { id: p._pid, data: p, user_id: currentUser.id };
+            });
+            if (rows.length > 0) {
+                const { error } = await getSB().from(SB_TABLE).upsert(rows, { onConflict: 'id' });
+                if (error) throw error;
+            }
+            // Remove rows deleted locally (ids no longer in patientData)
+            showSyncStatus('ok');
+        } catch (e) {
+            console.error('Sync upload error:', e);
+            showSyncStatus('error');
+        }
+    }
+
+    async function syncFromCloud() {
+        if (!currentUser) return;
+        try {
+            showSyncStatus('syncing');
+            const { data, error } = await getSB().from(SB_TABLE).select('data').eq('user_id', currentUser.id);
+            if (error) throw error;
+            if (data && data.length > 0) {
+                patientData = data.map(r => r.data);
+                if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
+                if (typeof displayRows === 'function') displayRows();
+                if (typeof updateCensus === 'function') updateCensus();
+                if (typeof populateColumnSelector === 'function') populateColumnSelector();
+                if (typeof populateColumnSelect === 'function') populateColumnSelect();
+            }
+            showSyncStatus('ok');
+        } catch (e) {
+            console.error('Sync download error:', e);
+            showSyncStatus('error');
+        }
+    }
+
+    function scheduleSync() {
+        if (!currentUser) return;
+        clearTimeout(_syncTimer);
+        _syncTimer = setTimeout(syncToCloud, 2500);
+    }
+
+    async function login() {
+        const email = document.getElementById('authEmail').value.trim();
+        const pw = document.getElementById('authPassword').value;
+        const errEl = document.getElementById('authError');
+        errEl.style.color = '#ef4444';
+        if (!email || !pw) { errEl.textContent = 'Enter email and password.'; return; }
+        errEl.textContent = '';
+        const { error } = await getSB().auth.signInWithPassword({ email, password: pw });
+        if (error) { errEl.textContent = error.message; return; }
+        closeAuthModal();
+    }
+
+    async function signup() {
+        const email = document.getElementById('authEmail').value.trim();
+        const pw = document.getElementById('authPassword').value;
+        const errEl = document.getElementById('authError');
+        errEl.style.color = '#ef4444';
+        if (!email || !pw) { errEl.textContent = 'Enter email and password.'; return; }
+        errEl.textContent = '';
+        const { error } = await getSB().auth.signUp({ email, password: pw });
+        if (error) { errEl.textContent = error.message; return; }
+        errEl.style.color = '#10b981';
+        errEl.textContent = 'Check your email to confirm your account!';
+    }
+
+    async function logout() {
+        await getSB().auth.signOut();
+        currentUser = null;
+        updateAuthUI();
+        showSyncStatus('ok');
+        document.getElementById('syncStatus').style.display = 'none';
+    }
+
+    function openAuthModal() {
+        if (currentUser) { logout(); return; }
+        document.getElementById('authModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('authEmail').focus(), 50);
+    }
+
+    function closeAuthModal() {
+        document.getElementById('authModal').style.display = 'none';
+    }
+
+    // Boot
+    (async function initSupabase() {
+        const sb = getSB();
+        sb.auth.onAuthStateChange((event, session) => {
+            const prev = currentUser;
+            currentUser = session?.user || null;
+            updateAuthUI();
+            if (currentUser && !prev) syncFromCloud();
+        });
+        const { data: { session } } = await sb.auth.getSession();
+        currentUser = session?.user || null;
+        updateAuthUI();
+        if (currentUser) syncFromCloud();
+    })();
     </script>
 </body>
 </html>
