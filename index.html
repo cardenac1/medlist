@@ -855,29 +855,26 @@ const VIOLIN_DASHBOARD_CSS = `
             position: relative;
         }
 
-        .search-wrapper.expanded {
-            margin-bottom: 4rem;
-        }
 
         .search-container {
             display: flex;
             gap: 0.5rem;
             background: var(--card-bg);
-            padding: 0.75rem;
+            padding: 0;
             border-radius: 0.5rem;
             opacity: 0;
-            transform: translateY(-10px);
             visibility: hidden;
+            max-height: 0;
+            overflow: hidden;
             transition: all 0.3s ease;
-            position: absolute;
-            width: 100%;
-            z-index: 10;
         }
 
         .search-container.active {
             opacity: 1;
-            transform: translateY(0);
             visibility: visible;
+            max-height: 5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
         #searchInput {
