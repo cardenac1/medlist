@@ -419,30 +419,40 @@ const VIOLIN_DASHBOARD_CSS = `
 .controls-wrap {
     margin-bottom: 0.5rem;
 }
-.controls-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: rgba(10,10,10,0.5);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 0.5rem;
-    color: #94a3b8;
-    font-size: 0.78rem;
-    padding: 0.3rem 0.7rem;
-    cursor: pointer;
-    margin-bottom: 0.25rem;
-}
-.controls-toggle:hover { color: #e2e8f0; background: rgba(30,30,30,0.7); }
 .controls {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.35rem;
     margin-bottom: 0.25rem;
-    padding: 0.75rem;
+    padding: 0.35rem 0.6rem;
     background: rgba(10, 10, 10, 0.7);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.75rem;
+}
+.controls button, .controls select {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.5rem;
+    white-space: nowrap;
+}
+.controls select {
+    background: rgba(10,10,10,0.7);
+    color: #f1f5f9;
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+}
+.toolbar-import {
+    width: auto !important;
+}
+.toolbar-import .file-input-label {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 0.5rem;
+    width: auto;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 /* Navigation buttons */
@@ -845,29 +855,26 @@ const VIOLIN_DASHBOARD_CSS = `
             position: relative;
         }
 
-        .search-wrapper.expanded {
-            margin-bottom: 4rem;
-        }
 
         .search-container {
             display: flex;
             gap: 0.5rem;
             background: var(--card-bg);
-            padding: 0.75rem;
+            padding: 0;
             border-radius: 0.5rem;
             opacity: 0;
-            transform: translateY(-10px);
             visibility: hidden;
+            max-height: 0;
+            overflow: hidden;
             transition: all 0.3s ease;
-            position: absolute;
-            width: 100%;
-            z-index: 10;
         }
 
         .search-container.active {
             opacity: 1;
-            transform: translateY(0);
             visibility: visible;
+            max-height: 5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
         #searchInput {
@@ -3236,22 +3243,16 @@ async function testOCRAvailability() {
     <div class="container">
         <!-- Controls -->
         <div class="controls-wrap">
-            <button class="controls-toggle" id="controlsToggle" onclick="toggleControls()">
-                ⚙ Tools <span id="controlsArrow" style="display:inline-block;transition:transform 200ms ease;">▸</span>
-            </button>
-            <div class="controls" id="controlsBar" style="display:none;">
-                <div class="file-input-wrapper">
+            <div class="controls" id="controlsBar">
+                <div class="file-input-wrapper toolbar-import">
                     <input type="file" id="fileInput" accept=".json,.csv">
-                    <label for="fileInput" class="file-input-label">
-                        📁 Import
-                    </label>
+                    <label for="fileInput" class="file-input-label">Import</label>
                 </div>
-                <button onclick="toggleColumnDropdown()">Column Options</button>
                 <select id="columnSelect" onchange="sortRows()">
                     <option value="">Sort by</option>
                 </select>
                 <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
-                <button onclick="toggleSearch()">🔍 Search</button>
+                <button onclick="toggleSearch()">Search</button>
                 <button id="exportButtonMain" onclick="exportData()">Export</button>
             </div>
         </div>
