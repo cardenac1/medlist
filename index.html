@@ -3083,6 +3083,7 @@ select,
 }
 
     </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 
@@ -3133,6 +3134,33 @@ async function testOCRAvailability() {
 
 	
 <body>
+
+<!-- Login Overlay -->
+<div id="loginOverlay" style="display:flex;position:fixed;inset:0;background:#0a0a0f;z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#1e1e2e;border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;padding:2rem;width:360px;max-width:90%;box-shadow:0 25px 60px rgba(0,0,0,0.6);">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+            <div style="font-size:1.6rem;font-weight:bold;color:#e2e8f0;margin-bottom:0.3rem;">MedList</div>
+            <div style="color:#64748b;font-size:0.82rem;">Sign in to access your patient list</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.65rem;">
+            <input id="loginEmail" type="email" placeholder="Email"
+                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;padding:0.7rem 1rem;border-radius:0.6rem;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter')signIn()">
+            <input id="loginPassword" type="password" placeholder="Password"
+                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;padding:0.7rem 1rem;border-radius:0.6rem;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter')signIn()">
+            <div id="loginError" style="font-size:0.78rem;min-height:1.1em;color:#f87171;"></div>
+            <button id="loginBtn" onclick="signIn()"
+                style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;padding:0.75rem;border-radius:0.6rem;font-size:0.9rem;font-weight:600;cursor:pointer;width:100%;">Sign In</button>
+            <button id="signupBtn" onclick="signUp()"
+                style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);padding:0.75rem;border-radius:0.6rem;font-size:0.9rem;cursor:pointer;width:100%;">Create Account</button>
+        </div>
+    </div>
+</div>
+
+<!-- Main App -->
+<div id="app" style="display:none;">
+
     <!-- Header with Census -->
     <div class="header">
         <div class="header-content">
@@ -3162,6 +3190,7 @@ async function testOCRAvailability() {
                 <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
                 <button onclick="toggleSearch()">🔍 Search</button>
                 <button id="exportButtonMain" onclick="exportData()">Export</button>
+                <button onclick="signOut()" style="margin-left:auto;background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#fca5a5;" title="Sign out">⏻ Sign Out</button>
             </div>
         </div>
 
@@ -3569,12 +3598,10 @@ const helpContent = {
 		
 
         // ============ INITIALIZATION ============
-        window.onload = function() {
-            loadFromLocalStorage();
+        window.onload = async function() {
             setupEventListeners();
             updateCensus();
-            
-           
+            await initSupabase();
         };
 
         function setupEventListeners() {
@@ -4345,11 +4372,10 @@ const helpContent = {
                     version: '2.0',
                     timestamp: new Date().toISOString(),
                     patients: patientData,
-					checklistStates: tempChecklistStates  // ADD THIS LINE
+					checklistStates: tempChecklistStates
                 };
                 localStorage.setItem('ultimatePatientList', JSON.stringify(dataToSave));
-                
-
+                scheduleSupabaseSave(); // sync to cloud on every save
             } catch (e) {
                 console.error('Error saving to localStorage:', e);
             }
@@ -4363,6 +4389,132 @@ const helpContent = {
 
 
 
+
+        // ============ SUPABASE CONFIG ============
+        const SUPABASE_URL = 'https://ccuvvwpyxpbgvjoatgvj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdXZ2d3B5eHBiZ3Zqb2F0Z3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTEwNDAsImV4cCI6MjA5MjI2NzA0MH0.7RmqTBI5M3Gvd35389m7mI9P-OuApBAjGLwDBb3tQ3w';
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let _supabaseSaveTimer = null;
+
+        async function initSupabase() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                _showApp();
+                await loadFromSupabase();
+            } else {
+                _showLogin();
+                loadFromLocalStorage(); // load local data while not logged in
+            }
+
+            _supabase.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN') {
+                    currentUser = session.user;
+                    _showApp();
+                    await loadFromSupabase();
+                } else if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    patientData = [];
+                    displayRows();
+                    updateCensus();
+                    _showLogin();
+                }
+            });
+        }
+
+        function _showApp() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+        }
+
+        function _showLogin() {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+
+        async function signIn() {
+            const email    = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errEl    = document.getElementById('loginError');
+            errEl.style.color = '#f87171';
+            errEl.textContent = '';
+            if (!email || !password) { errEl.textContent = 'Please enter email and password.'; return; }
+            const btn = document.getElementById('loginBtn');
+            btn.textContent = 'Signing in…';
+            btn.disabled = true;
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+            btn.textContent = 'Sign In';
+            btn.disabled = false;
+            if (error) errEl.textContent = error.message;
+        }
+
+        async function signUp() {
+            const email    = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errEl    = document.getElementById('loginError');
+            errEl.style.color = '#f87171';
+            errEl.textContent = '';
+            if (!email || !password) { errEl.textContent = 'Please enter email and password.'; return; }
+            if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+            const btn = document.getElementById('signupBtn');
+            btn.textContent = 'Creating…';
+            btn.disabled = true;
+            const { error } = await _supabase.auth.signUp({ email, password });
+            btn.textContent = 'Create Account';
+            btn.disabled = false;
+            if (error) {
+                errEl.textContent = error.message;
+            } else {
+                errEl.style.color = '#4ade80';
+                errEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+            }
+        }
+
+        async function signOut() {
+            await _supabase.auth.signOut();
+        }
+
+        // Save to Supabase (debounced — fires 2s after last change)
+        function scheduleSupabaseSave() {
+            clearTimeout(_supabaseSaveTimer);
+            _supabaseSaveTimer = setTimeout(async () => {
+                if (!currentUser) return;
+                try {
+                    const { error } = await _supabase.from('patients').upsert({
+                        id:      currentUser.id,
+                        user_id: currentUser.id,
+                        data:    { version:'2.0', timestamp: new Date().toISOString(), patients: patientData, checklistStates: tempChecklistStates }
+                    });
+                    if (error) console.error('Supabase save error:', error);
+                } catch(e) { console.error('Supabase save failed:', e); }
+            }, 2000);
+        }
+
+        async function loadFromSupabase() {
+            if (!currentUser) return;
+            try {
+                const { data, error } = await _supabase
+                    .from('patients')
+                    .select('data')
+                    .eq('user_id', currentUser.id)
+                    .maybeSingle();
+                if (error) { console.error('Supabase load error:', error); loadFromLocalStorage(); return; }
+                if (data && data.data && Array.isArray(data.data.patients)) {
+                    const parsed = data.data;
+                    patientData = parsed.patients;
+                    if (parsed.checklistStates) tempChecklistStates = parsed.checklistStates;
+                    localStorage.setItem('ultimatePatientList', JSON.stringify(parsed));
+                    displayRows();
+                    populateColumnSelector();
+                    populateColumnSelect();
+                    updateCensus();
+                } else {
+                    loadFromLocalStorage(); // no cloud data yet — load local
+                }
+            } catch(e) { console.error('Supabase load failed:', e); loadFromLocalStorage(); }
+        }
 
 		function loadFromLocalStorage() {
     try {
@@ -16851,5 +17003,6 @@ function showIOHourlyPopup(label, entries, color) {
 
 
     </script>
+</div><!-- end #app -->
 </body>
 </html>
