@@ -493,38 +493,76 @@ const VIOLIN_DASHBOARD_CSS = `
             opacity: 0.88;
         }
 
-        /* iOS Controls */
-.controls-wrap {
-    margin-bottom: 10px;
-}
-.controls-toggle {
+        /* iOS Compact Toolbar */
+.toolbar-bar {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(44, 44, 46, 0.7);
+    margin-bottom: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+.toolbar-bar::-webkit-scrollbar { display: none; }
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(44, 44, 46, 0.85);
+    color: var(--primary);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    letter-spacing: -0.01em;
+    height: 32px;
+}
+.toolbar-btn:hover { background: rgba(58, 58, 60, 0.98); opacity: 0.9; }
+.toolbar-btn:active { transform: scale(0.95); opacity: 0.7; }
+
+.toolbar-btn-primary {
+    background: #0A84FF;
+    color: #fff;
+}
+.toolbar-btn-primary:hover { background: #0A84FF; opacity: 0.88; }
+
+.toolbar-btn-icon {
+    width: 32px;
+    padding: 0;
+    font-size: 16px;
     color: var(--text-secondary);
+}
+
+.toolbar-select {
+    background: rgba(44, 44, 46, 0.85);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 0 12px;
     font-size: 13px;
     font-weight: 500;
-    padding: 7px 12px;
     cursor: pointer;
-    margin-bottom: 6px;
+    height: 32px;
+    flex-shrink: 0;
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     letter-spacing: -0.01em;
+    max-width: 120px;
 }
-.controls-toggle:hover { color: var(--text-primary); background: rgba(58, 58, 60, 0.9); }
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 4px;
-    padding: 12px;
-    background: rgba(28, 28, 30, 0.85);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 0.5px solid var(--separator);
-    border-radius: var(--radius-lg);
+
+.toolbar-file {
+    display: inline-flex;
+    flex-shrink: 0;
 }
+.toolbar-file input[type="file"] { position: absolute; left: -9999px; }
+.toolbar-file .toolbar-btn { cursor: pointer; }
 
 /* iOS Navigation pill buttons */
 .nav-buttons {
@@ -3420,26 +3458,21 @@ async function testOCRAvailability() {
     </div>
 
     <div class="container">
-        <!-- Controls -->
-        <div class="controls-wrap">
-            <button class="controls-toggle" id="controlsToggle" onclick="toggleControls()">
-                ⚙ Tools <span id="controlsArrow" style="display:inline-block;transition:transform 200ms ease;">▸</span>
-            </button>
-            <div class="controls" id="controlsBar" style="display:none;">
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" accept=".json,.csv">
-                    <label for="fileInput" class="file-input-label">
-                        📁 Import
-                    </label>
-                </div>
-                <button onclick="toggleColumnDropdown()">Column Options</button>
-                <select id="columnSelect" onchange="sortRows()">
-                    <option value="">Sort by</option>
-                </select>
-                <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
-                <button onclick="toggleSearch()">🔍 Search</button>
-                <button id="exportButtonMain" onclick="exportData()">Export</button>
+        <!-- Compact iOS Toolbar -->
+        <div class="toolbar-bar">
+            <div class="file-input-wrapper toolbar-file">
+                <input type="file" id="fileInput" accept=".json,.csv">
+                <label for="fileInput" class="toolbar-btn toolbar-btn-primary">
+                    ↑ Import
+                </label>
             </div>
+            <select id="columnSelect" class="toolbar-select" onchange="sortRows()">
+                <option value="">Sort by</option>
+            </select>
+            <button id="resortBtn" class="toolbar-btn" onclick="reSort()" style="display: none;">↻</button>
+            <button class="toolbar-btn" onclick="toggleSearch()">⌕ Search</button>
+            <button id="exportButtonMain" class="toolbar-btn" onclick="exportData()">↓ Export</button>
+            <button class="toolbar-btn toolbar-btn-icon" onclick="toggleColumnDropdown()" title="Column Options">⊞</button>
         </div>
 
         <!-- Column Dropdown -->
