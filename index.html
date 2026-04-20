@@ -7617,15 +7617,15 @@ saveToLocalStorage();
                 var clr = abnormal
                     ? 'background:rgba(239,68,68,0.2);color:#ff6b6b;font-weight:700;'
                     : 'color:#6ee7b7;';
-                var dtLine = dt ? '<div style="font-size:0.6em;color:#999;white-space:nowrap;text-align:center;">' + dt + '</div>' : '';
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
+                var dtLine = dt ? '<div style="font-size:0.75em;color:#999;white-space:nowrap;text-align:center;">' + dt + '</div>' : '';
+                return '<td style="padding:3px 6px;font-size:0.92rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
             }
             function emptyCell() { return '<td></td>'; }
             function sectionHdr(label, color) {
-                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">' + label + '</td></tr>';
+                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">' + label + '</td></tr>';
             }
             function demarcRow(label) {
-                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:#2d1f00;color:#fbbf24;font-size:0.72rem;font-weight:700;padding:6px 10px;text-align:center;border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b;letter-spacing:0.05em;">' + label + '</td></tr>';
+                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:#2d1f00;color:#fbbf24;font-size:0.88rem;font-weight:700;padding:6px 10px;text-align:center;border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b;letter-spacing:0.05em;">' + label + '</td></tr>';
             }
             function ioDateShort(dtStr) {
                 if (!dtStr) return '';
@@ -7641,13 +7641,13 @@ saveToLocalStorage();
             }
             function histDataCell(val, dt, unit) {
                 unit = unit || '';
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#a78bfa;background:rgba(139,92,246,0.08);">' +
+                return '<td style="padding:3px 6px;font-size:0.92rem;text-align:center;color:#a78bfa;background:rgba(139,92,246,0.08);">' +
                     '<div>' + val + unit + '</div>' +
-                    (dt ? '<div style="font-size:0.6em;color:#6b7280;white-space:nowrap;text-align:center;">' + dt + '</div>' : '') +
+                    (dt ? '<div style="font-size:0.75em;color:#6b7280;white-space:nowrap;text-align:center;">' + dt + '</div>' : '') +
                     '</td>';
             }
             function totalCell(content) {
-                return '<td style="padding:3px 6px;font-size:0.78rem;text-align:center;color:#fbbf24;font-weight:700;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;">' + content + '</td>';
+                return '<td style="padding:3px 6px;font-size:0.92rem;text-align:center;color:#fbbf24;font-weight:700;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;">' + content + '</td>';
             }
             function emptyTotalCell() {
                 return '<td style="background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:0;"></td>';
@@ -7666,7 +7666,7 @@ saveToLocalStorage();
                 // Truncate long drain/intake names; show full name in tooltip
                 var dispName = name.length > 50 ? name.substring(0, 48) + '\u2026' : name;
                 var todayStr = (totalToday > 0 && todayTimeLabel)
-                    ? '<span style="font-size:0.65em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Today: ' + totalToday + (unit.trim()||'') + ' / ' + todayTimeLabel + '</span>'
+                    ? '<span style="font-size:0.8em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Today: ' + totalToday + (unit.trim()||'') + ' / ' + todayTimeLabel + '</span>'
                     : '';
                 var row = '<tr><td style="white-space:normal;line-height:1.25;word-break:break-word;max-width:120px;" title="' +
                     name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + dispName + todayStr + '</td>';
@@ -7725,7 +7725,7 @@ saveToLocalStorage();
                 var histBalColor = histBal >= 0 ? '#10b981' : '#f59e0b';
                 var bal24   = in24 - out24;
                 var bal24Color = bal24 >= 0 ? '#10b981' : '#f59e0b';
-                var row = '<tr><td style="font-weight:700;font-size:0.78rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>';
+                var row = '<tr><td style="font-weight:700;font-size:0.92rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>';
                 // Today balance across maxMainCols
                 if (maxMainCols >= 3) {
                     row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>';
@@ -7741,8 +7741,8 @@ saveToLocalStorage();
                 if (has24hrTotal) {
                     if (in24 > 0 || out24 > 0) {
                         row += '<td style="padding:3px 6px;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;white-space:nowrap;">' +
-                            '<span style="color:' + bal24Color + ';font-weight:700;font-size:0.78rem;">' + (bal24 >= 0 ? '+' : '') + bal24 + ' mL</span>' +
-                            '<div style="font-size:0.6em;color:#94a3b8;">\u2191' + in24 + ' \u2193' + out24 + '</div></td>';
+                            '<span style="color:' + bal24Color + ';font-weight:700;font-size:0.92rem;">' + (bal24 >= 0 ? '+' : '') + bal24 + ' mL</span>' +
+                            '<div style="font-size:0.75em;color:#94a3b8;">\u2191' + in24 + ' \u2193' + out24 + '</div></td>';
                     } else { row += emptyTotalCell(); }
                 }
                 // History balance
@@ -7780,16 +7780,16 @@ saveToLocalStorage();
             var tableHTML = '<style>' +
                 '#tableContainer{overflow-x:auto;-webkit-overflow-scrolling:touch;}' +
                 '#tableContainer table{border-collapse:collapse;font-family:monospace;min-width:100%;}' +
-                '#tableContainer th{background:#1e293b;color:#94a3b8;font-size:0.65rem;padding:3px 8px;text-align:center;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
+                '#tableContainer th{background:#1e293b;color:#94a3b8;font-size:0.8rem;padding:3px 8px;text-align:center;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
                 '#tableContainer th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:#1e293b;}' +
-                '#tableContainer td:first-child{color:#cbd5e1;font-size:0.6rem;font-weight:600;padding:2px 5px;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
+                '#tableContainer td:first-child{color:#cbd5e1;font-size:0.75rem;font-weight:600;padding:2px 5px;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
                 '#tableContainer tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '#tableContainer tr:hover td:first-child{background:#0f0f1e;}' +
                 '</style><table><tr><th>Parameter / Total</th>';
             for (var _ci = 0; _ci < maxMainCols; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
-            if (has24hrTotal) tableHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.6rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;">24h\u00a0Total</th>';
+            if (has24hrTotal) tableHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.75rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;">24h\u00a0Total</th>';
             if (hasSeparator) {
-                tableHTML += '<th style="background:#2d1f00;color:#fbbf24;border-left:2px solid #f59e0b;font-size:0.6rem;white-space:nowrap;padding:3px 5px;">\u25c4 Pre-7AM \u25ba</th>';
+                tableHTML += '<th style="background:#2d1f00;color:#fbbf24;border-left:2px solid #f59e0b;font-size:0.75rem;white-space:nowrap;padding:3px 5px;">\u25c4 Pre-7AM \u25ba</th>';
                 for (var _hi = 0; _hi < maxHistCols; _hi++) tableHTML += '<th style="background:#1a1a2e;color:#a78bfa;">#' + (_hi + 1) + '</th>';
             }
             tableHTML += '</tr>';
