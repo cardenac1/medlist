@@ -3243,128 +3243,6 @@ select,
     color: #e2e8f0;
 }
 
-/* ===== TABLE MODE ===== */
-.table-mode-container {
-    overflow-x: auto;
-    width: 100%;
-    padding: 0.25rem 0 2rem 0;
-}
-.patient-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    font-size: 0.78rem;
-}
-.patient-table th {
-    background: rgba(15, 23, 42, 0.97);
-    color: #94a3b8;
-    font-size: 0.62rem;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    padding: 0.45rem 0.4rem;
-    border: 1px solid rgba(255,255,255,0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    white-space: nowrap;
-    font-weight: 700;
-}
-.patient-table td {
-    border: 1px solid rgba(255,255,255,0.07);
-    padding: 0.3rem 0.4rem;
-    vertical-align: top;
-    background: rgba(10,10,10,0.5);
-}
-.patient-table tr:hover td {
-    background: rgba(59,130,246,0.04);
-}
-.ptbl-id     { width: 10%; }
-.ptbl-prob   { width: 17%; }
-.ptbl-ics    { width: 14%; }
-.ptbl-vitals { width: 23%; }
-.ptbl-orders { width: 20%; }
-.ptbl-todo   { width: 16%; }
-.tbl-editable {
-    width: 100%;
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.76rem;
-    resize: none;
-    outline: none;
-    min-height: 36px;
-    overflow: hidden;
-    line-height: 1.4;
-}
-.tbl-editable:focus {
-    background: rgba(59,130,246,0.07);
-    border-radius: 4px;
-    box-shadow: 0 0 0 2px rgba(59,130,246,0.18);
-}
-.ptbl-name {
-    font-weight: 700;
-    font-size: 0.8rem;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-    cursor: pointer;
-    transition: color 100ms;
-}
-.ptbl-name:hover { color: #60a5fa; text-decoration: underline; }
-.ptbl-rm  { font-size: 0.76rem; color: #60a5fa; }
-.ptbl-mrn { font-size: 0.69rem; color: #64748b; }
-.tbl-toggle-bar {
-    display: flex;
-    gap: 3px;
-    margin-bottom: 4px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-.tbl-import-btn {
-    font-size: 0.58rem;
-    padding: 2px 7px;
-    background: linear-gradient(135deg, #0ea5e9, #0369a1);
-    border: none;
-    border-radius: 100px;
-    color: white;
-    cursor: pointer;
-    font-weight: 700;
-    white-space: nowrap;
-}
-.tbl-import-btn:hover { opacity: 0.85; }
-.tbl-toggle-btn {
-    font-size: 0.58rem;
-    padding: 2px 7px;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.13);
-    border-radius: 100px;
-    color: #64748b;
-    cursor: pointer;
-    white-space: nowrap;
-}
-.tbl-toggle-btn.active {
-    background: rgba(59,130,246,0.18);
-    border-color: #3b82f6;
-    color: #60a5fa;
-}
-.tbl-vitals-snapshot,
-.tbl-vitals-full,
-.tbl-orders-snapshot,
-.tbl-orders-full {
-    font-size: 0.7rem;
-    color: #e2e8f0;
-    line-height: 1.4;
-}
-.tbl-vitals-snapshot,
-.tbl-vitals-full {
-    font-family: 'JetBrains Mono', monospace;
-}
-#tableModeBtn.tbl-active {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 2px 10px rgba(139,92,246,0.3);
-}
 
     </style>
 </head>
@@ -3442,7 +3320,6 @@ async function testOCRAvailability() {
                     <option value="">Sort by</option>
                 </select>
                 <button onclick="toggleSearch()">Search</button>
-                <button id="tableModeBtn" onclick="toggleTableMode()">⊞ Table</button>
                 <button id="exportButtonMain" onclick="exportData()">Export</button>
             </div>
         </div>
@@ -3464,9 +3341,6 @@ async function testOCRAvailability() {
 
         <!-- Row List -->
         <ul class="row-list" id="rowList"></ul>
-
-        <!-- Table Mode View -->
-        <div id="tableModeView" class="table-mode-container" style="display:none;"></div>
 
         <!-- Floating Action Button -->
         <button class="fab" onclick="showAddEntryModal()">+</button>
@@ -13358,108 +13232,144 @@ function generateFullChecklistHTML() {
   }
   const states = tempChecklistStates[patientKey];
 
-  // ========= DATA (with nested Patient care) =========
-  const traumaItems = [
-    // ADD TO LIST
-    { section: 'ADD TO LIST', color: '#dc2626', text: 'Add to list' },
+  // ========= DATA =========
+  const consultItems = [
+    // 🩺 STAFF / NOTE
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Add to list' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Review Hx / Vitals / I&Os / Labs / Imaging' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Staff with attending' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Complete NOTE (include HCP)' },
 
-    // STAFF
-    { section: 'STAFF', color: '#d97706', text: 'Staff' },
-    { section: 'STAFF', color: '#d97706', text: 'Order Scans' },
+    // ☎️ RECOMMENDATIONS
+    { section: '☎️ RECOMMENDATIONS', color: '#9333ea', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
+    { section: '☎️ RECOMMENDATIONS', color: '#9333ea', text: 'Sign out to primary team/ED' },
 
-    // NOTE
-    { section: 'NOTE (include HCP)', color: '#16a34a', text: 'Advanced Directives/Goals of Care/HCP' },
+    // ✍️ ORDERS
+    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'Extra scans / consults' },
+    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
 
-    // F/U SCANS AND LABS
-    { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Primary review of imaging' },
-    { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Plan by injury: CTH, CT C/T/L Spine, CT chest/abdomen/pelvis, + additional scans (attending reads). <a href="https://docs.google.com/document/d/12lbPO5K7jMPhruuoedT-piCaQSr9dja2OObAeMD2NWk/edit?tab=t.0" target="_blank" rel="noopener noreferrer">Reading CT scans</a>' },
-    { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'Review labs' },
-    { section: 'F/U SCANS AND LABS', color: '#9333ea', text: 'If going to OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
+    // 🔪 OR
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'NPO at midnight ± IVF' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Book OR + Call OR' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Obtain Consent' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Type & Screen (within 3 days + historical)' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: '2U PRBCs on hold' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Urine HCG' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Preoperative risk stratification' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'EKG, CXR, Preop testing' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Coags' },
+    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Special instruments/booking needs' },
 
-    // DISPO/ADDENDUM
-    { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Sign out DISPO to ICU/Floor/ED' },
-    { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'EVIDENCE BASED RECOMMENDATIONS FOR THEIR DIAGNOSIS AND CORMOBIDITIES' },
-    { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Update family' },
-    { section: 'DISPO/ADDENDUM', color: '#c026d3', text: 'Tertiary Survey' },
+    // 🫀 PATIENT CARE
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
 
-    // ORDERS/CONSULTS
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Extra Scans/Consults' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'PSO if admitting - call bed board' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Diet order vs. NPO/IVF (caution with IVF if risk of fluid overload ex. CHF, CKD, cirrhosis etc.' },
-	      { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Consults: Palliative care, Swallow eval, etc.' },
+    // 🏃 ACTIVITY
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
 
+    // 🍔 DIET / NUTRITION
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
 
-    // PATIENT CARE (nested)
-    {
-      section: 'ORDERS/CONSULTS',
-      color: '#0284c7',
-      text: 'Patient care',
-      children: [
-        'Blood glucose monitoring',
-		'Cardiac telemetry',
-        'Lines/tubes/drains: Drain / NGT / Foley / OGT / chest tube / central line / arterial line / Peripheral IV orders',
-        'Intake and output',
-		'Intermittent Pneumatic Compression/SCDs',
-		'Neurological / neurovascular checks', 
-	    'Vital signs',
-	    'Daily weight',
-        'Code / resuscitation status',
-        'Incentive spirometry', 
-	    'Continuous pulse oximetry', 
-		'Notify provider of abnormal vital signs (T <35 or >38, HR <60 or >100, SBP <90 or >180, DBP <60 or >120, O2 <94)',
-		'Activity: OOB ad lib/with assistance/Bedrest, weight bearing status',
-      ]
-    },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Pain meds and bowel reg' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: '<a href="http://www.icucalorie.com/dvt/">DVT prophylaxis</a>' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Home medications' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Daily 2 AM labs (6am txp)' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'Interval scans/studies/consults' },
-    { section: 'ORDERS/CONSULTS', color: '#0284c7', text: 'EVIDENCE BASED MANAGEMENT of their diagnosis and COMORBID CONDITIONS' },
+    // 💊 MEDICATIONS
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
+
+    // 🧪 LABORATORY
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp)' },
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
+
+    // 🫁 RESPIRATORY
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Nebs' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
+
+    // 🧑‍⚕️ EVIDENCE BASED
+    { section: '🧑‍⚕️ EVIDENCE BASED', color: '#0d9488', text: 'Ongoing evidence-based management' },
   ];
 
-  const consultItems = [
-    { section: 'ADD TO LIST', color: '#2563eb', text: 'Add to list' },
-    { section: 'STAFF', color: '#2563eb', text: 'Review HX/Vitals/IOs/Labs/Imaging with attending reads' },
-    { section: 'STAFF', color: '#16a34a', text: 'Staff' },
-    { section: 'NOTE', color: '#9333ea', text: 'Complete consultation note' },
-    { section: 'NOTE', color: '#c026d3', text: 'EVIDENCE BASED RECOMMENDATIONS FOR THEIR DIAGNOSIS' },
+  const traumaItems = [
+    // 📝 STAFF / NOTE
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Staff with attending' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Order scans' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Complete NOTE (include HCP)' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'PROCEDURES NOTE' },
 
-    // ORDERS
-    { section: 'ORDERS', color: '#d97706', text: 'PSO if admitting - call bed board' },
-    { section: 'ORDERS', color: '#d97706', text: 'Diet order vs. NPO/IVF (caution with IVF if risk of fluid overload ex. CHF, CKD, cirrhosis etc.' },
-	      { section: 'ORDERS', color: '#d97706', text: 'Consults: Palliative care, swallow evaluation etc.' },
+    // 🩻 IMAGING & LAB REVIEW
+    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Primary review of imaging (CTH, CT C/T/L Spine, CT Chest/Abdomen/Pelvis, Additional scans as needed)' },
+    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Follow-up attending reads' },
+    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Review labs' },
 
+    // ☎️ DISPO
+    { section: '☎️ DISPO', color: '#c026d3', text: 'Sign-out (ICU / Floor / ED)' },
+    { section: '☎️ DISPO', color: '#c026d3', text: 'Update family' },
+    { section: '☎️ DISPO', color: '#c026d3', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
 
-    // PATIENT CARE (nested)
-    {
-      section: 'ORDERS',
-      color: '#d97706',
-      text: 'Patient care',
-      children: [
-        'Blood glucose monitoring',
-		'Cardiac telemetry',
-        'Lines/tubes/drains: Drain / NGT / Foley / OGT / chest tube / central line / arterial line / Peripheral IV orders',
-        'Intake and output',
-		'Intermittent Pneumatic Compression/SCDs',
-		'Neurological / neurovascular checks', 
-	    'Vital signs',
-	    'Daily weight',
-        'Code / resuscitation status',
-        'Incentive spirometry', 
-	    'Continuous pulse oximetry', 
-		'Notify provider of abnormal vital signs (T <35 or >38, HR <60 or >100, SBP <90 or >180, DBP <60 or >120, O2 <94)',
-		'Activity: OOB ad lib/with assistance/Bedrest, weight bearing status', 
-		'Management of comorbid conditions' 
-      ]
-    },
-    { section: 'ORDERS', color: '#d97706', text: 'Pain meds and bowel reg' },
-    { section: 'ORDERS', color: '#d97706', text: '<a href="http://www.icucalorie.com/dvt/">DVT prophylaxis</a>' },
-    { section: 'ORDERS', color: '#d97706', text: 'Home meds' },
-    { section: 'ORDERS', color: '#d97706', text: 'Daily 2 AM labs (6am txp)' },
-    { section: 'ORDERS', color: '#d97706', text: 'Consultations/Imaging/Interventions' },
-    { section: 'ORDERS', color: '#d97706', text: 'EVIDENCE BASED MANAGEMENT of their DIAGNOSIS and COMORBID CONDITIONS' },
-    { section: 'ORDERS', color: '#d97706', text: 'Booking for OR: NPO at midnight ± IVF, Book OR + Call OR, consent, Type & screen within 3 days + historical, order 2U PRBCs on hold, Urine ± HCG EKG CXR coags, Order special booking needs/instruments' },
+    // ✍️ ORDERS
+    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'Extra scans / consults' },
+    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
+
+    // 🫀 PATIENT CARE
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
+
+    // 🏃 ACTIVITY
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
+
+    // 🍔 DIET / NUTRITION
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
+
+    // 💊 MEDICATIONS
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
+
+    // 🧪 LABORATORY
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp) OR q12 labs for ICU' },
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
+
+    // 🫁 RESPIRATORY
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Nebs' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
+
+    // 🧑‍⚕️ EVIDENCE-BASED TREATMENT
+    { section: '🧑‍⚕️ EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Evidence-based management of diagnoses' },
+    { section: '🧑‍⚕️ EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Comorbidity management inpatient' },
+
+    // 🔪 OR
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'NPO at midnight ± IVF' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Book OR + Call OR' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Obtain Consent' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Type & Screen (within 3 days + historical)' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: '2U PRBCs on hold' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Urine HCG' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Preoperative risk stratification' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'EKG, CXR, Preop testing' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Coags' },
+    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Special instruments/booking needs' },
   ];
 
   const items = isTrauma ? traumaItems : consultItems;
@@ -13488,7 +13398,7 @@ function generateFullChecklistHTML() {
     <div style="margin-bottom:0.35rem; text-align:center;">
       <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-bottom:0.3rem;">
         <strong style="color:${isTrauma ? '#ef4444' : '#3b82f6'}; font-size:1.05em;">
-          ${isTrauma ? 'TRAUMA' : 'CONSULT PATIENT'} CHECKLIST
+          ${isTrauma ? '⚕️ TRAUMA CHECKLIST' : '🩺 CONSULT CHECKLIST'}
         </strong>
         <button onclick="toggleChecklistType()"
           style="background:linear-gradient(135deg, ${isTrauma ? '#3b82f6' : '#ef4444'}, ${isTrauma ? '#2563eb' : '#dc2626'}); color:white; border:none; padding:0.15rem 0.4rem; border-radius:0.375rem; font-size:0.78rem; cursor:pointer; transition:all .3s; box-shadow:0 2px 4px rgba(0,0,0,.2);"
@@ -13519,7 +13429,7 @@ function generateFullChecklistHTML() {
   // ========= RENDER EACH SECTION (supports children) =========
   Object.entries(sections).forEach(([sectionName, sectionItems]) => {
     const sectionColor = sectionItems[0].color;
-    const isOrders = sectionName.toUpperCase().includes('ORDERS');
+    const isOrders = /ORDERS|OR \(|PATIENT CARE|MEDICATIONS|LABORATORY|RESPIRATORY/i.test(sectionName);
     const sectionId = sectionName.replace(/[^a-zA-Z0-9]/g, '_');
 
     html += `
@@ -13778,393 +13688,6 @@ function createHelpModal() {
 
 
 
-// ===== TABLE MODE =====
-
-let isTableMode = false;
-// Tracks expanded state per cell: key = `${patientIndex}-vitals` or `${patientIndex}-orders`
-let tableCellExpandState = {};
-
-function toggleTableMode() {
-    isTableMode = !isTableMode;
-    const btn = document.getElementById('tableModeBtn');
-    const rowList = document.getElementById('rowList');
-    const tableView = document.getElementById('tableModeView');
-    const fab = document.querySelector('.fab');
-
-    if (isTableMode) {
-        rowList.style.display = 'none';
-        tableView.style.display = 'block';
-        btn.classList.add('tbl-active');
-        if (fab) fab.style.display = 'block';
-        renderTableMode();
-    } else {
-        rowList.style.display = '';
-        tableView.style.display = 'none';
-        btn.classList.remove('tbl-active');
-        displayRows();
-    }
-}
-
-function renderTableMode(data) {
-    data = data || patientData;
-    const container = document.getElementById('tableModeView');
-    if (!container) return;
-
-    if (!data || data.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:#64748b;padding:2rem;">No patients to display</p>';
-        return;
-    }
-
-    container.innerHTML = `
-    <table class="patient-table">
-        <thead>
-            <tr>
-                <th class="ptbl-id">RM / NM / MRN</th>
-                <th class="ptbl-prob">PROBLEMS</th>
-                <th class="ptbl-ics">ICS</th>
-                <th class="ptbl-vitals">VITALS / LABS</th>
-                <th class="ptbl-orders">ORDERS</th>
-                <th class="ptbl-todo">TO DO</th>
-            </tr>
-        </thead>
-        <tbody id="tableModeBody"></tbody>
-    </table>`;
-
-    const tbody = document.getElementById('tableModeBody');
-    data.forEach(function(patient) {
-        const index = patientData.indexOf(patient);
-        tbody.appendChild(buildTableRow(patient, index));
-    });
-}
-
-function tblEsc(t) {
-    if (t == null) return '';
-    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function buildTableRow(patient, index) {
-    const { color } = getPriorityStatus(patient);
-    const name = patient.Name || patient['Pt Name'] || '';
-    const rm   = patient.RM   || patient.Room || '';
-    const mrn  = patient.MRN  || '';
-
-    const tr = document.createElement('tr');
-    tr.dataset.index = index;
-    tr.style.borderLeft = '4px solid ' + color;
-
-    // RM / NM / MRN
-    const tdId = document.createElement('td');
-    tdId.className = 'ptbl-id';
-    tdId.innerHTML =
-        '<div class="ptbl-name" onclick="showDetails(' + index + ')" title="Open details">' + tblEsc(name) + '</div>' +
-        '<div class="ptbl-rm">'  + tblEsc(rm)  + '</div>' +
-        '<div class="ptbl-mrn">' + tblEsc(mrn) + '</div>';
-
-    // PROBLEMS
-    const tdProb = document.createElement('td');
-    tdProb.className = 'ptbl-prob';
-    tdProb.appendChild(createTblTextarea(patient, 'Problems'));
-
-    // ICS
-    const tdIcs = document.createElement('td');
-    tdIcs.className = 'ptbl-ics';
-    tdIcs.appendChild(createTblTextarea(patient, 'ICS'));
-
-    // VITALS / LABS
-    const tdVitals = document.createElement('td');
-    tdVitals.className = 'ptbl-vitals';
-    buildTblVitalsCell(tdVitals, patient, index);
-
-    // ORDERS
-    const tdOrders = document.createElement('td');
-    tdOrders.className = 'ptbl-orders';
-    buildTblOrdersCell(tdOrders, patient, index);
-
-    // TO DO
-    const tdTodo = document.createElement('td');
-    tdTodo.className = 'ptbl-todo';
-    buildTblTodoCell(tdTodo, patient, index);
-
-    tr.appendChild(tdId);
-    tr.appendChild(tdProb);
-    tr.appendChild(tdIcs);
-    tr.appendChild(tdVitals);
-    tr.appendChild(tdOrders);
-    tr.appendChild(tdTodo);
-    return tr;
-}
-
-function createTblTextarea(patient, field) {
-    const ta = document.createElement('textarea');
-    ta.className = 'tbl-editable';
-    ta.value = patient[field] || '';
-    ta.placeholder = field + '...';
-    function autoResize() {
-        ta.style.height = 'auto';
-        ta.style.height = Math.max(36, ta.scrollHeight) + 'px';
-    }
-    ta.addEventListener('input', function() {
-        patient[field] = this.value;
-        saveToLocalStorage();
-        autoResize();
-    });
-    setTimeout(autoResize, 0);
-    return ta;
-}
-
-function buildTblVitalsCell(td, patient, index) {
-    const stateKey = index + '-vitals';
-    const isExpanded = tableCellExpandState[stateKey] === 'full';
-    td.innerHTML = '';
-
-    const bar = document.createElement('div');
-    bar.className = 'tbl-toggle-bar';
-
-    const importBtn = document.createElement('button');
-    importBtn.className = 'tbl-import-btn';
-    importBtn.textContent = '⬇ Import';
-    importBtn.onclick = function(e) {
-        e.stopPropagation();
-        currentPatientIndex = index;
-        showImportModal();
-    };
-
-    const snapBtn = document.createElement('button');
-    snapBtn.className = 'tbl-toggle-btn' + (!isExpanded ? ' active' : '');
-    snapBtn.textContent = 'Snapshot';
-    snapBtn.onclick = function() {
-        tableCellExpandState[stateKey] = 'snapshot';
-        buildTblVitalsCell(td, patient, index);
-    };
-
-    const fullBtn = document.createElement('button');
-    fullBtn.className = 'tbl-toggle-btn' + (isExpanded ? ' active' : '');
-    fullBtn.textContent = 'Full';
-    fullBtn.onclick = function() {
-        tableCellExpandState[stateKey] = 'full';
-        buildTblVitalsCell(td, patient, index);
-    };
-
-    bar.appendChild(importBtn);
-    bar.appendChild(snapBtn);
-    bar.appendChild(fullBtn);
-
-    const content = document.createElement('div');
-
-    if (isExpanded) {
-        content.className = 'tbl-vitals-full';
-        const violin = (patient.VIOLIN || '').trim();
-        if (violin) {
-            content.innerHTML = tblEsc(violin).replace(/\n/g, '<br>');
-        } else {
-            content.innerHTML = '<span style="color:#475569">No vitals/labs data</span>';
-        }
-    } else {
-        content.className = 'tbl-vitals-snapshot';
-        content.innerHTML = buildTblVitalsSnapshot(patient);
-    }
-
-    td.appendChild(bar);
-    td.appendChild(content);
-}
-
-function buildTblVitalsSnapshot(patient) {
-    let html = '';
-    const violin = patient.VIOLIN || '';
-
-    // Extract key vitals line
-    let vitalsRaw = '';
-    violin.split('\n').some(function(line) {
-        const t = line.trim();
-        if (t && t !== 'Subj:' && /\b(T\s+[\d*]|HR\s+[\d*]|SBP\s+[\d*])/.test(t)) {
-            vitalsRaw = t;
-            return true;
-        }
-        return false;
-    });
-
-    if (vitalsRaw) {
-        function vv(key, src) {
-            const m = src.match(new RegExp(key + '\\s+([^\\s,]+(?:\\s*\\([^)]+\\))?(?:-[^\\s,@]+)?(?:@[^\\s,]+)?)'));
-            return m ? m[1] : null;
-        }
-        const parts = [];
-        const tV   = vv('T',   vitalsRaw); if (tV)   parts.push('T:' + tV);
-        const sbpV = vv('SBP', vitalsRaw);
-        const dbpV = vv('DBP', vitalsRaw);
-        if (sbpV) parts.push('BP:' + sbpV + (dbpV ? '/' + dbpV : ''));
-        const hrV  = vv('HR',  vitalsRaw); if (hrV)  parts.push('HR:' + hrV);
-        const o2V  = vv('O2',  vitalsRaw); if (o2V)  parts.push('O2:' + o2V);
-        if (parts.length) {
-            html += '<div style="font-size:0.7rem;font-family:\'JetBrains Mono\',monospace;color:#a5f3fc;margin-bottom:3px;">' + tblEsc(parts.join('  ')) + '</div>';
-        }
-    }
-
-    // Key labs snapshot
-    let ld = {};
-    try { if (patient.LabData) ld = JSON.parse(patient.LabData); } catch(e) {}
-    const labs = ld.labs || {};
-    const snap = [];
-    if (labs.wbc && labs.wbc[0] != null) snap.push('WBC:' + labs.wbc[0]);
-    if (labs.hgb && labs.hgb[0] != null) snap.push('Hgb:' + labs.hgb[0]);
-    if (labs.plt && labs.plt[0] != null) snap.push('Plt:' + labs.plt[0]);
-    if (labs.na  && labs.na[0]  != null) snap.push('Na:' + labs.na[0]);
-    if (labs.k   && labs.k[0]   != null) snap.push('K:' + labs.k[0]);
-    if (labs.cr  && labs.cr[0]  != null) snap.push('Cr:' + labs.cr[0]);
-    if (labs.bun && labs.bun[0] != null) snap.push('BUN:' + labs.bun[0]);
-
-    if (snap.length) {
-        html += '<div style="font-size:0.67rem;color:#94a3b8;line-height:1.5;">' + tblEsc(snap.join('  ')) + '</div>';
-    }
-
-    return html || '<span style="color:#475569;font-size:0.68rem;">No data</span>';
-}
-
-function buildTblOrdersCell(td, patient, index) {
-    const stateKey = index + '-orders';
-    const isExpanded = tableCellExpandState[stateKey] === 'full';
-    td.innerHTML = '';
-
-    const bar = document.createElement('div');
-    bar.className = 'tbl-toggle-bar';
-
-    const importBtn = document.createElement('button');
-    importBtn.className = 'tbl-import-btn';
-    importBtn.textContent = '⬇ Import';
-    importBtn.onclick = function(e) {
-        e.stopPropagation();
-        currentPatientIndex = index;
-        showImportModal();
-    };
-
-    const snapBtn = document.createElement('button');
-    snapBtn.className = 'tbl-toggle-btn' + (!isExpanded ? ' active' : '');
-    snapBtn.textContent = 'Snapshot';
-    snapBtn.onclick = function() {
-        tableCellExpandState[stateKey] = 'snapshot';
-        buildTblOrdersCell(td, patient, index);
-    };
-
-    const fullBtn = document.createElement('button');
-    fullBtn.className = 'tbl-toggle-btn' + (isExpanded ? ' active' : '');
-    fullBtn.textContent = 'Full';
-    fullBtn.onclick = function() {
-        tableCellExpandState[stateKey] = 'full';
-        buildTblOrdersCell(td, patient, index);
-    };
-
-    bar.appendChild(importBtn);
-    bar.appendChild(snapBtn);
-    bar.appendChild(fullBtn);
-
-    const content = document.createElement('div');
-
-    if (isExpanded) {
-        content.className = 'tbl-orders-full';
-        const orders   = (patient.ORDERS || '').trim();
-        const imported = (patient.ImportedData || '').trim();
-        let ordersHtml = '';
-
-        if (imported) {
-            const mm = imported.match(/Medications[^\n]*\n([\s\S]*?)(?=\n{2,}[A-Z ]{3,}:|DIET|$)/i);
-            if (mm) {
-                const lines = mm[1].split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 1; });
-                ordersHtml = lines.map(tblEsc).join('<br>');
-            }
-        }
-        if (!ordersHtml && orders) ordersHtml = tblEsc(orders).replace(/\n/g, '<br>');
-        content.innerHTML = ordersHtml || '<span style="color:#475569">No orders data</span>';
-    } else {
-        content.className = 'tbl-orders-snapshot';
-        const orders = patient.ORDERS || '';
-        const ltdM   = orders.match(/LTD\s*:\s*([^\n]+)/i);
-        const dispoM = orders.match(/DISPO\s*:\s*([^\n]+)/i);
-        let snapHtml = '';
-        if (ltdM)   snapHtml += '<div style="font-size:0.7rem;"><span style="color:#94a3b8;">LTD:</span> '   + tblEsc(ltdM[1])   + '</div>';
-        if (dispoM) snapHtml += '<div style="font-size:0.7rem;"><span style="color:#4ade80;">DISPO:</span> ' + tblEsc(dispoM[1]) + '</div>';
-        if (!snapHtml) {
-            const firstLines = orders.split('\n').filter(function(l){ return l.trim(); }).slice(0, 3);
-            snapHtml = firstLines.length
-                ? '<div style="font-size:0.69rem;color:#94a3b8;">' + firstLines.map(tblEsc).join('<br>') + '</div>'
-                : '<span style="color:#475569;font-size:0.68rem;">No orders</span>';
-        }
-        content.innerHTML = snapHtml;
-    }
-
-    td.appendChild(bar);
-    td.appendChild(content);
-}
-
-function buildTblTodoCell(td, patient, index) {
-    td.innerHTML = '';
-    const todoText = patient['To do'] || '';
-    const parsed   = parseTodoText(todoText);
-
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display:flex;flex-direction:column;gap:2px;';
-
-    const pending   = parsed.tasks.filter(function(t){ return t.type === 'task' && !t.done; });
-    const completed = parsed.tasks.filter(function(t){ return t.type === 'task' && t.done; });
-    const plains    = parsed.tasks.filter(function(t){ return t.type === 'plain'; });
-
-    plains.concat(pending).concat(completed).forEach(function(item) {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:flex-start;gap:5px;padding:1px 0;';
-
-        if (item.type === 'task') {
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.checked = item.done;
-            cb.style.cssText = 'width:12px;height:12px;margin-top:2px;flex-shrink:0;accent-color:#3b82f6;cursor:pointer;';
-            cb.addEventListener('change', function() {
-                item.done = this.checked;
-                patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
-                saveToLocalStorage();
-                buildTblTodoCell(td, patient, index);
-                updateTodoBadge(patient);
-            });
-            const lbl = document.createElement('span');
-            lbl.style.cssText = 'font-size:0.72rem;line-height:1.4;color:' + (item.done ? '#475569' : '#e2e8f0') + ';' + (item.done ? 'text-decoration:line-through;' : '');
-            lbl.textContent = item.text;
-            row.appendChild(cb);
-            row.appendChild(lbl);
-        } else {
-            const lbl = document.createElement('span');
-            lbl.style.cssText = 'font-size:0.72rem;color:#64748b;';
-            lbl.textContent = item.text;
-            row.appendChild(lbl);
-        }
-        wrapper.appendChild(row);
-    });
-
-    if (parsed.tasks.length === 0) {
-        const empty = document.createElement('span');
-        empty.style.cssText = 'font-size:0.68rem;color:#475569;';
-        empty.textContent = 'No tasks';
-        wrapper.appendChild(empty);
-    }
-
-    // Inline add-task input
-    const addRow = document.createElement('div');
-    addRow.style.cssText = 'display:flex;gap:4px;margin-top:5px;';
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.placeholder = '+ Add task…';
-    inp.style.cssText = 'flex:1;font-size:0.67rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:2px 6px;color:#e2e8f0;outline:none;';
-    inp.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && this.value.trim()) {
-            parsed.tasks.push({ type: 'task', done: false, text: this.value.trim() });
-            patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
-            saveToLocalStorage();
-            buildTblTodoCell(td, patient, index);
-            updateTodoBadge(patient);
-        }
-    });
-    addRow.appendChild(inp);
-    wrapper.appendChild(addRow);
-    td.appendChild(wrapper);
-}
-
 // ===== PDF EXPORT =====
 
 function exportPDF() {
@@ -14312,16 +13835,30 @@ function exportPDF() {
         const vitalsHTML = buildPDFVitalsHTML(patient);
         const todo       = (patient['To do'] || '').trim();
 
+        // Compact todo: □/✓ symbols instead of raw [ ]/[x] text
+        function buildPDFTodoHTML(raw) {
+            if (!raw) return '';
+            return raw.split('\n').map(function(line) {
+                const t = line.trim();
+                if (!t) return null;
+                if (/^\[x\]/i.test(t)) {
+                    return '<s style="color:#888">✓ ' + esc(t.replace(/^\[x\]\s*/i,'')) + '</s>';
+                }
+                if (/^\[ \]/.test(t)) {
+                    return '□ ' + esc(t.replace(/^\[ \]\s*/,''));
+                }
+                return '<span style="color:#555">' + esc(t) + '</span>';
+            }).filter(Boolean).join('<br>');
+        }
+
         rows += `<tr>
             <td class="col-id">
-                <div class="pt-name">${esc(name)}</div>
-                <div class="pt-rm">${esc(rm)}</div>
-                <div class="pt-mrn">${esc(mrn)}</div>
+                <b>${esc(name)}</b><br>${esc(rm)}<br><span style="color:#666">${esc(mrn)}</span>
             </td>
             <td class="col-prob">${esc(problems).replace(/\n/g,'<br>')}</td>
             <td class="col-ics">${esc(ics).replace(/\n/g,'<br>')}</td>
             <td class="col-vitals">${vitalsHTML}</td>
-            <td class="col-todo"><strong>To Do:</strong><br>${esc(todo).replace(/\n/g,'<br>')}</td>
+            <td class="col-todo">${buildPDFTodoHTML(todo)}</td>
         </tr>`;
     });
 
@@ -14332,27 +13869,24 @@ function exportPDF() {
 <title>Patient List - ${dateStr}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Courier New', Courier, monospace; font-size: 7pt; line-height: 1.25; color: #000; }
+body { font-family: 'Courier New', Courier, monospace; font-size: 5.5pt; line-height: 1.15; color: #000; }
 table { width:100%; border-collapse:collapse; table-layout:fixed; }
-th, td { border:1px solid #000; padding:2px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; }
-th { background:#1a1a2e; color:#fff; font-size:6.5pt; text-align:center; padding:3px 2px;
-     -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.col-id     { width:14%; }
+th, td { border:1px solid #555; padding:1px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; }
+th { background:#222; color:#fff; font-size:5pt; text-align:center; padding:2px;
+     -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:0.03em; }
+.col-id     { width:13%; }
 .col-prob   { width:22%; }
-.col-ics    { width:18%; }
-.col-vitals { width:26%; }
-.col-todo   { width:20%; }
-.pt-name { font-weight:bold; font-size:8.5pt; margin-bottom:1px; }
-.pt-rm   { font-size:8pt; }
-.pt-mrn  { font-size:7pt; color:#444; }
-.vitals-line { margin-bottom:1px; }
-.fishbone { font-family:'Courier New', Courier, monospace; font-size:6.5pt; white-space:pre-wrap; line-height:1.3; }
-.ts  { font-size:5.5pt; color:#555; font-style:italic; margin-bottom:1px; }
+.col-ics    { width:17%; }
+.col-vitals { width:27%; }
+.col-todo   { width:21%; }
+b { font-size:6pt; }
+.fishbone { font-family:'Courier New', Courier, monospace; font-size:5pt; white-space:pre-wrap; line-height:1.2; }
+.ts  { font-size:4.5pt; color:#666; font-style:italic; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr { page-break-inside: avoid; break-inside: avoid; }
-tr:nth-child(even) td { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.page-title { text-align:center; font-weight:bold; font-size:9pt; margin-bottom:5px; font-family:Arial,sans-serif; }
-@page { margin:0.35in; size:portrait; }
+tr:nth-child(even) td { background:#f7f7f7; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.page-title { text-align:center; font-weight:bold; font-size:7pt; margin-bottom:3px; font-family:Arial,sans-serif; }
+@page { margin:0.25in; size:portrait; }
 </style>
 </head>
 <body>
