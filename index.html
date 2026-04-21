@@ -4522,6 +4522,17 @@ const helpContent = {
                 populateColumnSelector();
                 populateColumnSelect();
                 updateCensus();
+                // Restore saved sort selection
+                const savedSort = localStorage.getItem('patientSortColumn');
+                if (savedSort) {
+                    currentSortColumn = savedSort;
+                    const colSelect = document.getElementById('columnSelect');
+                    if (colSelect) colSelect.value = savedSort;
+                    const resortBtn = document.getElementById('resortBtn');
+                    if (resortBtn) resortBtn.style.display = 'inline-block';
+                    applyPatientSort(patientData, savedSort);
+                    displayRows();
+                }
             }
         }
         
@@ -5005,6 +5016,7 @@ function renderTodoInListRow(container, patient) {
 }
 
 function displayRows(data = patientData) {
+    if (currentSortColumn) applyPatientSort(data, currentSortColumn);
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
 
@@ -5462,51 +5474,41 @@ function displayRows(data = patientData) {
 
 
 
-	   function sortRows() {
-    const column = document.getElementById('columnSelect').value;
-    if (column) {
-        // Save the current sort column and show re-sort button
-        currentSortColumn = column;
-        document.getElementById('resortBtn').style.display = 'inline-block';
-        
-        patientData.sort((a, b) => {
-            const valueA = a[column] || '';
-            const valueB = b[column] || '';
-            
-            // Special handling for Priority column
-            if (column === 'Priority') {
+       function applyPatientSort(arr, col) {
+        if (!col || !arr) return;
+        arr.sort((a, b) => {
+            const valueA = a[col] || '';
+            const valueB = b[col] || '';
+            if (col === 'Priority') {
                 const getPriorityValue = (val) => {
-                    if (!val || val.trim() === '') return 1000; // Empty = last
+                    if (!val || val.toString().trim() === '') return 1000;
                     const trimmed = val.toString().trim().toUpperCase();
-                    
-                    // Check if it's 'C' (complete)
-                    if (trimmed === 'C') return 100; // After 1-10, before empty
-                    
-                    // Check if it's numeric 1-10
+                    if (trimmed === 'C') return 100;
                     const num = parseInt(trimmed, 10);
-                    if (!isNaN(num) && num >= 1 && num <= 10) {
-                        return num; // 1-10 come first
-                    }
-                    
-                    // Everything else (non-numeric text) comes last
+                    if (!isNaN(num) && num >= 1 && num <= 10) return num;
                     return 1000;
                 };
-                
-                const priorityA = getPriorityValue(valueA);
-                const priorityB = getPriorityValue(valueB);
-                return priorityA - priorityB;
+                return getPriorityValue(valueA) - getPriorityValue(valueB);
             }
-            
-            // Regular string comparison for other columns
             return valueA.toString().toLowerCase().localeCompare(valueB.toString().toLowerCase());
         });
-        displayRows();
-    } else {
-        // Hide re-sort button if no sort selected
-        document.getElementById('resortBtn').style.display = 'none';
-        currentSortColumn = '';
     }
-}
+
+       function sortRows() {
+        const column = document.getElementById('columnSelect').value;
+        if (column) {
+            currentSortColumn = column;
+            localStorage.setItem('patientSortColumn', column);
+            document.getElementById('resortBtn').style.display = 'inline-block';
+            applyPatientSort(patientData, column);
+            displayRows();
+        } else {
+            document.getElementById('resortBtn').style.display = 'none';
+            currentSortColumn = '';
+            localStorage.removeItem('patientSortColumn');
+            displayRows();
+        }
+    }
 
 
 
