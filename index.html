@@ -410,57 +410,86 @@ const VIOLIN_DASHBOARD_CSS = `
         }
 
         .controls .file-input-wrapper:hover .file-input-label {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            background: rgba(255,255,255,0.13) !important;
         }
 
         /* Controls */
 .controls-wrap {
     margin-bottom: 0.5rem;
+    width: 100%;
 }
 .controls {
     display: flex;
     flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.15rem;
-    padding: 0.2rem 0.4rem;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.25rem;
     background: rgba(10, 10, 10, 0.7);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 .controls button {
-    font-size: 0.65rem !important;
-    padding: 0.15rem 0.4rem !important;
-    border-radius: 0.3rem !important;
+    flex: 1 1 0;
+    font-size: 0.72rem !important;
+    padding: 0.45rem 0.3rem !important;
+    border-radius: 0.4rem !important;
     white-space: nowrap;
-    min-width: unset;
-    flex-shrink: 0;
+    min-width: 0;
+    text-align: center;
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #e2e8f0 !important;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.controls button:hover {
+    background: rgba(255,255,255,0.13) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 .controls select {
-    font-size: 0.65rem;
-    padding: 0.15rem 0.2rem;
-    border-radius: 0.3rem;
+    flex: 1 1 0;
+    font-size: 0.72rem;
+    padding: 0.45rem 0.3rem;
+    border-radius: 0.4rem;
     white-space: nowrap;
-    background: rgba(10,10,10,0.7);
-    color: #f1f5f9;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.07);
+    color: #e2e8f0;
+    border: 1px solid rgba(255,255,255,0.12);
     cursor: pointer;
-    max-width: 80px;
-    flex-shrink: 1;
     min-width: 0;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
 }
 .toolbar-import {
-    width: auto !important;
-    flex-shrink: 0;
+    flex: 1 1 0;
+    display: flex;
 }
 .toolbar-import .file-input-label {
-    padding: 0.15rem 0.4rem !important;
-    font-size: 0.65rem !important;
-    border-radius: 0.3rem !important;
-    width: auto !important;
+    flex: 1;
+    padding: 0.45rem 0.3rem !important;
+    font-size: 0.72rem !important;
+    border-radius: 0.4rem !important;
     white-space: nowrap;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #e2e8f0 !important;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    box-shadow: none !important;
+}
+.toolbar-import:hover .file-input-label {
+    background: rgba(255,255,255,0.13) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
 }
 
 /* Navigation buttons */
@@ -3273,6 +3302,7 @@ async function testOCRAvailability() {
             </div>
             <span id="syncStatus" class="sync-status" title="Sync status"></span>
             <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑ Sync</button>
+            <button id="forcePushBtn" onclick="forcePushToCloud()" title="Force push: replace cloud with local data" style="display:none;">⇑ Force Push</button>
             <button id="authBtn" onclick="openAuthModal()">☁ Login</button>
         </div>
     </div>
@@ -3288,7 +3318,6 @@ async function testOCRAvailability() {
                 <select id="columnSelect" onchange="sortRows()">
                     <option value="">Sort by</option>
                 </select>
-                <button id="resortBtn" onclick="reSort()" style="display: none;">↻ Re-sort</button>
                 <button onclick="toggleSearch()">Search</button>
                 <button id="exportButtonMain" onclick="exportData()">Export</button>
             </div>
@@ -4522,6 +4551,15 @@ const helpContent = {
                 populateColumnSelector();
                 populateColumnSelect();
                 updateCensus();
+                // Restore saved sort selection
+                const savedSort = localStorage.getItem('patientSortColumn');
+                if (savedSort) {
+                    currentSortColumn = savedSort;
+                    const colSelect = document.getElementById('columnSelect');
+                    if (colSelect) colSelect.value = savedSort;
+                    applyPatientSort(patientData, savedSort);
+                    displayRows();
+                }
             }
         }
         
@@ -5005,6 +5043,7 @@ function renderTodoInListRow(container, patient) {
 }
 
 function displayRows(data = patientData) {
+    if (currentSortColumn) applyPatientSort(data, currentSortColumn);
     const rowList = document.getElementById('rowList');
     rowList.innerHTML = '';
 
@@ -5462,71 +5501,44 @@ function displayRows(data = patientData) {
 
 
 
-	   function sortRows() {
-    const column = document.getElementById('columnSelect').value;
-    if (column) {
-        // Save the current sort column and show re-sort button
-        currentSortColumn = column;
-        document.getElementById('resortBtn').style.display = 'inline-block';
-        
-        patientData.sort((a, b) => {
-            const valueA = a[column] || '';
-            const valueB = b[column] || '';
-            
-            // Special handling for Priority column
-            if (column === 'Priority') {
+       function applyPatientSort(arr, col) {
+        if (!col || !arr) return;
+        arr.sort((a, b) => {
+            const valueA = a[col] || '';
+            const valueB = b[col] || '';
+            if (col === 'Priority') {
                 const getPriorityValue = (val) => {
-                    if (!val || val.trim() === '') return 1000; // Empty = last
+                    if (!val || val.toString().trim() === '') return 1000;
                     const trimmed = val.toString().trim().toUpperCase();
-                    
-                    // Check if it's 'C' (complete)
-                    if (trimmed === 'C') return 100; // After 1-10, before empty
-                    
-                    // Check if it's numeric 1-10
+                    if (trimmed === 'C') return 100;
                     const num = parseInt(trimmed, 10);
-                    if (!isNaN(num) && num >= 1 && num <= 10) {
-                        return num; // 1-10 come first
-                    }
-                    
-                    // Everything else (non-numeric text) comes last
+                    if (!isNaN(num) && num >= 1 && num <= 10) return num;
                     return 1000;
                 };
-                
-                const priorityA = getPriorityValue(valueA);
-                const priorityB = getPriorityValue(valueB);
-                return priorityA - priorityB;
+                return getPriorityValue(valueA) - getPriorityValue(valueB);
             }
-            
-            // Regular string comparison for other columns
             return valueA.toString().toLowerCase().localeCompare(valueB.toString().toLowerCase());
         });
-        displayRows();
-    } else {
-        // Hide re-sort button if no sort selected
-        document.getElementById('resortBtn').style.display = 'none';
-        currentSortColumn = '';
     }
-}
 
-
-
-
-	    function reSort() {
-    if (currentSortColumn) {
-        // Set the dropdown to the current sort column
-        document.getElementById('columnSelect').value = currentSortColumn;
-        // Call the existing sort function
-        sortRows();
-        
-        // Optional: Show a brief confirmation
-        const btn = document.getElementById('resortBtn');
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Sorted!';
-        setTimeout(() => {
-            btn.textContent = originalText;
-        }, 1000);
+       function sortRows() {
+        const column = document.getElementById('columnSelect').value;
+        if (column) {
+            currentSortColumn = column;
+            localStorage.setItem('patientSortColumn', column);
+            applyPatientSort(patientData, column);
+            displayRows();
+        } else {
+            currentSortColumn = '';
+            localStorage.removeItem('patientSortColumn');
+            displayRows();
+        }
     }
-}
+
+
+
+
+
 
 
 	    
@@ -6010,6 +6022,7 @@ case 'chartcheck': {
             inlineTableBody.style.cssText = 'padding:0.5rem;overflow-x:auto;';
             if (labData && Object.keys(labData).length > 0) {
                 inlineTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+                appendChartSuggestions(inlineTableBody);
             } else {
                 inlineTableBody.innerHTML = '<p style="color:#94a3b8;padding:0.5rem;">No lab data available. Use the Import button above to load data.</p>';
             }
@@ -7576,6 +7589,7 @@ setTimeout(() => {
 const inlineLabTableBody = document.getElementById('inlineLabTableBody');
 if (inlineLabTableBody) {
     inlineLabTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+    appendChartSuggestions(inlineLabTableBody);
 }
 
 showFullOrders = true;
@@ -7910,7 +7924,8 @@ saveToLocalStorage();
             tableHTML += '</tr>';
 
             // ── VITALS (today in main cols, pre-7AM history in extra right cols) ──
-            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; });
+            var hasO2TherapyData = !!(labData && (labData.o2therapyCode || labData.o2therapyRaw));
+            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; }) || hasO2TherapyData;
             if (hasVit) {
                 tableHTML += sectionHdr('Vitals — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#0f4c81');
                 vitalDefs.forEach(function(vd) {
@@ -7937,6 +7952,46 @@ saveToLocalStorage();
                     }
                     tableHTML += row + '</tr>';
                 });
+                // O2 Therapy row
+                if (hasO2TherapyData) {
+                    var o2Code = labData.o2therapyCode || '';
+                    var o2Raw  = labData.o2therapyRaw  || '';
+                    var o2Flow = (labData.o2flowRaw || '').replace(/\s*L\/min/i, 'L');
+                    var o2Display;
+                    if (o2Code === 'RA') {
+                        o2Display = 'Room Air';
+                    } else if (o2Code === 'Vent') {
+                        var vParts = ['Vent'];
+                        if (labData.ventModeRaw)     vParts.push(labData.ventModeRaw.trim());
+                        if (labData.ventFrequencyRaw) vParts.push('RR:' + labData.ventFrequencyRaw);
+                        if (labData.ventTidalRaw)     vParts.push('TV:' + labData.ventTidalRaw + 'mL');
+                        if (labData.ventPeepRaw)      vParts.push('PEEP:' + labData.ventPeepRaw);
+                        if (labData.ventFiO2Raw)      vParts.push('FiO\u2082:' + labData.ventFiO2Raw + '%');
+                        o2Display = vParts.join(' | ');
+                    } else if (o2Code === 'NC') {
+                        o2Display = (o2Flow ? o2Flow + ' ' : '') + 'NC';
+                    } else if (o2Code === 'HFNC') {
+                        o2Display = 'HFNC' + (o2Flow ? ' ' + o2Flow : '');
+                    } else if (o2Code === 'NRB') {
+                        o2Display = 'NRB' + (o2Flow ? ' ' + o2Flow : '');
+                    } else if (o2Code === 'BiPAP/CPAP') {
+                        o2Display = 'BiPAP/CPAP' + (o2Flow ? ' ' + o2Flow : '');
+                    } else {
+                        o2Display = (o2Raw || o2Code || 'O2') + (o2Flow ? ' ' + o2Flow : '');
+                    }
+                    var isSupplemental = o2Code && o2Code !== 'RA';
+                    var o2CellClr = isSupplemental
+                        ? 'background:rgba(251,146,60,0.15);color:#fb923c;font-weight:700;'
+                        : 'color:#6ee7b7;';
+                    var o2Row = '<tr><td style="color:#7dd3fc;font-weight:600;">O2 Therapy</td>';
+                    o2Row += '<td colspan="' + maxMainCols + '" style="padding:4px 8px;font-size:0.92rem;' + o2CellClr + '">' + o2Display + '</td>';
+                    if (has24hrTotal) o2Row += emptyTotalCell();
+                    if (hasSeparator) {
+                        o2Row += sepCell();
+                        for (var _oj = 0; _oj < maxHistCols; _oj++) o2Row += emptyCell();
+                    }
+                    tableHTML += o2Row + '</tr>';
+                }
             }
 
             // ── I/O BALANCE (before intakes, as requested) ────────────────────────
@@ -8094,6 +8149,62 @@ saveToLocalStorage();
                 });
             }
 
+            // Miscellaneous lab values (within last 3 days, not in any defined section)
+            if (labData.labs) {
+                var knownLabKeys = {};
+                labSections.forEach(function(sec) {
+                    sec.labs.forEach(function(l) { knownLabKeys[l.key] = true; });
+                });
+                var miscLabKeys = [];
+                Object.keys(labData.labs).forEach(function(key) {
+                    if (knownLabKeys[key]) return;
+                    var arr = labData.labs[key];
+                    if (!arr || !arr.length) return;
+                    // Check if any date falls within the 72-hour history window
+                    var isRecent = false;
+                    var dArr = (labData.datesArray && labData.datesArray[key]) || (labData.dates && labData.dates[key] ? [labData.dates[key]] : []);
+                    var tArr = (labData.timesArray && labData.timesArray[key]) || (labData.times && labData.times[key] ? [labData.times[key]] : []);
+                    for (var _di = 0; _di < dArr.length; _di++) {
+                        var _dp = dArr[_di].split('/');
+                        if (_dp.length < 2) continue;
+                        var _yr = (_dp[2] && _dp[2].length === 2) ? (2000 + parseInt(_dp[2])) : (parseInt(_dp[2]) || 2025);
+                        var _tp = (tArr && tArr[_di] || '00:00').split(':');
+                        var _dt = new Date(_yr, parseInt(_dp[0]) - 1, parseInt(_dp[1]), parseInt(_tp[0]) || 0, parseInt(_tp[1]) || 0);
+                        if (_dt >= historyStart && _dt <= _now) { isRecent = true; break; }
+                    }
+                    if (isRecent) miscLabKeys.push(key);
+                });
+                if (miscLabKeys.length > 0) {
+                    var miscUid = 'miscLab' + Date.now();
+                    tableHTML += '<tr style="cursor:pointer;" onclick="(function(){' +
+                        'var els=document.getElementsByClassName(\'' + miscUid + '\');' +
+                        'var show=els.length>0&&els[0].style.display===\'none\';' +
+                        'for(var i=0;i<els.length;i++){els[i].style.display=show?\'table-row\':\'none\';}' +
+                        'var ic=document.getElementById(\'' + miscUid + '_ic\');if(ic)ic.textContent=show?\'\u25bc\':\'\u25ba\';' +
+                        '})()">' +
+                        '<td colspan="' + (maxValues + 1) + '" style="background:#1e2a1a;color:#86efac;font-size:0.82rem;font-weight:700;' +
+                        'letter-spacing:0.06em;padding:5px 10px;text-transform:uppercase;border-top:1px solid #374151;">' +
+                        '<span id="' + miscUid + '_ic">\u25ba</span> Other Lab Values \u2014 Last 3 Days (' + miscLabKeys.length + ')' +
+                        '</td></tr>';
+                    miscLabKeys.forEach(function(key) {
+                        var arr = labData.labs[key];
+                        var dispKey = key.replace(/([A-Z])/g, ' $1').trim();
+                        var row = '<tr class="' + miscUid + '" style="display:none;"><td>' + dispKey + '</td>';
+                        for (var i = 0; i < maxMainCols; i++) {
+                            if (i < arr.length) {
+                                row += dataCell(arr[i], getLabDT(key, i), false, '');
+                            } else { row += emptyCell(); }
+                        }
+                        if (has24hrTotal) row += emptyTotalCell();
+                        if (hasSeparator) {
+                            row += sepCell();
+                            for (var j = 0; j < maxHistCols; j++) row += emptyCell();
+                        }
+                        tableHTML += row + '</tr>';
+                    });
+                }
+            }
+
             tableHTML += '</table>';
             return tableHTML;
         }
@@ -8104,6 +8215,54 @@ saveToLocalStorage();
                 return;
             }
             document.getElementById('tableContainer').innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+        }
+
+        function appendChartSuggestions(container) {
+            if (!container || !labData || !Object.keys(labData).length) return;
+            // Remove any previous suggestions panel in this container
+            var prev = container.querySelector('.chart-suggestions-panel');
+            if (prev) prev.remove();
+            var allSuggestions = [];
+            // Clinical suggestions (vitals + labs + meds)
+            try {
+                var fullMedsText = lastImportedData ? extractFullMeds(lastImportedData) : '';
+                var clinicalSugs = generateSuggestions(labData, fullMedsText);
+                allSuggestions = allSuggestions.concat(clinicalSugs);
+            } catch(e) {}
+            // Electrolyte warnings (with dosing), deduped
+            try {
+                var eWarns = electrolyteWarnings(labData);
+                var existingLower = allSuggestions.map(function(s){ return s.replace(/\*/g,'').toLowerCase(); });
+                eWarns.forEach(function(w) {
+                    var clean = w.replace(/\*/g,'').toLowerCase();
+                    var isDup = existingLower.some(function(e) {
+                        if (clean.includes('hyponatremic') && e.includes('hyponatremic')) return true;
+                        if (clean.includes('hypernatremic') && e.includes('hypernatremic')) return true;
+                        if (clean.includes('hyperkalemic') && e.includes('hyperkalemic')) return true;
+                        if (clean.includes('meq k') && e.includes('meq k')) return true;
+                        if (clean.includes('calcium gluconate') && e.includes('calcium gluconate')) return true;
+                        if (clean.includes('mag sulfate') && e.includes('mag sulfate')) return true;
+                        if (clean.includes('mmol phos') && e.includes('mmol phos')) return true;
+                        return false;
+                    });
+                    if (!isDup) allSuggestions.push(w);
+                });
+            } catch(e) {}
+            // I/O warnings
+            try {
+                if (lastImportedData) {
+                    var _ioForWarn = extractIntakeOutputData(lastImportedData);
+                    if (_ioForWarn && _ioForWarn.outputs) {
+                        var ioWarns = buildIOWarnings(_ioForWarn, patientData[currentPatientIndex] || {});
+                        allSuggestions = allSuggestions.concat(ioWarns);
+                    }
+                }
+            } catch(e) {}
+            if (!allSuggestions.length) return;
+            var panel = createSuggestionsModule(allSuggestions);
+            panel.className = (panel.className || '') + ' chart-suggestions-panel';
+            panel.style.marginTop = '0.75rem';
+            container.appendChild(panel);
         }
 
 
@@ -17241,17 +17400,20 @@ function showIOHourlyPopup(label, entries, color) {
     function updateAuthUI() {
         const btn = document.getElementById('authBtn');
         const syncBtn = document.getElementById('manualSyncBtn');
+        const forcePushBtn = document.getElementById('forcePushBtn');
         const statusEl = document.getElementById('syncStatus');
         if (!btn) return;
         if (currentUser) {
             btn.textContent = '👤 ' + (currentUser.email.split('@')[0]);
             btn.title = currentUser.email + ' — click to log out';
             if (syncBtn) syncBtn.style.display = '';
+            if (forcePushBtn) forcePushBtn.style.display = '';
             if (statusEl) statusEl.style.display = '';
         } else {
             btn.textContent = '☁ Login';
             btn.title = 'Login to enable cloud sync';
             if (syncBtn) syncBtn.style.display = 'none';
+            if (forcePushBtn) forcePushBtn.style.display = 'none';
             if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
         }
     }
@@ -17260,7 +17422,8 @@ function showIOHourlyPopup(label, entries, color) {
         if (!currentUser) return;
         try {
             showSyncStatus('syncing');
-            const rows = (typeof patientData !== 'undefined' ? patientData : []).map(p => {
+            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
+            const rows = localPatients.map(p => {
                 if (!p._pid) p._pid = _genId();
                 return { id: p._pid, data: p, user_id: currentUser.id };
             });
@@ -17268,11 +17431,48 @@ function showIOHourlyPopup(label, entries, color) {
                 const { error } = await getSB().from(SB_TABLE).upsert(rows, { onConflict: 'id' });
                 if (error) throw error;
             }
-            // Remove rows deleted locally (ids no longer in patientData)
+            // Delete cloud records whose _pid no longer exists locally (orphan cleanup)
+            const localIds = new Set(localPatients.map(p => p._pid).filter(Boolean));
+            const { data: cloudRows } = await getSB().from(SB_TABLE).select('id').eq('user_id', currentUser.id);
+            if (cloudRows) {
+                const orphanIds = cloudRows.map(r => r.id).filter(id => !localIds.has(id));
+                if (orphanIds.length > 0) {
+                    await getSB().from(SB_TABLE).delete().in('id', orphanIds);
+                }
+            }
             showSyncStatus('ok');
         } catch (e) {
             console.error('Sync upload error:', e);
             showSyncStatus('error');
+        }
+    }
+
+    async function forcePushToCloud() {
+        if (!currentUser) { alert('Please log in first.'); return; }
+        if (!confirm('Force Push will completely replace the cloud database with your current local data.\n\nThis cannot be undone. Continue?')) return;
+        try {
+            showSyncStatus('syncing');
+            const btn = document.getElementById('forcePushBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
+            // Assign _pid to any patients missing one
+            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
+            localPatients.forEach(p => { if (!p._pid) p._pid = _genId(); });
+            // Wipe all cloud records for this user then re-insert
+            const { error: delErr } = await getSB().from(SB_TABLE).delete().eq('user_id', currentUser.id);
+            if (delErr) throw delErr;
+            const rows = localPatients.map(p => ({ id: p._pid, data: p, user_id: currentUser.id }));
+            if (rows.length > 0) {
+                const { error } = await getSB().from(SB_TABLE).insert(rows);
+                if (error) throw error;
+            }
+            showSyncStatus('ok');
+            if (btn) { btn.textContent = '✓ Pushed!'; setTimeout(() => { btn.textContent = '⇑ Force Push'; btn.disabled = false; }, 2000); }
+        } catch (e) {
+            console.error('Force push error:', e);
+            showSyncStatus('error');
+            const btn = document.getElementById('forcePushBtn');
+            if (btn) { btn.textContent = '⇑ Force Push'; btn.disabled = false; }
+            alert('Force push failed: ' + (e.message || e));
         }
     }
 
