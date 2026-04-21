@@ -6010,6 +6010,7 @@ case 'chartcheck': {
             inlineTableBody.style.cssText = 'padding:0.5rem;overflow-x:auto;';
             if (labData && Object.keys(labData).length > 0) {
                 inlineTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+                appendChartSuggestions(inlineTableBody);
             } else {
                 inlineTableBody.innerHTML = '<p style="color:#94a3b8;padding:0.5rem;">No lab data available. Use the Import button above to load data.</p>';
             }
@@ -7576,6 +7577,7 @@ setTimeout(() => {
 const inlineLabTableBody = document.getElementById('inlineLabTableBody');
 if (inlineLabTableBody) {
     inlineLabTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+    appendChartSuggestions(inlineLabTableBody);
 }
 
 showFullOrders = true;
@@ -8201,6 +8203,54 @@ saveToLocalStorage();
                 return;
             }
             document.getElementById('tableContainer').innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+        }
+
+        function appendChartSuggestions(container) {
+            if (!container || !labData || !Object.keys(labData).length) return;
+            // Remove any previous suggestions panel in this container
+            var prev = container.querySelector('.chart-suggestions-panel');
+            if (prev) prev.remove();
+            var allSuggestions = [];
+            // Clinical suggestions (vitals + labs + meds)
+            try {
+                var fullMedsText = lastImportedData ? extractFullMeds(lastImportedData) : '';
+                var clinicalSugs = generateSuggestions(labData, fullMedsText);
+                allSuggestions = allSuggestions.concat(clinicalSugs);
+            } catch(e) {}
+            // Electrolyte warnings (with dosing), deduped
+            try {
+                var eWarns = electrolyteWarnings(labData);
+                var existingLower = allSuggestions.map(function(s){ return s.replace(/\*/g,'').toLowerCase(); });
+                eWarns.forEach(function(w) {
+                    var clean = w.replace(/\*/g,'').toLowerCase();
+                    var isDup = existingLower.some(function(e) {
+                        if (clean.includes('hyponatremic') && e.includes('hyponatremic')) return true;
+                        if (clean.includes('hypernatremic') && e.includes('hypernatremic')) return true;
+                        if (clean.includes('hyperkalemic') && e.includes('hyperkalemic')) return true;
+                        if (clean.includes('meq k') && e.includes('meq k')) return true;
+                        if (clean.includes('calcium gluconate') && e.includes('calcium gluconate')) return true;
+                        if (clean.includes('mag sulfate') && e.includes('mag sulfate')) return true;
+                        if (clean.includes('mmol phos') && e.includes('mmol phos')) return true;
+                        return false;
+                    });
+                    if (!isDup) allSuggestions.push(w);
+                });
+            } catch(e) {}
+            // I/O warnings
+            try {
+                if (lastImportedData) {
+                    var _ioForWarn = extractIntakeOutputData(lastImportedData);
+                    if (_ioForWarn && _ioForWarn.outputs) {
+                        var ioWarns = buildIOWarnings(_ioForWarn, patientData[currentPatientIndex] || {});
+                        allSuggestions = allSuggestions.concat(ioWarns);
+                    }
+                }
+            } catch(e) {}
+            if (!allSuggestions.length) return;
+            var panel = createSuggestionsModule(allSuggestions);
+            panel.className = (panel.className || '') + ' chart-suggestions-panel';
+            panel.style.marginTop = '0.75rem';
+            container.appendChild(panel);
         }
 
 
