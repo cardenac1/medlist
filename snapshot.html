@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Snapshot</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d0d0d; color: #e2e8f0; font-family: -apple-system, sans-serif; padding: 1rem; min-height: 100vh; }
+  h1 { font-size: 1.1rem; color: #94a3b8; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  .btn-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+  button {
+    padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;
+    font-size: 0.875rem; font-weight: 600; transition: opacity 0.15s;
+  }
+  button:active { opacity: 0.7; }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+  .btn-copy { background: #059669; color: #fff; }
+  textarea {
+    width: 100%; height: 200px; background: #0f172a; color: #94a3b8;
+    border: 1px solid #1e293b; border-radius: 0.5rem; padding: 0.75rem;
+    font-family: monospace; font-size: 0.8rem; resize: vertical;
+    margin-bottom: 0.75rem;
+  }
+  #result-box {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 0.5rem;
+    padding: 0.75rem; display: none;
+  }
+  #result-text {
+    font-family: 'Courier New', monospace; font-size: 0.85rem;
+    white-space: pre; color: #e2e8f0; line-height: 1.6;
+    overflow-x: auto;
+  }
+  .label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.35rem; }
+  #error-msg { color: #f87171; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+</style>
+</head>
+<body>
+
+<h1>Patient Snapshot</h1>
+
+<div class="btn-row">
+  <button class="btn-primary" onclick="pasteAndProcess()">📋 Paste &amp; Process</button>
+  <button class="btn-secondary" onclick="process()">▶ Process</button>
+</div>
+
+<p class="label">Paste raw flowsheet / chart data below:</p>
+<textarea id="raw-input" placeholder="Paste data here..."></textarea>
+
+<div id="error-msg"></div>
+
+<div id="result-box">
+  <div class="btn-row" style="margin-bottom:0.5rem;">
+    <button class="btn-copy" onclick="copyResult()">Copy</button>
+  </div>
+  <div id="result-text"></div>
+</div>
+
+<script>
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+
+function parseTS(dateStr, timeStr) {
+  const p = dateStr.split('/');
+  const yr = p[2].length === 2 ? '20' + p[2] : p[2];
+  return new Date(`${yr}-${p[0]}-${p[1]}T${timeStr}`);
+}
+
+function fmtDT(dateStr, timeStr) {
+  const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+  const tm = timeStr.match(/(\d{1,2}:\d{2})/);
+  return (dm ? dm[1] : dateStr) + ' ' + (tm ? tm[1] : timeStr);
+}
+
+function isWithin48h(dateStr, timeStr) {
+  const now = new Date();
+  const ago = new Date(now - 48 * 3600 * 1000);
+  const dt = parseTS(dateStr, timeStr);
+  return dt >= ago && dt <= now;
+}
+
+// ─── VITALS ─────────────────────────────────────────────────────────────────
+
+function extractVitals(text) {
+  const now = new Date();
+  const ago24 = new Date(now - 24 * 3600 * 1000);
+
+  function within24(dateStr, timeStr) {
+    const dt = parseTS(dateStr, timeStr);
+    return dt >= ago24 && dt <= now;
+  }
+
+  const vitals = { temp: [], hr: [], sbp: [], dbp: [], o2: [] };
+
+  // Temperature
+  const tempRx = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  let m;
+  while ((m = tempRx.exec(text)) !== null)
+    if (within24(m[2], m[3])) vitals.temp.push(parseFloat(m[1]));
+
+  // Heart Rate
+  const hrRx = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((m = hrRx.exec(text)) !== null)
+    if (within24(m[2], m[3])) vitals.hr.push(parseInt(m[1]));
+
+  // Systolic BP
+  const sbpRx = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((m = sbpRx.exec(text)) !== null)
+    if (within24(m[2], m[3])) vitals.sbp.push(parseInt(m[1]));
+
+  // Diastolic BP
+  const dbpRx = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((m = dbpRx.exec(text)) !== null)
+    if (within24(m[2], m[3])) vitals.dbp.push(parseInt(m[1]));
+
+  // O2 Saturation
+  const o2Rx = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((m = o2Rx.exec(text)) !== null)
+    if (within24(m[2], m[3])) vitals.o2.push(parseInt(m[1]));
+
+  // O2 Therapy
+  const o2Entries = [];
+  const o2ThRx = /Oxygen Therapy:\s*(.+?)\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+  while ((m = o2ThRx.exec(text)) !== null)
+    o2Entries.push({ desc: m[1].trim(), ts: parseTS(m[2], m[3]) });
+
+  let o2Code = '', o2Raw = '';
+  if (o2Entries.length) {
+    o2Entries.sort((a, b) => a.ts - b.ts);
+    const latest = o2Entries.pop();
+    o2Raw = latest.desc;
+    const r = o2Raw.toLowerCase();
+    if (/room air/i.test(r))                                           o2Code = 'RA';
+    else if (/invasive mechanical ventilator/i.test(r))                o2Code = 'Vent';
+    else if (/non-invasive mechanical ventilator|bipap|cpap/i.test(r)) o2Code = 'BiPAP/CPAP';
+    else if (/high[- ]?flow nasal cannula/i.test(r))                   o2Code = 'HFNC';
+    else if (/nasal cannula/i.test(r))                                 o2Code = 'NC';
+    else if (/non-?rebreather/i.test(r))                               o2Code = 'NRB';
+    else                                                               o2Code = 'O2';
+  }
+
+  // O2 Flow Rate
+  let o2Flow = '';
+  const flowEntries = [];
+  const flowRx = /Oxygen Flow Rate:\s*([\d.]+\s*L\/min)\s*\(\s*(\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\s*\)/gi;
+  while ((m = flowRx.exec(text)) !== null)
+    flowEntries.push({ rate: m[1].trim(), ts: parseTS(m[2], m[3]) });
+  if (flowEntries.length) {
+    flowEntries.sort((a, b) => a.ts - b.ts);
+    o2Flow = flowEntries.pop().rate.replace(/\s*L\/min/i, 'L');
+  }
+
+  return { vitals, o2Code, o2Flow };
+}
+
+function formatVitalsLine(vitals, o2Code, o2Flow) {
+  const parts = [];
+
+  if (vitals.temp.length) {
+    const tmax = Math.max(...vitals.temp).toFixed(1);
+    parts.push('Tmax ' + tmax);
+  }
+  if (vitals.hr.length) {
+    const mn = Math.min(...vitals.hr), mx = Math.max(...vitals.hr);
+    parts.push('HR ' + (mn === mx ? mn : mn + '-' + mx));
+  }
+  if (vitals.sbp.length && vitals.dbp.length) {
+    const sMin = Math.min(...vitals.sbp), sMax = Math.max(...vitals.sbp);
+    const dMin = Math.min(...vitals.dbp), dMax = Math.max(...vitals.dbp);
+    parts.push('BP ' + sMin + '/' + dMin + '-' + sMax + '/' + dMax);
+  }
+  if (o2Code) {
+    let o2str = '';
+    if (o2Code === 'RA') o2str = 'RA';
+    else if (o2Code === 'NC') o2str = (o2Flow ? o2Flow + ' ' : '') + 'NC';
+    else if (o2Code === 'HFNC') o2str = 'HFNC' + (o2Flow ? ' ' + o2Flow : '');
+    else if (o2Code === 'NRB') o2str = 'NRB' + (o2Flow ? ' ' + o2Flow : '');
+    else if (o2Code === 'BiPAP/CPAP') o2str = 'BiPAP/CPAP' + (o2Flow ? ' ' + o2Flow : '');
+    else if (o2Code === 'Vent') o2str = 'Vent';
+    else o2str = o2Code + (o2Flow ? ' ' + o2Flow : '');
+    parts.push('O2 ' + o2str);
+  }
+
+  return parts.length ? parts.join(' | ') : '';
+}
+
+// ─── I/O ────────────────────────────────────────────────────────────────────
+
+function extractIO(text) {
+  const now = new Date();
+  const ago24 = new Date(now - 24 * 3600 * 1000);
+
+  const ioMatch = text.match(/<Intake and Output Start>([\s\S]*?)<Intake and Output End>/i);
+  if (!ioMatch) return null;
+
+  const ioText = ioMatch[1];
+  const intakeMatch = ioText.match(/Intake\s*\n([\s\S]*?)(?=Output|$)/i);
+  const outputMatch = ioText.match(/Output\s*\n([\s\S]*?)$/i);
+
+  function parseDateTime(str) {
+    const m = str.match(/\((\d{2})\/(\d{2})\/(\d{2,4})\s+(\d{2}):(\d{2})(?::(\d{2}))?\)/);
+    if (!m) return null;
+    const yr = m[3].length === 2 ? 2000 + parseInt(m[3]) : parseInt(m[3]);
+    return new Date(yr, parseInt(m[1]) - 1, parseInt(m[2]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6] || 0));
+  }
+
+  function inWindow(dt) { return dt && dt >= ago24 && dt <= now; }
+
+  let totalIn = 0, totalOut = 0;
+
+  if (intakeMatch && !intakeMatch[1].includes('No qualifying data')) {
+    intakeMatch[1].split('\n').forEach(line => {
+      const dt = parseDateTime(line);
+      if (!inWindow(dt)) return;
+      const vm = line.match(/:\s*(\d+)\s*mL/);
+      if (vm) totalIn += parseInt(vm[1]);
+    });
+  }
+
+  if (outputMatch) {
+    outputMatch[1].split('\n').forEach(line => {
+      const dt = parseDateTime(line);
+      if (!inWindow(dt)) return;
+      const vm = line.match(/:\s*(\d+)\s*mL/i);
+      if (vm) totalOut += parseInt(vm[1]);
+    });
+  }
+
+  return { totalIn, totalOut, balance: totalIn - totalOut };
+}
+
+function formatIOLine(io) {
+  if (!io) return '';
+  const bal = io.balance >= 0 ? '+' + io.balance : String(io.balance);
+  return 'In ' + io.totalIn + ' / Out ' + io.totalOut + ' / Bal ' + bal;
+}
+
+// ─── LABS ────────────────────────────────────────────────────────────────────
+
+function extractLabs(text) {
+  function extractLabValues(pattern) {
+    const rx = new RegExp(pattern + '.*?([\\d.]+).*?\\((\\d{2}\\/\\d{2}\\/\\d{2,4})\\s+(\\d{2}:\\d{2}(?::\\d{2})?)\\)', 'gi');
+    const results = [];
+    let m;
+    while ((m = rx.exec(text)) !== null) {
+      const valM = m[0].match(/:\s*[<>]?\s*([\d.]+)/);
+      if (valM) {
+        results.push({ value: parseFloat(valM[1]), date: m[2], time: m[3] });
+      }
+    }
+    return results.slice(0, 2); // only 2 most recent
+  }
+
+  const labs = {
+    WBC:  extractLabValues('WBC:'),
+    Hgb:  extractLabValues('Hgb:'),
+    Plt:  extractLabValues('Platelet Count:'),
+    Na:   extractLabValues('Sodium:'),
+    K:    extractLabValues('Potassium:'),
+    Cl:   extractLabValues('Chloride:'),
+    CO2:  extractLabValues('CO2:'),
+    BUN:  extractLabValues('BUN:'),
+    Cr:   extractLabValues('Creatinine:'),
+    Ca:   [],
+    Mag:  extractLabValues('Magnesium Level:'),
+    Phos: extractLabValues('Inorganic Phosphorus:'),
+  };
+
+  // Ca: try ionized first, fall back to total (albumin-corrected if possible)
+  const iCa = extractLabValues('Calcium, Ionized:').concat(extractLabValues('Ionized Calcium:'));
+  if (iCa.length) {
+    labs.Ca = iCa.slice(0, 2);
+  } else {
+    const tCa = extractLabValues('Calcium:');
+    const alb = extractLabValues('Albumin:');
+    if (tCa.length && alb.length) {
+      labs.Ca = tCa.slice(0, 2).map(e => ({
+        ...e, value: parseFloat((e.value + 0.8 * (4.0 - (alb[0]?.value || 4.0))).toFixed(2))
+      }));
+    } else {
+      labs.Ca = tCa.slice(0, 2);
+    }
+  }
+
+  return labs;
+}
+
+function formatLabTable(labs) {
+  const rows = [
+    ['WBC',  labs.WBC],
+    ['Hgb',  labs.Hgb],
+    ['Plt',  labs.Plt],
+    ['Na',   labs.Na],
+    ['K',    labs.K],
+    ['Cl',   labs.Cl],
+    ['CO2',  labs.CO2],
+    ['BUN',  labs.BUN],
+    ['Cr',   labs.Cr],
+    ['Ca',   labs.Ca],
+    ['Mag',  labs.Mag],
+    ['Phos', labs.Phos],
+  ].filter(([, vals]) => vals && vals.length > 0);
+
+  if (!rows.length) return '';
+
+  // Collect up to 2 unique timestamps across all labs
+  const tsSet = [];
+  rows.forEach(([, vals]) => {
+    vals.forEach(v => {
+      const key = fmtDT(v.date, v.time);
+      if (!tsSet.includes(key)) tsSet.push(key);
+    });
+  });
+  const headers = tsSet.slice(0, 2);
+
+  // Column widths
+  const labelW = Math.max(...rows.map(([lbl]) => lbl.length), 4);
+  const colW = Math.max(12, ...headers.map(h => h.length + 2));
+
+  // Header row
+  let out = ' '.repeat(labelW + 2);
+  headers.forEach(h => { out += h.padStart(colW); });
+  out += '\n';
+
+  // Data rows
+  rows.forEach(([lbl, vals]) => {
+    let line = lbl.padEnd(labelW + 2);
+    headers.forEach(h => {
+      const match = vals.find(v => fmtDT(v.date, v.time) === h);
+      const cell = match ? String(match.value) : '--';
+      line += cell.padStart(colW);
+    });
+    out += line + '\n';
+  });
+
+  return out.trimEnd();
+}
+
+// ─── MAIN ────────────────────────────────────────────────────────────────────
+
+function process() {
+  const text = document.getElementById('raw-input').value.trim();
+  const errEl = document.getElementById('error-msg');
+  errEl.style.display = 'none';
+
+  if (!text) {
+    errEl.textContent = 'No data to process.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const { vitals, o2Code, o2Flow } = extractVitals(text);
+  const io = extractIO(text);
+  const labs = extractLabs(text);
+
+  const lines = [];
+
+  const vitLine = formatVitalsLine(vitals, o2Code, o2Flow);
+  if (vitLine) lines.push(vitLine);
+
+  const ioLine = formatIOLine(io);
+  if (ioLine) lines.push(ioLine);
+
+  const labTable = formatLabTable(labs);
+  if (labTable) {
+    if (lines.length) lines.push('');
+    lines.push(labTable);
+  }
+
+  const output = lines.join('\n');
+  document.getElementById('result-text').textContent = output || '(no data extracted)';
+  document.getElementById('result-box').style.display = 'block';
+}
+
+async function pasteAndProcess() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('raw-input').value = text;
+    process();
+  } catch {
+    document.getElementById('error-msg').textContent = 'Clipboard access denied — paste manually then hit Process.';
+    document.getElementById('error-msg').style.display = 'block';
+  }
+}
+
+function copyResult() {
+  const text = document.getElementById('result-text').textContent;
+  navigator.clipboard.writeText(text).catch(() => {
+    const el = document.getElementById('result-text');
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+  });
+}
+</script>
+</body>
+</html>
