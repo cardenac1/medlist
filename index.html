@@ -7910,7 +7910,8 @@ saveToLocalStorage();
             tableHTML += '</tr>';
 
             // ── VITALS (today in main cols, pre-7AM history in extra right cols) ──
-            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; });
+            var hasO2TherapyData = !!(labData && (labData.o2therapyCode || labData.o2therapyRaw));
+            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; }) || hasO2TherapyData;
             if (hasVit) {
                 tableHTML += sectionHdr('Vitals — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#0f4c81');
                 vitalDefs.forEach(function(vd) {
@@ -7937,6 +7938,46 @@ saveToLocalStorage();
                     }
                     tableHTML += row + '</tr>';
                 });
+                // O2 Therapy row
+                if (hasO2TherapyData) {
+                    var o2Code = labData.o2therapyCode || '';
+                    var o2Raw  = labData.o2therapyRaw  || '';
+                    var o2Flow = (labData.o2flowRaw || '').replace(/\s*L\/min/i, 'L');
+                    var o2Display;
+                    if (o2Code === 'RA') {
+                        o2Display = 'Room Air';
+                    } else if (o2Code === 'Vent') {
+                        var vParts = ['Vent'];
+                        if (labData.ventModeRaw)     vParts.push(labData.ventModeRaw.trim());
+                        if (labData.ventFrequencyRaw) vParts.push('RR:' + labData.ventFrequencyRaw);
+                        if (labData.ventTidalRaw)     vParts.push('TV:' + labData.ventTidalRaw + 'mL');
+                        if (labData.ventPeepRaw)      vParts.push('PEEP:' + labData.ventPeepRaw);
+                        if (labData.ventFiO2Raw)      vParts.push('FiO\u2082:' + labData.ventFiO2Raw + '%');
+                        o2Display = vParts.join(' | ');
+                    } else if (o2Code === 'NC') {
+                        o2Display = (o2Flow ? o2Flow + ' ' : '') + 'NC';
+                    } else if (o2Code === 'HFNC') {
+                        o2Display = 'HFNC' + (o2Flow ? ' ' + o2Flow : '');
+                    } else if (o2Code === 'NRB') {
+                        o2Display = 'NRB' + (o2Flow ? ' ' + o2Flow : '');
+                    } else if (o2Code === 'BiPAP/CPAP') {
+                        o2Display = 'BiPAP/CPAP' + (o2Flow ? ' ' + o2Flow : '');
+                    } else {
+                        o2Display = (o2Raw || o2Code || 'O2') + (o2Flow ? ' ' + o2Flow : '');
+                    }
+                    var isSupplemental = o2Code && o2Code !== 'RA';
+                    var o2CellClr = isSupplemental
+                        ? 'background:rgba(251,146,60,0.15);color:#fb923c;font-weight:700;'
+                        : 'color:#6ee7b7;';
+                    var o2Row = '<tr><td style="color:#7dd3fc;font-weight:600;">O2 Therapy</td>';
+                    o2Row += '<td colspan="' + maxMainCols + '" style="padding:4px 8px;font-size:0.92rem;' + o2CellClr + '">' + o2Display + '</td>';
+                    if (has24hrTotal) o2Row += emptyTotalCell();
+                    if (hasSeparator) {
+                        o2Row += sepCell();
+                        for (var _oj = 0; _oj < maxHistCols; _oj++) o2Row += emptyCell();
+                    }
+                    tableHTML += o2Row + '</tr>';
+                }
             }
 
             // ── I/O BALANCE (before intakes, as requested) ────────────────────────
@@ -8092,6 +8133,62 @@ saveToLocalStorage();
                         tableHTML += row + '</tr>';
                     });
                 });
+            }
+
+            // Miscellaneous lab values (within last 3 days, not in any defined section)
+            if (labData.labs) {
+                var knownLabKeys = {};
+                labSections.forEach(function(sec) {
+                    sec.labs.forEach(function(l) { knownLabKeys[l.key] = true; });
+                });
+                var miscLabKeys = [];
+                Object.keys(labData.labs).forEach(function(key) {
+                    if (knownLabKeys[key]) return;
+                    var arr = labData.labs[key];
+                    if (!arr || !arr.length) return;
+                    // Check if any date falls within the 72-hour history window
+                    var isRecent = false;
+                    var dArr = (labData.datesArray && labData.datesArray[key]) || (labData.dates && labData.dates[key] ? [labData.dates[key]] : []);
+                    var tArr = (labData.timesArray && labData.timesArray[key]) || (labData.times && labData.times[key] ? [labData.times[key]] : []);
+                    for (var _di = 0; _di < dArr.length; _di++) {
+                        var _dp = dArr[_di].split('/');
+                        if (_dp.length < 2) continue;
+                        var _yr = (_dp[2] && _dp[2].length === 2) ? (2000 + parseInt(_dp[2])) : (parseInt(_dp[2]) || 2025);
+                        var _tp = (tArr && tArr[_di] || '00:00').split(':');
+                        var _dt = new Date(_yr, parseInt(_dp[0]) - 1, parseInt(_dp[1]), parseInt(_tp[0]) || 0, parseInt(_tp[1]) || 0);
+                        if (_dt >= historyStart && _dt <= _now) { isRecent = true; break; }
+                    }
+                    if (isRecent) miscLabKeys.push(key);
+                });
+                if (miscLabKeys.length > 0) {
+                    var miscUid = 'miscLab' + Date.now();
+                    tableHTML += '<tr style="cursor:pointer;" onclick="(function(){' +
+                        'var els=document.getElementsByClassName(\'' + miscUid + '\');' +
+                        'var show=els.length>0&&els[0].style.display===\'none\';' +
+                        'for(var i=0;i<els.length;i++){els[i].style.display=show?\'table-row\':\'none\';}' +
+                        'var ic=document.getElementById(\'' + miscUid + '_ic\');if(ic)ic.textContent=show?\'\u25bc\':\'\u25ba\';' +
+                        '})()">' +
+                        '<td colspan="' + (maxValues + 1) + '" style="background:#1e2a1a;color:#86efac;font-size:0.82rem;font-weight:700;' +
+                        'letter-spacing:0.06em;padding:5px 10px;text-transform:uppercase;border-top:1px solid #374151;">' +
+                        '<span id="' + miscUid + '_ic">\u25ba</span> Other Lab Values \u2014 Last 3 Days (' + miscLabKeys.length + ')' +
+                        '</td></tr>';
+                    miscLabKeys.forEach(function(key) {
+                        var arr = labData.labs[key];
+                        var dispKey = key.replace(/([A-Z])/g, ' $1').trim();
+                        var row = '<tr class="' + miscUid + '" style="display:none;"><td>' + dispKey + '</td>';
+                        for (var i = 0; i < maxMainCols; i++) {
+                            if (i < arr.length) {
+                                row += dataCell(arr[i], getLabDT(key, i), false, '');
+                            } else { row += emptyCell(); }
+                        }
+                        if (has24hrTotal) row += emptyTotalCell();
+                        if (hasSeparator) {
+                            row += sepCell();
+                            for (var j = 0; j < maxHistCols; j++) row += emptyCell();
+                        }
+                        tableHTML += row + '</tr>';
+                    });
+                }
             }
 
             tableHTML += '</table>';
