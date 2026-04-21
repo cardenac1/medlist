@@ -13429,7 +13429,7 @@ function generateFullChecklistHTML() {
   // ========= RENDER EACH SECTION (supports children) =========
   Object.entries(sections).forEach(([sectionName, sectionItems]) => {
     const sectionColor = sectionItems[0].color;
-    const isOrders = /ORDERS|OR \(|PATIENT CARE|MEDICATIONS|LABORATORY|RESPIRATORY|EVIDENCE/i.test(sectionName);
+    const isOrders = /ORDERS|OR \(|PATIENT CARE|MEDICATIONS|LABORATORY|RESPIRATORY/i.test(sectionName);
     const sectionId = sectionName.replace(/[^a-zA-Z0-9]/g, '_');
 
     html += `
