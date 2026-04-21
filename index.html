@@ -7907,14 +7907,14 @@ saveToLocalStorage();
 
             // ── TABLE HTML ───────────────────────────────────────────────────────
             var tableHTML = '<style>' +
-                '#tableContainer{overflow-x:auto;-webkit-overflow-scrolling:touch;}' +
-                '#tableContainer table{border-collapse:collapse;font-family:monospace;min-width:100%;}' +
-                '#tableContainer th{background:#1e293b;color:#94a3b8;font-size:0.8rem;padding:3px 8px;text-align:center;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
-                '#tableContainer th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:#1e293b;}' +
-                '#tableContainer td:first-child{color:#cbd5e1;font-size:0.75rem;font-weight:600;padding:2px 5px;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
-                '#tableContainer tr:hover td{background-color:rgba(255,255,255,0.04);}' +
-                '#tableContainer tr:hover td:first-child{background:#0f0f1e;}' +
-                '</style><table><tr><th>Parameter / Total</th>';
+                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}' +
+                '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;}' +
+                '.uni-tbl th{background:#1e293b;color:#94a3b8;font-size:0.8rem;padding:3px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#1e293b;}' +
+                '.uni-tbl td:first-child{color:#cbd5e1;font-size:0.75rem;font-weight:600;padding:2px 5px;position:-webkit-sticky;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
+                '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
+                '.uni-tbl tr:hover td:first-child{background:#0f0f1e;}' +
+                '</style><div class="uni-tbl"><table><tr><th>Parameter / Total</th>';
             for (var _ci = 0; _ci < maxMainCols; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
             if (has24hrTotal) tableHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.75rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;">24h\u00a0Total</th>';
             if (hasSeparator) {
@@ -8205,7 +8205,7 @@ saveToLocalStorage();
                 }
             }
 
-            tableHTML += '</table>';
+            tableHTML += '</table></div>';
             return tableHTML;
         }
 
