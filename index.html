@@ -3302,6 +3302,7 @@ async function testOCRAvailability() {
             </div>
             <span id="syncStatus" class="sync-status" title="Sync status"></span>
             <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑ Sync</button>
+            <button id="forcePushBtn" onclick="forcePushToCloud()" title="Force push: replace cloud with local data" style="display:none;">⇑ Force Push</button>
             <button id="authBtn" onclick="openAuthModal()">☁ Login</button>
         </div>
     </div>
@@ -17399,17 +17400,20 @@ function showIOHourlyPopup(label, entries, color) {
     function updateAuthUI() {
         const btn = document.getElementById('authBtn');
         const syncBtn = document.getElementById('manualSyncBtn');
+        const forcePushBtn = document.getElementById('forcePushBtn');
         const statusEl = document.getElementById('syncStatus');
         if (!btn) return;
         if (currentUser) {
             btn.textContent = '👤 ' + (currentUser.email.split('@')[0]);
             btn.title = currentUser.email + ' — click to log out';
             if (syncBtn) syncBtn.style.display = '';
+            if (forcePushBtn) forcePushBtn.style.display = '';
             if (statusEl) statusEl.style.display = '';
         } else {
             btn.textContent = '☁ Login';
             btn.title = 'Login to enable cloud sync';
             if (syncBtn) syncBtn.style.display = 'none';
+            if (forcePushBtn) forcePushBtn.style.display = 'none';
             if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
         }
     }
@@ -17418,7 +17422,8 @@ function showIOHourlyPopup(label, entries, color) {
         if (!currentUser) return;
         try {
             showSyncStatus('syncing');
-            const rows = (typeof patientData !== 'undefined' ? patientData : []).map(p => {
+            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
+            const rows = localPatients.map(p => {
                 if (!p._pid) p._pid = _genId();
                 return { id: p._pid, data: p, user_id: currentUser.id };
             });
@@ -17426,11 +17431,48 @@ function showIOHourlyPopup(label, entries, color) {
                 const { error } = await getSB().from(SB_TABLE).upsert(rows, { onConflict: 'id' });
                 if (error) throw error;
             }
-            // Remove rows deleted locally (ids no longer in patientData)
+            // Delete cloud records whose _pid no longer exists locally (orphan cleanup)
+            const localIds = new Set(localPatients.map(p => p._pid).filter(Boolean));
+            const { data: cloudRows } = await getSB().from(SB_TABLE).select('id').eq('user_id', currentUser.id);
+            if (cloudRows) {
+                const orphanIds = cloudRows.map(r => r.id).filter(id => !localIds.has(id));
+                if (orphanIds.length > 0) {
+                    await getSB().from(SB_TABLE).delete().in('id', orphanIds);
+                }
+            }
             showSyncStatus('ok');
         } catch (e) {
             console.error('Sync upload error:', e);
             showSyncStatus('error');
+        }
+    }
+
+    async function forcePushToCloud() {
+        if (!currentUser) { alert('Please log in first.'); return; }
+        if (!confirm('Force Push will completely replace the cloud database with your current local data.\n\nThis cannot be undone. Continue?')) return;
+        try {
+            showSyncStatus('syncing');
+            const btn = document.getElementById('forcePushBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
+            // Assign _pid to any patients missing one
+            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
+            localPatients.forEach(p => { if (!p._pid) p._pid = _genId(); });
+            // Wipe all cloud records for this user then re-insert
+            const { error: delErr } = await getSB().from(SB_TABLE).delete().eq('user_id', currentUser.id);
+            if (delErr) throw delErr;
+            const rows = localPatients.map(p => ({ id: p._pid, data: p, user_id: currentUser.id }));
+            if (rows.length > 0) {
+                const { error } = await getSB().from(SB_TABLE).insert(rows);
+                if (error) throw error;
+            }
+            showSyncStatus('ok');
+            if (btn) { btn.textContent = '✓ Pushed!'; setTimeout(() => { btn.textContent = '⇑ Force Push'; btn.disabled = false; }, 2000); }
+        } catch (e) {
+            console.error('Force push error:', e);
+            showSyncStatus('error');
+            const btn = document.getElementById('forcePushBtn');
+            if (btn) { btn.textContent = '⇑ Force Push'; btn.disabled = false; }
+            alert('Force push failed: ' + (e.message || e));
         }
     }
 
