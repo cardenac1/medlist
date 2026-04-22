@@ -290,7 +290,13 @@ function formatLabLine(labs) {
   ];
   const parts = order
     .filter(([, vals]) => vals && vals.length > 0)
-    .map(([lbl, vals]) => lbl + ' ' + vals[0].value);
+    .map(([lbl, vals]) => {
+      const v = vals[0];
+      const dm = v.date.match(/(\d{1,2}\/\d{1,2})/);
+      const tm = v.time.match(/(\d{1,2}:\d{2})/);
+      const ts = (dm ? dm[1] : v.date) + ' ' + (tm ? tm[1] : v.time);
+      return lbl + ' ' + v.value + ' (' + ts + ')';
+    });
   return parts.join(' | ');
 }
 
