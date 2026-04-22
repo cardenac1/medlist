@@ -66,18 +66,6 @@ function parseTS(dateStr, timeStr) {
   return new Date(`${yr}-${p[0]}-${p[1]}T${timeStr}`);
 }
 
-function fmtDT(dateStr, timeStr) {
-  const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
-  const tm = timeStr.match(/(\d{1,2}:\d{2})/);
-  return (dm ? dm[1] : dateStr) + ' ' + (tm ? tm[1] : timeStr);
-}
-
-function isWithin48h(dateStr, timeStr) {
-  const now = new Date();
-  const ago = new Date(now - 48 * 3600 * 1000);
-  const dt = parseTS(dateStr, timeStr);
-  return dt >= ago && dt <= now;
-}
 
 // ─── VITALS ─────────────────────────────────────────────────────────────────
 
@@ -248,7 +236,7 @@ function extractLabs(text) {
         results.push({ value: parseFloat(valM[1]), date: m[2], time: m[3] });
       }
     }
-    return results.slice(0, 2); // only 2 most recent
+    return results.slice(0, 1); // latest only
   }
 
   const labs = {
@@ -285,8 +273,8 @@ function extractLabs(text) {
   return labs;
 }
 
-function formatLabTable(labs) {
-  const rows = [
+function formatLabLine(labs) {
+  const order = [
     ['WBC',  labs.WBC],
     ['Hgb',  labs.Hgb],
     ['Plt',  labs.Plt],
@@ -299,41 +287,11 @@ function formatLabTable(labs) {
     ['Ca',   labs.Ca],
     ['Mag',  labs.Mag],
     ['Phos', labs.Phos],
-  ].filter(([, vals]) => vals && vals.length > 0);
-
-  if (!rows.length) return '';
-
-  // Collect up to 2 unique timestamps across all labs
-  const tsSet = [];
-  rows.forEach(([, vals]) => {
-    vals.forEach(v => {
-      const key = fmtDT(v.date, v.time);
-      if (!tsSet.includes(key)) tsSet.push(key);
-    });
-  });
-  const headers = tsSet.slice(0, 2);
-
-  // Column widths
-  const labelW = Math.max(...rows.map(([lbl]) => lbl.length), 4);
-  const colW = Math.max(12, ...headers.map(h => h.length + 2));
-
-  // Header row
-  let out = ' '.repeat(labelW + 2);
-  headers.forEach(h => { out += h.padStart(colW); });
-  out += '\n';
-
-  // Data rows
-  rows.forEach(([lbl, vals]) => {
-    let line = lbl.padEnd(labelW + 2);
-    headers.forEach(h => {
-      const match = vals.find(v => fmtDT(v.date, v.time) === h);
-      const cell = match ? String(match.value) : '--';
-      line += cell.padStart(colW);
-    });
-    out += line + '\n';
-  });
-
-  return out.trimEnd();
+  ];
+  const parts = order
+    .filter(([, vals]) => vals && vals.length > 0)
+    .map(([lbl, vals]) => lbl + ' ' + vals[0].value);
+  return parts.join(' | ');
 }
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
@@ -361,11 +319,8 @@ function process() {
   const ioLine = formatIOLine(io);
   if (ioLine) lines.push(ioLine);
 
-  const labTable = formatLabTable(labs);
-  if (labTable) {
-    if (lines.length) lines.push('');
-    lines.push(labTable);
-  }
+  const labLine = formatLabLine(labs);
+  if (labLine) lines.push(labLine);
 
   const output = lines.join('\n');
   document.getElementById('result-text').textContent = output || '(no data extracted)';
