@@ -79,32 +79,39 @@ function extractVitals(text) {
   }
 
   const vitals = { temp: [], hr: [], sbp: [], dbp: [], o2: [] };
+  let latestVitalTS = null; // { date, time, ts }
+
+  function trackTS(dateStr, timeStr) {
+    const ts = parseTS(dateStr, timeStr);
+    if (!latestVitalTS || ts > latestVitalTS.ts)
+      latestVitalTS = { date: dateStr, time: timeStr, ts };
+  }
 
   // Temperature
   const tempRx = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
   let m;
   while ((m = tempRx.exec(text)) !== null)
-    if (within24(m[2], m[3])) vitals.temp.push(parseFloat(m[1]));
+    if (within24(m[2], m[3])) { vitals.temp.push(parseFloat(m[1])); trackTS(m[2], m[3]); }
 
   // Heart Rate
   const hrRx = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
   while ((m = hrRx.exec(text)) !== null)
-    if (within24(m[2], m[3])) vitals.hr.push(parseInt(m[1]));
+    if (within24(m[2], m[3])) { vitals.hr.push(parseInt(m[1])); trackTS(m[2], m[3]); }
 
   // Systolic BP
   const sbpRx = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
   while ((m = sbpRx.exec(text)) !== null)
-    if (within24(m[2], m[3])) vitals.sbp.push(parseInt(m[1]));
+    if (within24(m[2], m[3])) { vitals.sbp.push(parseInt(m[1])); trackTS(m[2], m[3]); }
 
   // Diastolic BP
   const dbpRx = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
   while ((m = dbpRx.exec(text)) !== null)
-    if (within24(m[2], m[3])) vitals.dbp.push(parseInt(m[1]));
+    if (within24(m[2], m[3])) { vitals.dbp.push(parseInt(m[1])); trackTS(m[2], m[3]); }
 
   // O2 Saturation
   const o2Rx = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
   while ((m = o2Rx.exec(text)) !== null)
-    if (within24(m[2], m[3])) vitals.o2.push(parseInt(m[1]));
+    if (within24(m[2], m[3])) { vitals.o2.push(parseInt(m[1])); trackTS(m[2], m[3]); }
 
   // O2 Therapy
   const o2Entries = [];
@@ -138,10 +145,16 @@ function extractVitals(text) {
     o2Flow = flowEntries.pop().rate.replace(/\s*L\/min/i, 'L');
   }
 
-  return { vitals, o2Code, o2Flow };
+  return { vitals, o2Code, o2Flow, latestVitalTS };
 }
 
-function formatVitalsLine(vitals, o2Code, o2Flow) {
+function shortTS(dateStr, timeStr) {
+  const dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+  const tm = timeStr.match(/(\d{1,2}:\d{2})/);
+  return (dm ? dm[1] : dateStr) + ' ' + (tm ? tm[1] : timeStr);
+}
+
+function formatVitalsLine(vitals, o2Code, o2Flow, latestVitalTS) {
   const parts = [];
 
   if (vitals.temp.length) {
@@ -169,7 +182,9 @@ function formatVitalsLine(vitals, o2Code, o2Flow) {
     parts.push('O2 ' + o2str);
   }
 
-  return parts.length ? parts.join(' | ') : '';
+  if (!parts.length) return '';
+  const ts = latestVitalTS ? ' (' + shortTS(latestVitalTS.date, latestVitalTS.time) + ')' : '';
+  return parts.join(' | ') + ts;
 }
 
 // ─── I/O ────────────────────────────────────────────────────────────────────
@@ -274,30 +289,22 @@ function extractLabs(text) {
 }
 
 function formatLabLine(labs) {
-  const order = [
-    ['WBC',  labs.WBC],
-    ['Hgb',  labs.Hgb],
-    ['Plt',  labs.Plt],
-    ['Na',   labs.Na],
-    ['K',    labs.K],
-    ['Cl',   labs.Cl],
-    ['CO2',  labs.CO2],
-    ['BUN',  labs.BUN],
-    ['Cr',   labs.Cr],
-    ['Ca',   labs.Ca],
-    ['Mag',  labs.Mag],
-    ['Phos', labs.Phos],
-  ];
-  const parts = order
-    .filter(([, vals]) => vals && vals.length > 0)
-    .map(([lbl, vals]) => {
-      const v = vals[0];
-      const dm = v.date.match(/(\d{1,2}\/\d{1,2})/);
-      const tm = v.time.match(/(\d{1,2}:\d{2})/);
-      const ts = (dm ? dm[1] : v.date) + ' ' + (tm ? tm[1] : v.time);
-      return lbl + ' ' + v.value + ' (' + ts + ')';
-    });
-  return parts.join(' | ');
+  function groupStr(entries) {
+    const present = entries.filter(([, vals]) => vals && vals.length > 0);
+    if (!present.length) return '';
+    const values = present.map(([lbl, vals]) => lbl + ' ' + vals[0].value).join(' | ');
+    // timestamp from the first available lab in the group
+    const first = present[0][1][0];
+    return values + ' (' + shortTS(first.date, first.time) + ')';
+  }
+
+  const cbc = groupStr([['WBC', labs.WBC], ['Hgb', labs.Hgb], ['Plt', labs.Plt]]);
+  const bmp = groupStr([
+    ['Na', labs.Na], ['K', labs.K], ['Cl', labs.Cl], ['CO2', labs.CO2],
+    ['BUN', labs.BUN], ['Cr', labs.Cr], ['Ca', labs.Ca], ['Mag', labs.Mag], ['Phos', labs.Phos],
+  ]);
+
+  return [cbc, bmp].filter(Boolean).join('    ');
 }
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
@@ -313,13 +320,13 @@ function process() {
     return;
   }
 
-  const { vitals, o2Code, o2Flow } = extractVitals(text);
+  const { vitals, o2Code, o2Flow, latestVitalTS } = extractVitals(text);
   const io = extractIO(text);
   const labs = extractLabs(text);
 
   const lines = [];
 
-  const vitLine = formatVitalsLine(vitals, o2Code, o2Flow);
+  const vitLine = formatVitalsLine(vitals, o2Code, o2Flow, latestVitalTS);
   if (vitLine) lines.push(vitLine);
 
   const ioLine = formatIOLine(io);
