@@ -5034,16 +5034,13 @@ function displayRows(data = patientData) {
         const patientName = patient['Name'] || patient['Pt Name'] || '';
         const room        = patient['RM']   || patient['Room']      || '';
         const mrn         = patient['MRN']  || '';
-        const attending   = patient['Att']  || patient['Attending'] || '';
-
         // ── Card ─────────────────────────────────────────────────
         const listItem = document.createElement('li');
         listItem.className = `row-item ${priorityClass}`;
         listItem.style.cssText = `
             position: relative;
             display: flex;
-            flex-direction: column;
-            border-left: 3px solid ${color};
+            flex-direction: row;
             border-top: 1px solid rgba(255,255,255,0.07);
             border-bottom: 1px solid rgba(255,255,255,0.07);
             border-right: 1px solid rgba(255,255,255,0.07);
@@ -5054,16 +5051,34 @@ function displayRows(data = patientData) {
             font-size: 0.82rem;
             backdrop-filter: blur(10px);
             transition: background 140ms ease, box-shadow 140ms ease;
+            overflow: hidden;
         `;
 
-        // ── Top row: identity + priority circle ───────────────────
+        // Clickable accent bar (priority selector)
+        const accentBar = document.createElement('div');
+        const priorityName = getPriorityName(patient.Priority);
+        accentBar.style.cssText = `
+            width: 5px; flex-shrink: 0; background: ${color};
+            cursor: pointer; transition: width 140ms ease;
+        `;
+        accentBar.title = `Priority: ${priorityName} (Click to change)`;
+        accentBar.onclick = (e) => {
+            e.stopPropagation();
+            showStatusSelector(patient, index, accentBar);
+        };
+        accentBar.onmouseenter = () => { accentBar.style.width = '9px'; };
+        accentBar.onmouseleave = () => { accentBar.style.width = '5px'; };
+        listItem.appendChild(accentBar);
+
+        // Card body (flex column)
+        const cardBody = document.createElement('div');
+        cardBody.style.cssText = `flex: 1; min-width: 0; display: flex; flex-direction: column;`;
+
+        // ── Identity row ──────────────────────────────────────────
         const cardMain = document.createElement('div');
         cardMain.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.3rem 0.45rem 0.3rem 0.55rem;
-            min-width: 0;
+            display: flex; align-items: center; gap: 0.45rem;
+            padding: 0.3rem 0.45rem 0.3rem 0.55rem; min-width: 0;
         `;
 
         // Clickable identity cluster (copies name / RM / MRN)
@@ -5090,9 +5105,8 @@ function displayRows(data = patientData) {
             return el;
         };
 
-        if (room)      identity.appendChild(badge(room,     'rgba(239,68,68,0.13)',  '#f87171', 'rgba(239,68,68,0.28)'));
-        if (mrn)       identity.appendChild(badge(mrn,      'rgba(52,211,153,0.10)', '#6ee7b7', 'rgba(52,211,153,0.22)'));
-        if (attending) identity.appendChild(badge(attending, 'rgba(251,191,36,0.10)', '#fcd34d', 'rgba(251,191,36,0.22)'));
+        if (room) identity.appendChild(badge(room, 'rgba(239,68,68,0.13)',  '#f87171', 'rgba(239,68,68,0.28)'));
+        if (mrn)  identity.appendChild(badge(mrn,  'rgba(52,211,153,0.10)', '#6ee7b7', 'rgba(52,211,153,0.22)'));
 
         identity.onclick = (e) => {
             e.stopPropagation();
@@ -5111,38 +5125,7 @@ function displayRows(data = patientData) {
         };
 
         cardMain.appendChild(identity);
-
-        // Priority circle
-        const priorityName = getPriorityName(patient.Priority);
-        const priorityCircleWrap = document.createElement('div');
-        priorityCircleWrap.className = 'priority-circle-wrap';
-        priorityCircleWrap.title = `Priority: ${priorityName} (Click to change)`;
-
-        const priorityCircle = document.createElement('div');
-        priorityCircle.style.cssText = `
-            width: 14px; height: 14px; border-radius: 50%;
-            background: ${color};
-            border: 2px solid rgba(255,255,255,0.2);
-            box-shadow: 0 0 6px ${color}55;
-            transition: all 180ms ease;
-            flex-shrink: 0;
-        `;
-        priorityCircleWrap.appendChild(priorityCircle);
-        priorityCircleWrap.onclick = (e) => {
-            e.stopPropagation();
-            showStatusSelector(patient, index, priorityCircleWrap);
-        };
-        priorityCircleWrap.onmouseenter = () => {
-            priorityCircle.style.transform = 'scale(1.4)';
-            priorityCircle.style.boxShadow = `0 0 10px ${color}99`;
-        };
-        priorityCircleWrap.onmouseleave = () => {
-            priorityCircle.style.transform = 'scale(1)';
-            priorityCircle.style.boxShadow = `0 0 6px ${color}55`;
-        };
-
-        cardMain.appendChild(priorityCircleWrap);
-        listItem.appendChild(cardMain);
+        cardBody.appendChild(cardMain);
 
         // ── Todos row (only when present) ─────────────────────────
         if ((patient['To do'] || '').trim()) {
@@ -5152,21 +5135,22 @@ function displayRows(data = patientData) {
                 border-top: 1px solid rgba(255,255,255,0.05);
             `;
             renderTodoInListRow(todosRow, patient);
-            listItem.appendChild(todosRow);
+            cardBody.appendChild(todosRow);
         }
+
+        listItem.appendChild(cardBody);
 
         // ── Hover / click ─────────────────────────────────────────
         listItem.onmouseenter = () => {
             listItem.style.background = 'rgba(59,130,246,0.06)';
-            listItem.style.boxShadow = `inset 0 0 0 1px ${color}22, 0 3px 10px rgba(0,0,0,0.22)`;
+            listItem.style.boxShadow = `0 3px 10px rgba(0,0,0,0.22)`;
         };
         listItem.onmouseleave = () => {
             listItem.style.background = 'rgba(12,12,14,0.80)';
             listItem.style.boxShadow = 'none';
         };
         listItem.onclick = (e) => {
-            if (e.target.closest('.priority-circle-wrap')) return;
-            if (!e.target.closest('button')) showDetails(index);
+            if (!e.target.closest('button') && e.target !== accentBar) showDetails(index);
         };
 
         rowList.appendChild(listItem);
