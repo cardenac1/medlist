@@ -57,6 +57,13 @@
   <div id="result-text"></div>
 </div>
 
+<div id="fishbone-box" style="display:none;margin-top:0.75rem;background:#0f172a;border:1px solid #1e293b;border-radius:0.5rem;padding:0.75rem;">
+  <div class="btn-row" style="margin-bottom:0.5rem;">
+    <button class="btn-copy" onclick="copyFishbone()">Copy</button>
+  </div>
+  <pre id="fishbone-text" style="font-family:'Courier New',monospace;font-size:0.9rem;color:#e2e8f0;line-height:1.6;margin:0;white-space:pre;overflow-x:auto;"></pre>
+</div>
+
 <script>
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -257,6 +264,7 @@ function extractLabs(text) {
   const labs = {
     WBC:  extractLabValues('WBC:'),
     Hgb:  extractLabValues('Hgb:'),
+    Hct:  extractLabValues('Hct:'),
     Plt:  extractLabValues('Platelet Count:'),
     Na:   extractLabValues('Sodium:'),
     K:    extractLabValues('Potassium:'),
@@ -264,6 +272,7 @@ function extractLabs(text) {
     CO2:  extractLabValues('CO2:'),
     BUN:  extractLabValues('BUN:'),
     Cr:   extractLabValues('Creatinine:'),
+    Glu:  extractLabValues('Glucose:').concat(extractLabValues('Glucose POC:')).slice(0,1),
     Ca:   [],
     Mag:  extractLabValues('Magnesium Level:'),
     Phos: extractLabValues('Inorganic Phosphorus:'),
@@ -307,6 +316,70 @@ function formatLabLine(labs) {
   return [cbc, bmp].filter(Boolean).join('    ');
 }
 
+// ─── FISHBONE ────────────────────────────────────────────────────────────────
+
+function buildFishbone(labs) {
+  function v(arr, lo, hi) {
+    if (!arr || !arr.length) return '--';
+    const n = arr[0].value;
+    const abn = (lo !== null && n < lo) || (hi !== null && n > hi);
+    return abn ? '*' + n + '*' : String(n);
+  }
+
+  // CBC values
+  const wbc = v(labs.WBC,  4.5, 11);
+  const hgb = v(labs.Hgb,  7,   null);   // flag only critical low
+  const plt = v(labs.Plt,  150, 400);
+  const hct = v(labs.Hct,  21,  null);   // flag only critical low
+
+  // BMP/CMP values
+  const na  = v(labs.Na,   135, 145);
+  const k   = v(labs.K,    4.0, 5.0);
+  const cl  = v(labs.Cl,   96,  106);
+  const co2 = v(labs.CO2,  null, null);
+  const bun = v(labs.BUN,  null, 24);
+  const cr  = v(labs.Cr,   null, 1.2);
+  const glu = v(labs.Glu,  70,  200);
+
+  // Electrolytes
+  const ca   = v(labs.Ca,   8.5, 10.2);
+  const mag  = v(labs.Mag,  1.7, 2.2);
+  const phos = v(labs.Phos, 2.5, 4.5);
+
+  // ── CBC box ──────────────────────────────────
+  // WBC \ Hgb  / PLT
+  //      / Hct \
+  const c1t = wbc, c1b = '';
+  const c2t = hgb, c2b = hct;
+  const c3t = plt, c3b = '';
+  const c1w = Math.max(c1t.length, c1b.length);
+  const c2w = Math.max(c2t.length, c2b.length);
+  const c3w = Math.max(c3t.length, c3b.length);
+  const cbcTop = c1t.padEnd(c1w) + '\\' + c2t.padEnd(c2w) + ' /' + c3t.padEnd(c3w);
+  const cbcBot = c1b.padEnd(c1w) + '/' + c2b.padEnd(c2w + 1) + '\\' + c3b.padEnd(c3w);
+
+  // ── BMP box ──────────────────────────────────
+  // Na  | Cl  | BUN / Glu
+  // K   | CO2 | Cr  \
+  const b1t = na,  b1b = k;
+  const b2t = cl,  b2b = co2;
+  const b3t = bun, b3b = cr;
+  const b1w = Math.max(b1t.length, b1b.length);
+  const b2w = Math.max(b2t.length, b2b.length);
+  const b3w = Math.max(b3t.length, b3b.length);
+  const bmpTop = b1t.padEnd(b1w) + '|' + b2t.padEnd(b2w) + '|' + b3t.padEnd(b3w) + '/' + glu;
+  const bmpBot = b1b.padEnd(b1w) + '|' + b2b.padEnd(b2w) + '|' + b3b.padEnd(b3w) + '\\';
+
+  // ── Electrolytes line ────────────────────────
+  const elec = 'Ca:' + ca + '  Mag:' + mag + '  Phos:' + phos;
+
+  return [cbcTop, cbcBot, '', bmpTop, bmpBot, '', elec].join('\n');
+}
+
+function renderFishbone(text) {
+  return text.replace(/\*([^*\n]+)\*/g, '<span style="color:#ff4444;font-weight:700;">$1</span>');
+}
+
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
 function process() {
@@ -338,6 +411,11 @@ function process() {
   const output = lines.join('\n');
   document.getElementById('result-text').textContent = output || '(no data extracted)';
   document.getElementById('result-box').style.display = 'block';
+
+  const fishboneRaw = buildFishbone(labs);
+  document.getElementById('fishbone-text').innerHTML = renderFishbone(fishboneRaw);
+  document.getElementById('fishbone-box').style.display = 'block';
+  document.getElementById('fishbone-text').dataset.plain = fishboneRaw;
 }
 
 async function pasteAndProcess() {
@@ -349,6 +427,11 @@ async function pasteAndProcess() {
     document.getElementById('error-msg').textContent = 'Clipboard access denied — paste manually then hit Process.';
     document.getElementById('error-msg').style.display = 'block';
   }
+}
+
+function copyFishbone() {
+  const text = document.getElementById('fishbone-text').dataset.plain || '';
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 function copyResult() {
