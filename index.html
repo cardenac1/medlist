@@ -2972,25 +2972,20 @@ select,
 
 
 /* Priority Color Variables - ANSI Color Scheme (GREEN reserved for Priority C only) */
-.priority-0 { --priority-color: #23CC72; } /* Priority C - Complete - ANSI Bright Green (RESERVED) */
-.priority-1 { --priority-color: #FF0000; } /* Priority 1 - Urgent - ANSI Bright Red */
-.priority-2 { --priority-color: #DD0000; } /* Priority 2 - High - ANSI Red */
-.priority-3 { --priority-color: #FF5500; } /* Priority 3 - Medium-High - Orange */
-.priority-4 { --priority-color: #FF8800; } /* Priority 4 - Medium - Bright Orange */
-.priority-5 { --priority-color: #FFFF00; } /* Priority 5 - Medium-Low - ANSI Bright Yellow */
-.priority-6 { --priority-color: #A39600; } /* Priority 6 - Low-Medium - ANSI Bright Cyan */
-.priority-7 { --priority-color: #5555FF; } /* Priority 7 - Low - Light Blue */
-.priority-8 { --priority-color: #0000FF; } /* Priority 8 - Very Low - ANSI Bright Blue */
-.priority-9 { --priority-color: #FF00FF; } /* Priority 9 - Minimal - ANSI Bright Magenta */
-.priority-10 { --priority-color: #AA00AA; } /* Priority 10 - Lowest - ANSI Magenta */
-.priority-default { --priority-color: #555555; } /* No priority - Dark gray */
+.priority-critical   { --priority-color: #FF1111; } /* Critical – bright red */
+.priority-high       { --priority-color: #8B0000; } /* High – dark red */
+.priority-medium     { --priority-color: #FF8800; } /* Medium – orange */
+.priority-medium-low { --priority-color: #FFD700; } /* Medium-Low – yellow */
+.priority-low        { --priority-color: #9333EA; } /* Low – purple */
+.priority-very-low   { --priority-color: #3B82F6; } /* Very Low – blue */
+.priority-complete   { --priority-color: #23CC72; } /* Complete – green */
+.priority-default    { --priority-color: #555555; } /* No priority – dark gray */
 
 
 		
 .row-item {
     position: relative;
-    border-left: 4px solid var(--priority-color, #444444);
-    transition: all 0.3s ease, border-left-width 0.3s ease;
+    transition: all 0.3s ease;
     display: grid;
     grid-template-columns: 1fr 8px;
     min-height: 60px;
@@ -3005,13 +3000,14 @@ select,
     gap: 0.5rem;
 }
 
-.priority-sidebar {
-    grid-column: 2;
-    background: var(--priority-color, #444444);
-    border-radius: 0 0.5rem 0.5rem 0;
+.priority-circle-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10;
+    padding: 0 10px;
+    flex-shrink: 0;
+    align-self: center;
 }
 
 
@@ -4809,72 +4805,34 @@ function getChecklistStatus(patient, patientIndex) {
 
 
 	function getPriorityStatus(patient) {
-    // Normalize priority: handle undefined, null, or non-string values
     const priority = (patient.Priority || '').toString().trim().toLowerCase();
-    console.log('getPriorityStatus: Normalized priority:', priority); // Debug log
 
-    if (!priority) {
-        console.log('getPriorityStatus: No priority, returning default');
-        return { color: '#444444', title: 'No priority set' };
-    }
+    if (!priority) return { color: '#555555', title: 'No priority set' };
 
-    // Handle priority "C" explicitly for green (ANSI GREEN - RESERVED)
-    if (priority === 'c') {
-        console.log('getPriorityStatus: Matched priority C, returning green');
-        return { color: '#23CC72', title: 'Priority C - Complete' }; // ANSI Bright Green (RESERVED)
-    }
+    const map = {
+        'critical':   { color: '#FF1111', title: 'Critical – Evaluating a critical patient' },
+        'high':       { color: '#8B0000', title: 'High – Evaluating urgent patient / Following up urgent scans' },
+        'medium':     { color: '#FF8800', title: 'Medium – Ordering urgent medication or therapy / Non-urgent consult' },
+        'medium-low': { color: '#FFD700', title: 'Medium-Low – Following up non-urgent scans' },
+        'low':        { color: '#9333EA', title: 'Low – Clinical notes and small tasks' },
+        'very-low':   { color: '#3B82F6', title: 'Very Low – Late follow-ups' },
+        'complete':   { color: '#23CC72', title: 'Complete' },
+    };
+    if (map[priority]) return map[priority];
 
-    // Handle numeric priorities (ANSI color scheme)
-    const priorityNum = parseInt(priority);
-    if (!isNaN(priorityNum)) {
-        console.log('getPriorityStatus: Priority is numeric:', priorityNum);
-        switch (priorityNum) {
-            case 1:
-                return { color: '#FF0000', title: 'Priority 1 - Urgent' }; // ANSI Bright Red
-            case 2:
-                return { color: '#DD0000', title: 'Priority 2 - High' }; // ANSI Red
-            case 3:
-                return { color: '#FF5500', title: 'Priority 3 - Medium-High' }; // Orange
-            case 4:
-                return { color: '#FF8800', title: 'Priority 4 - Medium' }; // Bright Orange
-            case 5:
-                return { color: '#FFFF00', title: 'Priority 5 - Medium-Low' }; // ANSI Bright Yellow
-            case 6:
-                return { color: '#A39600', title: 'Priority 6 - Low-Medium' }; // ANSI Bright Cyan
-            case 7:
-                return { color: '#5555FF', title: 'Priority 7 - Low' }; // Light Blue
-            case 8:
-                return { color: '#0000FF', title: 'Priority 8 - Very Low' }; // ANSI Bright Blue
-            case 9:
-                return { color: '#FF00FF', title: 'Priority 9 - Minimal' }; // ANSI Bright Magenta
-            case 10:
-                return { color: '#AA00AA', title: 'Priority 10 - Lowest' }; // ANSI Magenta
-            default:
-                console.log('getPriorityStatus: Numeric priority out of range:', priorityNum);
-                return { color: '#555555', title: `Priority ${priorityNum} - Out of range` }; // Dark Gray
-        }
+    // Legacy numeric/letter fallback for existing data
+    if (priority === 'c') return map['complete'];
+    const num = parseInt(priority);
+    if (!isNaN(num)) {
+        if (num === 1)       return map['critical'];
+        if (num === 2)       return map['high'];
+        if (num <= 4)        return map['medium'];
+        if (num === 5)       return map['medium-low'];
+        if (num <= 7)        return map['low'];
+        return map['very-low'];
     }
 
-    // Text-based priority fallback (GREEN RESERVED for complete/done only)
-    console.log('getPriorityStatus: Checking text-based priority:', priority);
-    if (priority.includes('done') || priority.includes('complete')) {
-        return { color: '#23CC72', title: `${priority} - Complete` }; // ANSI Green (RESERVED)
-    }
-    if (priority.includes('urgent') || priority.includes('stat')) {
-        return { color: '#FF0000', title: `${priority} - Urgent` }; // ANSI Bright Red
-    }
-    if (priority.includes('high')) {
-        return { color: '#FF5500', title: `${priority} - High` }; // Orange
-    }
-    if (priority.includes('medium')) {
-        return { color: '#FFFF00', title: `${priority} - Medium` }; // ANSI Bright Yellow
-    }
-    if (priority.includes('low')) {
-        return { color: '#A39600', title: `${priority} - Low` }; // ANSI Bright Cyan (NO GREEN!)
-    }
-
-    console.log('getPriorityStatus: Unrecognized priority, returning default:', priority);
-    return { color: '#444444', title: `${priority}` };
+    return { color: '#555555', title: priority };
 }
 		
 
@@ -5053,14 +5011,25 @@ function displayRows(data = patientData) {
         // Get priority status and color from getPriorityStatus
         const { color, title } = getPriorityStatus(patient);
 
-        // Determine priority class for additional styling
+        // Determine priority class for styling
         const priority = patient.Priority || '';
-        const priorityNum = parseInt(priority);
+        const normalized = priority.toString().trim().toLowerCase();
+        const validLevels = ['critical', 'high', 'medium', 'medium-low', 'low', 'very-low', 'complete'];
         let priorityClass = 'priority-default';
-        if (!isNaN(priorityNum) && priorityNum >= 1 && priorityNum <= 10) {
-            priorityClass = `priority-${priorityNum}`;
-        } else if (priority.toLowerCase() === 'c') {
+        if (validLevels.includes(normalized)) {
+            priorityClass = `priority-${normalized}`;
+        } else if (normalized === 'c') {
             priorityClass = 'priority-complete';
+        } else {
+            const num = parseInt(normalized);
+            if (!isNaN(num)) {
+                if (num === 1)      priorityClass = 'priority-critical';
+                else if (num === 2) priorityClass = 'priority-high';
+                else if (num <= 4)  priorityClass = 'priority-medium';
+                else if (num === 5) priorityClass = 'priority-medium-low';
+                else if (num <= 7)  priorityClass = 'priority-low';
+                else                priorityClass = 'priority-very-low';
+            }
         }
 
         // Extract key patient fields
@@ -5076,21 +5045,18 @@ function displayRows(data = patientData) {
         listItem.style.cssText = `
             position: relative;
             display: grid;
-            grid-template-columns: 1fr 1fr 20px;
-            align-items: start;
+            grid-template-columns: 1fr 1fr auto;
+            align-items: center;
             min-height: 0;
             gap: 0;
             background: rgba(10, 10, 10, 0.65);
             border-radius: 0.85rem;
             cursor: pointer;
             transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-            border-left: 5px solid ${color};
-            border-right: 5px solid ${color};
+            border: 1px solid rgba(255,255,255,0.14);
             font-size: 0.82rem;
             margin-bottom: 0.15rem;
             padding: 0;
-            border-top: 1px solid rgba(255,255,255,0.14);
-            border-bottom: 1px solid rgba(255,255,255,0.14);
             backdrop-filter: blur(8px);
         `;
 
@@ -5269,38 +5235,37 @@ function displayRows(data = patientData) {
             });
         }
 
-        // Priority sidebar
-        const prioritySidebar = document.createElement('div');
-        prioritySidebar.className = 'priority-sidebar';
-        prioritySidebar.style.cssText = `
-            width: 20px;
+        // Priority circle
+        const priorityName = getPriorityName(patient.Priority);
+        const priorityCircleWrap = document.createElement('div');
+        priorityCircleWrap.className = 'priority-circle-wrap';
+        priorityCircleWrap.title = `Priority: ${priorityName} (Click to change)`;
+
+        const priorityCircle = document.createElement('div');
+        priorityCircle.style.cssText = `
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
             background: ${color};
-            border-radius: 0 0.85rem 0.85rem 0;
-            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.25);
+            box-shadow: 0 0 8px ${color}60;
             transition: all 200ms ease;
             flex-shrink: 0;
-            align-self: stretch;
         `;
+        priorityCircleWrap.appendChild(priorityCircle);
 
-        // Priority sidebar click handler — stopPropagation as backup
-        prioritySidebar.onclick = (e) => {
+        priorityCircleWrap.onclick = (e) => {
             e.stopPropagation();
-            showStatusSelector(patient, index, prioritySidebar);
+            showStatusSelector(patient, index, priorityCircleWrap);
         };
-
-        // Priority sidebar hover effects
-        prioritySidebar.onmouseenter = () => {
-            prioritySidebar.style.width = '26px';
-            prioritySidebar.style.boxShadow = `0 0 12px ${color}40`;
+        priorityCircleWrap.onmouseenter = () => {
+            priorityCircle.style.transform = 'scale(1.3)';
+            priorityCircle.style.boxShadow = `0 0 14px ${color}90`;
         };
-        prioritySidebar.onmouseleave = () => {
-            prioritySidebar.style.width = '20px';
-            prioritySidebar.style.boxShadow = 'none';
+        priorityCircleWrap.onmouseleave = () => {
+            priorityCircle.style.transform = 'scale(1)';
+            priorityCircle.style.boxShadow = `0 0 8px ${color}60`;
         };
-
-        // Add tooltip
-        const priorityName = getPriorityName(patient.Priority);
-        prioritySidebar.title = `Priority: ${priorityName} (Click to change)`;
 
         // Row hover effects
         listItem.onmouseenter = () => {
@@ -5317,22 +5282,14 @@ function displayRows(data = patientData) {
 
         // Main row click handler
         listItem.onclick = (e) => {
-            // Treat the rightmost 32px of the card as the priority sidebar zone,
-            // catching clicks on rounded corners that miss the sidebar div itself
-            const rect = listItem.getBoundingClientRect();
-            const inSidebarZone = (e.clientX >= rect.right - 32);
-
-            if (inSidebarZone || e.target.closest('.priority-sidebar')) {
-                showStatusSelector(patient, index, prioritySidebar);
-            } else if (!e.target.closest('button')) {
-                showDetails(index);
-            }
+            if (e.target.closest('.priority-circle-wrap')) return;
+            if (!e.target.closest('button')) showDetails(index);
         };
 
         // Assemble the row
         listItem.appendChild(contentContainer);
         listItem.appendChild(toDoContainer);
-        listItem.appendChild(prioritySidebar);
+        listItem.appendChild(priorityCircleWrap);
 
         // Add to list
         rowList.appendChild(listItem);
@@ -5354,52 +5311,33 @@ function displayRows(data = patientData) {
 
 
 	function getPriorityName(priority) {
-    if (!priority || priority.trim() === '') {
-        return 'No priority set';
+    if (!priority || priority.trim() === '') return 'No priority set';
+    const normalized = priority.toString().trim().toLowerCase();
+
+    const names = {
+        'critical':   'Critical',
+        'high':       'High',
+        'medium':     'Medium',
+        'medium-low': 'Medium-Low',
+        'low':        'Low',
+        'very-low':   'Very Low',
+        'complete':   'Complete',
+    };
+    if (names[normalized]) return names[normalized];
+
+    // Legacy numeric/letter fallback
+    if (normalized === 'c') return 'Complete';
+    const num = parseInt(normalized);
+    if (!isNaN(num)) {
+        if (num === 1)  return 'Critical';
+        if (num === 2)  return 'High';
+        if (num <= 4)   return 'Medium';
+        if (num === 5)  return 'Medium-Low';
+        if (num <= 7)   return 'Low';
+        return 'Very Low';
     }
 
-    const normalizedPriority = priority.toString().trim().toLowerCase();
-
-    // Handle "C" explicitly
-    if (normalizedPriority === 'c') {
-        return 'Complete';
-    }
-
-    const priorityNum = parseInt(normalizedPriority);
-    if (!isNaN(priorityNum)) {
-        switch (priorityNum) {
-            case 1: return 'Urgent';
-            case 2: return 'High';
-            case 3: return 'Medium-High';
-            case 4: return 'Medium';
-            case 5: return 'Medium-Low';
-            case 6: return 'Low-Medium';
-            case 7: return 'Low';
-            case 8: return 'Very Low';
-            case 9: return 'Minimal';
-            case 10: return 'Lowest';
-            default: return `Priority ${priorityNum}`;
-        }
-    }
-
-    // Text-based priority fallback
-    if (normalizedPriority.includes('done') || normalizedPriority.includes('complete')) {
-        return 'Complete';
-    }
-    if (normalizedPriority.includes('urgent') || normalizedPriority.includes('stat')) {
-        return 'Urgent';
-    }
-    if (normalizedPriority.includes('high')) {
-        return 'High';
-    }
-    if (normalizedPriority.includes('medium')) {
-        return 'Medium';
-    }
-    if (normalizedPriority.includes('low')) {
-        return 'Low';
-    }
-
-    return normalizedPriority; // Return as-is if unrecognized
+    return normalized;
 }
 
 
@@ -15241,22 +15179,17 @@ function showPriorityStatus(index) {
 	// REPLACE the showStatusSelector function (around line 2990) with this updated version:
 
 function showStatusSelector(patient, index, statusElement) {
-    // ANSI Color Scheme Priority Options (GREEN reserved for Priority C only)
     const priorityOptions = [
-        { num: '', name: 'No Priority', color: '#555555' },                   // Dark gray
-        { num: 'C', name: 'Priority C - Complete/Done', color: '#23CC72' },   // ANSI Bright Green (RESERVED)
-        { num: '1', name: 'Priority 1 - EMERGENT- See immediately', color: '#FF0000' },  // ANSI Bright Red
-        { num: '2', name: 'Priority 2 - Urgent- see within 1 hour ', color: '#DD0000' },       // ANSI Red
-        { num: '3', name: 'Priority 3 - Semi-urgent, see in 1-2 hours ', color: '#FF5500' },     // Orange
-        { num: '4', name: 'Priority 4 - Medium- Semi Urgent, see in 2-3 hours', color: '#FF8800' },  // Bright Orange
-        { num: '5', name: 'Priority 5 - Medium-Non urgent- see in 3-5 hours  ', color: '#FFFF00' },  // ANSI Bright Yellow
-        { num: '6', name: 'Priority 6 - Low-Medium- Non urgent follow ups', color: '#474100' },      // ANSI Bright Cyan
-        { num: '7', name: 'Priority 7 - Low', color: '#5555FF' },             // Light Blue
-        { num: '8', name: 'Priority 8 - Very Low', color: '#0000FF' },        // ANSI Bright Blue
-        { num: '9', name: 'Priority 9 - Minimal', color: '#FF00FF' },         // ANSI Bright Magenta
-        { num: '10', name: 'Priority 10 - Lowest', color: '#AA00AA' },        // ANSI Magenta
+        { num: '',           name: 'No Priority',                                                         color: '#555555' },
+        { num: 'critical',   name: 'Critical – Evaluating a critical patient',                            color: '#FF1111' },
+        { num: 'high',       name: 'High – Evaluating urgent patient / Following up urgent scans',        color: '#8B0000' },
+        { num: 'medium',     name: 'Medium – Ordering urgent medication or therapy / Non-urgent consult', color: '#FF8800' },
+        { num: 'medium-low', name: 'Medium-Low – Following up non-urgent scans',                          color: '#FFD700' },
+        { num: 'low',        name: 'Low – Clinical notes and small tasks',                                color: '#9333EA' },
+        { num: 'very-low',   name: 'Very Low – Late follow-ups',                                         color: '#3B82F6' },
+        { num: 'complete',   name: 'Complete',                                                            color: '#23CC72' },
     ];
-    
+
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'block';
@@ -15267,18 +15200,17 @@ function showStatusSelector(patient, index, statusElement) {
             </h3>
             <div style="display: grid; gap: 0.5rem; margin-bottom: 1rem; max-height: 500px; overflow-y: auto;">
                 ${priorityOptions.map(option => `
-                    <button onclick="setPatientPriority('${option.num}', ${index}, this.closest('.modal'))" 
-                            style="padding: 0.75rem; text-align: left; background: var(--card-bg); 
-                                   border: 1px solid var(--border); border-radius: 0.375rem; 
-                                   color: var(--text-primary); cursor: pointer; display: flex; 
+                    <button onclick="setPatientPriority('${option.num}', ${index}, this.closest('.modal'))"
+                            style="padding: 0.75rem; text-align: left; background: var(--card-bg);
+                                   border: 1px solid var(--border); border-radius: 0.375rem;
+                                   color: var(--text-primary); cursor: pointer; display: flex;
                                    align-items: center; gap: 0.75rem;"
                             onmouseover="this.style.background='var(--card-hover)'"
                             onmouseout="this.style.background='var(--card-bg)'">
-                        <div style="width: 20px; height: 20px; border-radius: 0.25rem; 
-                                    background: ${option.color}; border: 2px solid rgba(255,255,255,0.2);"></div>
+                        <div style="width: 18px; height: 18px; border-radius: 50%;
+                                    background: ${option.color}; border: 2px solid rgba(255,255,255,0.25);
+                                    box-shadow: 0 0 6px ${option.color}60; flex-shrink: 0;"></div>
                         <span style="flex: 1;">${option.name}</span>
-                        <div style="width: 8px; height: 30px; background: ${option.color}; 
-                                    border-radius: 0.25rem; opacity: 0.8;"></div>
                     </button>
                 `).join('')}
             </div>
