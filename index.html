@@ -5050,7 +5050,7 @@ function displayRows(data = patientData) {
             min-height: 0;
             gap: 0;
             background: rgba(10, 10, 10, 0.65);
-            border-radius: 0.85rem;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(255,255,255,0.14);
@@ -5447,12 +5447,22 @@ function displayRows(data = patientData) {
             const valueB = b[col] || '';
             if (col === 'Priority') {
                 const getPriorityValue = (val) => {
-                    if (!val || val.toString().trim() === '') return 1000;
-                    const trimmed = val.toString().trim().toUpperCase();
-                    if (trimmed === 'C') return 100;
+                    if (!val || val.toString().trim() === '') return 8;
+                    const trimmed = val.toString().trim().toLowerCase();
+                    const rank = { 'critical': 1, 'high': 2, 'medium': 3, 'medium-low': 4, 'low': 5, 'very-low': 6, 'complete': 7 };
+                    if (rank[trimmed] !== undefined) return rank[trimmed];
+                    // Legacy numeric/letter fallback
+                    if (trimmed === 'c') return 7;
                     const num = parseInt(trimmed, 10);
-                    if (!isNaN(num) && num >= 1 && num <= 10) return num;
-                    return 1000;
+                    if (!isNaN(num)) {
+                        if (num === 1) return 1;
+                        if (num === 2) return 2;
+                        if (num <= 4)  return 3;
+                        if (num === 5) return 4;
+                        if (num <= 7)  return 5;
+                        return 6;
+                    }
+                    return 8;
                 };
                 return getPriorityValue(valueA) - getPriorityValue(valueB);
             }
