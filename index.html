@@ -3694,7 +3694,7 @@ async function testOCRAvailability() {
         ];
 
         const PATIENT_COLUMNS = [0, 1, 2, 3, 4, 7, 15, 16, 18, 19, 20];
-        const CONSULT_COLUMNS = [0, 1, 2, 3, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20];
+        const CONSULT_COLUMNS = [0, 1, 2, 3, 5, 8, 15, 16, 19, 20];
 
         const colors = [
             'colored-text-1', 'colored-text-2', 'colored-text-3',
@@ -4888,7 +4888,7 @@ function getChecklistStatus(patient, patientIndex) {
 
 function generateStatusIndicator(patient, index) {
     // Check if this should be grey (no consult data and no priority)
-    const consultFields = ['CC', 'HPI', 'ROS', 'PMH', 'Meds', 'All', 'Surg hx', 'FSH', 'PE'];
+    const consultFields = ['HPI'];
     const hasConsultData = consultFields.some(field => patient[field]?.trim());
     const hasPriority = patient.Priority?.trim();
 
@@ -5789,7 +5789,7 @@ function switchView(mode) {
                 // Card header
                 const cardHeader = document.createElement('div');
                 cardHeader.className = 'dashboard-card-header';
-                cardHeader.innerHTML = `<span class="card-icon">${cardIcons[header] || '📄'}</span><span class="card-title" style="color:${cardColors[header] || '#94a3b8'}">${header}</span>`;
+                cardHeader.innerHTML = `<span class="card-icon">${cardIcons[header] || '📄'}</span><span class="card-title" style="color:${cardColors[header] || '#94a3b8'}">${DISPLAY_LABELS[header] || header}</span>`;
 
                 // Help button
                 if (helpContent[header]) {
@@ -6221,18 +6221,14 @@ case 'chartcheck': {
 			fieldsToShow.forEach(header => {
     const label = document.createElement('label');
 
-if (currentViewMode === 'consult' && CONSULT_MODE_LABELS[header]) {
-    if (helpContent[header]) {
-        label.innerHTML = `${CONSULT_MODE_LABELS[header]}<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('${header}')">?</button>`;
-    } else {
-        label.textContent = CONSULT_MODE_LABELS[header];
-    }
+const displayLabel = (currentViewMode === 'consult' && CONSULT_MODE_LABELS[header])
+    ? CONSULT_MODE_LABELS[header]
+    : (DISPLAY_LABELS[header] || header);
+
+if (helpContent[header]) {
+    label.innerHTML = `${displayLabel}<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('${header}')">?</button>`;
 } else {
-    if (helpContent[header]) {
-        label.innerHTML = `${header}<button class="help-button" onclick="event.stopPropagation(); event.preventDefault(); showHelpModal('${header}')">?</button>`;
-    } else {
-        label.textContent = header;
-    }
+    label.textContent = displayLabel;
 }
 
 // Add toggle buttons for ORDERS and VIOLIN in basic/consult mode
@@ -7025,18 +7021,16 @@ const CONSULT_MODE_LABELS = {
     'RM': 'RM',
     'MRN': 'MRN',
     'A/G': 'A/G',
-    'CC': 'CC/Level',
     'HPI': 'HPI/Mech',
-    'ROS': 'ROS/1-2o',
-    'PMH': 'PMH',
-    'Meds': 'Meds',
-    'All': 'All',
-    'Surg hx': 'SurgHx',
-    'FSH': 'FSHCM#',
     'VIOLIN': 'VIOLIN',
-    'PE': 'PE',
     'To do': 'To Do',
     'Priority': 'Priority'
+};
+
+// Display label overrides for all modes (keeps internal data keys unchanged)
+const DISPLAY_LABELS = {
+    'Problems': 'HPI',
+    'ICS': 'PROBLEMS'
 };
 
 
@@ -7098,7 +7092,7 @@ const CONSULT_MODE_LABELS = {
             }
             
             // AUTO-ASSIGN PRIORITY 1 WHEN CONVERTING TO CONSULT
-            const consultFields = ['CC', 'HPI', 'ROS', 'PMH', 'Meds', 'All', 'Surg hx', 'FSH', 'PE'];
+            const consultFields = ['HPI'];
             const hasConsultData = consultFields.some(field => patient[field] && patient[field].trim());
             if (hasConsultData && (!patient.Priority || patient.Priority.trim() === '')) {
                 patient.Priority = '1'; // Set to urgent/red when converting to consult with data
