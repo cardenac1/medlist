@@ -9623,139 +9623,82 @@ else {
             return shortForm;
         }
 
-        // Helper function to create category row with single medications column
+        // Helper function to create category row with IV / PO sections
         function createCategoryRow(categoryName, medList) {
             const poMeds = medList.filter(m => m.route === 'PO' || m.route === 'SC' || m.route === 'PR' ||
                                                 m.route === 'INH' || m.route === 'IM');
             const ivMeds = medList.filter(m => m.route === 'IV');
 
-            // Skip empty categories
             if (poMeds.length === 0 && ivMeds.length === 0) return '';
 
-            let html = '';
-
-            // Category header with per-category color
             const catColor = categoryColors[categoryName] || 'var(--primary)';
-            html += `<div style="margin-bottom: 0.05rem;">`;
-            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}:</div>`;
+            const btnStyle = `background: none; border: none; padding: 0 2px; margin: 0; cursor: pointer; font-size: 0.7rem; line-height: 1; flex-shrink: 0; color: #888; font-family: inherit;`;
 
-            // PO medications
-            if (poMeds.length > 0) {
-                poMeds.forEach((med, idx) => {
-                    const medId = `med_${categoryName.replace(/\s+/g, '_')}_po_${idx}`;
+            let html = `<div style="margin-bottom: 0.15rem;">`;
+            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}</div>`;
 
-                    // Skip if deleted
+            const renderMeds = (meds, routeType) => {
+                const visibleMeds = meds.filter((med, idx) => {
+                    const medId = `med_${categoryName.replace(/\s+/g, '_')}_${routeType}_${idx}`;
+                    return !deletedOrders.has(medId);
+                });
+                if (visibleMeds.length === 0) return '';
+
+                let s = `<div style="margin-left: 0.5rem; margin-bottom: 0.08rem;">`;
+                s += `<div style="color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.02rem;">${routeType === 'iv' ? 'IV' : 'PO / Other'}</div>`;
+
+                meds.forEach((med, idx) => {
+                    const medId = `med_${categoryName.replace(/\s+/g, '_')}_${routeType}_${idx}`;
                     if (deletedOrders.has(medId)) return;
 
-                    // Check if this order has been edited
-                    let medText = med.text;
-                    let medRoute = med.route;
-                    let medIsPRN = med.isPRN;
-                    let isEdited = false;
-
+                    let medText = med.text, medRoute = med.route, medIsPRN = med.isPRN, isEdited = false;
                     if (editedOrders.has(medId)) {
-                        const editedMed = editedOrders.get(medId);
-                        medText = editedMed.text;
-                        medRoute = editedMed.route;
-                        medIsPRN = editedMed.isPRN;
-                        isEdited = true;
+                        const e = editedOrders.get(medId);
+                        medText = e.text; medRoute = e.route; medIsPRN = e.isPRN; isEdited = true;
                     }
 
-                    const color = medIsPRN ? '#FFFFFF' : '#FFFFFF';
                     const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
-                    const manualIndicator = med.isManual ? '✏️ ' : '';
-                    const editedIndicator = isEdited ? '📝 ' : '';
-                    const homeMedIndicator = isInpatMedAHomeMed(medText) ? '🏠 ' : '';
-                    const displayText = editedIndicator + manualIndicator + homeMedIndicator + '💊 ' + baseText + (medIsPRN ? ' PRN' : '');
+                    const tags = [
+                        isEdited      ? '<span style="color:#60a5fa;font-size:0.65rem;">[edited]</span>' : '',
+                        med.isManual  ? '<span style="color:#a78bfa;font-size:0.65rem;">[manual]</span>' : '',
+                        isInpatMedAHomeMed(medText) ? '<span style="color:#34d399;font-size:0.65rem;">[home]</span>' : '',
+                    ].filter(Boolean).join(' ');
+                    const prnTag = medIsPRN ? ' <span style="color:#fbbf24;font-size:0.65rem;">PRN</span>' : '';
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
-                    html += `<div style="color: ${color}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
-                    html += `<span>${displayText}</span>`;
-                    html += `<div style="display: flex; gap: 4px;">`;
-                    html += `<button type="button" onclick="editMedication(event, '${medId}', 'po', ${idx}, '${categoryName.replace(/'/g, "\\'")}', '${escapedText}', '${medRoute}', ${medIsPRN})"
-                            class="med-edit-btn"
-                            style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
-                            title="Edit this medication">✏️</button>`;
-                    html += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medNameForDC}')"
-                            class="med-status-btn"
-                            data-med-id="${medId}"
-                            data-status="stop"
-                            style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
-                            title="Remove this medication">🟥</button>`;
-                    html += `</div>`;
-                    html += '</div>';
+
+                    s += `<div style="color:#fff; font-family:'Segoe UI',Arial,sans-serif; font-weight:normal; padding:0; margin-bottom:0.02rem; display:flex; align-items:center; justify-content:space-between; line-height:1.15;">`;
+                    s += `<span>${tags ? tags + ' ' : ''}${baseText}${prnTag}</span>`;
+                    s += `<div style="display:flex;gap:4px;">`;
+                    s += `<button type="button" onclick="editMedication(event,'${medId}','${routeType}',${idx},'${categoryName.replace(/'/g, "\\'")}','${escapedText}','${medRoute}',${medIsPRN})" class="med-edit-btn" style="${btnStyle}" title="Edit">Edit</button>`;
+                    s += `<button type="button" onclick="toggleMedStatus(event,'${medId}','stop','${medNameForDC}')" class="med-status-btn" data-med-id="${medId}" data-status="stop" style="${btnStyle};color:#ef4444;" title="Remove">Remove</button>`;
+                    s += `</div></div>`;
                 });
-            }
 
-            // IV medications
-            if (ivMeds.length > 0) {
-                ivMeds.forEach((med, idx) => {
-                    const medId = `med_${categoryName.replace(/\s+/g, '_')}_iv_${idx}`;
+                s += `</div>`;
+                return s;
+            };
 
-                    // Skip if deleted
-                    if (deletedOrders.has(medId)) return;
-
-                    // Check if this order has been edited
-                    let medText = med.text;
-                    let medRoute = med.route;
-                    let medIsPRN = med.isPRN;
-                    let isEdited = false;
-
-                    if (editedOrders.has(medId)) {
-                        const editedMed = editedOrders.get(medId);
-                        medText = editedMed.text;
-                        medRoute = editedMed.route;
-                        medIsPRN = editedMed.isPRN;
-                        isEdited = true;
-                    }
-
-                    const color = medIsPRN ? '#FFFFFF' : '#FFFFFF';
-                    const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
-                    const manualIndicator = med.isManual ? '✏️ ' : '';
-                    const editedIndicator = isEdited ? '📝 ' : '';
-                    const homeMedIndicator = isInpatMedAHomeMed(medText) ? '🏠 ' : '';
-                    const displayText = editedIndicator + manualIndicator + homeMedIndicator + '💉 ' + baseText + (medIsPRN ? ' PRN' : '');
-
-                    const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
-                    const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
-                    html += `<div style="color: ${color}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
-                    html += `<span>${displayText}</span>`;
-                    html += `<div style="display: flex; gap: 4px;">`;
-                    html += `<button type="button" onclick="editMedication(event, '${medId}', 'iv', ${idx}, '${categoryName.replace(/'/g, "\\'")}', '${escapedText}', '${medRoute}', ${medIsPRN})"
-                            class="med-edit-btn"
-                            style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
-                            title="Edit this medication">✏️</button>`;
-                    html += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medNameForDC}')"
-                            class="med-status-btn"
-                            data-med-id="${medId}"
-                            data-status="stop"
-                            style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
-                            title="Remove this medication">🟥</button>`;
-                    html += `</div>`;
-                    html += '</div>';
-                });
-            }
-
-            // Category separator
-            html += `<div style="border-bottom: 1px solid #444; margin-top: 0.05rem;"></div>`;
-            html += '</div>';
-
+            html += renderMeds(poMeds, 'po');
+            html += renderMeds(ivMeds, 'iv');
+            html += `<div style="border-bottom:1px solid #333;margin-top:0.08rem;"></div>`;
+            html += `</div>`;
             return html;
         }
 
         // Build table HTML with toggle buttons
         let tableHTML = '<div style="background: var(--card-bg); padding: 0.6rem; border-radius: 0.5rem; border: 1px solid var(--primary);">';
         tableHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">';
-        tableHTML += '<strong style="color: var(--primary); font-size: 16px;">📋 Full Orders List</strong>';
+        tableHTML += '<strong style="color: var(--primary); font-size: 16px;">Full Orders List</strong>';
 
         // Toggle buttons
         tableHTML += '<div style="display: flex; gap: 5px;">';
-        tableHTML += `<button type="button" onclick="openAddOrderModal()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;" title="Add manual order">➕ Add Order</button>`;
+        tableHTML += `<button type="button" onclick="openAddOrderModal()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;" title="Add manual order">Add Order</button>`;
 
         // Show reset button only if there are manual changes
         if (manualOrders.length > 0 || deletedOrders.size > 0 || editedOrders.size > 0) {
-            tableHTML += `<button type="button" onclick="resetManualChanges()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;" title="Reset all manual changes">🔄 Reset</button>`;
+            tableHTML += `<button type="button" onclick="resetManualChanges()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;" title="Reset all manual changes">Reset</button>`;
         }
 
         tableHTML += `<button type="button" onclick="showAbbreviatedTable = true; renderOrdersTable();" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: ${showAbbreviatedTable ? 'var(--primary)' : '#444'}; color: ${showAbbreviatedTable ? '#000' : '#fff'}; border: none; border-radius: 4px; cursor: pointer; font-weight: ${showAbbreviatedTable ? '600' : '400'};">Abbreviated</button>`;
@@ -9780,7 +9723,7 @@ else {
         tableHTML += `<div style="margin-bottom: 0.15rem;">`;
         tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: #10b981; font-weight: 600; font-size: 13px;">VITALS/INTAKE/OUTPUTS:</div>`;
-        tableHTML += `<button type="button" onclick="editVitalsIO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #10b981;" title="Edit Vitals/Intake/Outputs">✏️</button>`;
+        tableHTML += `<button type="button" onclick="editVitalsIO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #10b981;" title="Edit Vitals/Intake/Outputs">Edit</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
         tableHTML += existingVitalsIO || '<em style="color: var(--text-secondary);">No vitals/IO orders</em>';
@@ -9792,7 +9735,7 @@ else {
         tableHTML += `<div style="margin-bottom: 0.15rem;">`;
         tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: #f59e0b; font-weight: 600; font-size: 13px;">LABS/IMAGING:</div>`;
-        tableHTML += `<button type="button" onclick="editLabsImaging()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #f59e0b;" title="Edit Labs/Imaging">✏️</button>`;
+        tableHTML += `<button type="button" onclick="editLabsImaging()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #f59e0b;" title="Edit Labs/Imaging">Edit</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
         tableHTML += existingLabsImaging || '<em style="color: var(--text-secondary);">No labs/imaging orders</em>';
@@ -9830,7 +9773,7 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
         tableHTML += `<div style="margin-bottom: 0.15rem;">`;
         tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: #06b6d4; font-weight: 600; font-size: 13px;">LABS/MISC:</div>`;
-        tableHTML += `<button type="button" onclick="editLabsMisc()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #06b6d4;" title="Edit LABS/MISC">✏️</button>`;
+        tableHTML += `<button type="button" onclick="editLabsMisc()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #06b6d4;" title="Edit LABS/MISC">Edit</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
         tableHTML += existingLabsMisc || '<em style="color: var(--text-secondary);">No labs/misc orders</em>';
@@ -9842,7 +9785,7 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
         tableHTML += `<div style="margin-bottom: 0.15rem;">`;
         tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: var(--primary); font-weight: 600; font-size: 13px;">LTD:</div>`;
-        tableHTML += `<button type="button" onclick="editLTD()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit LTD">✏️</button>`;
+        tableHTML += `<button type="button" onclick="editLTD()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit LTD">Edit</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2;">`;
         tableHTML += existingLTD || '<em style="color: var(--text-secondary);">No LTD data</em>';
@@ -9854,7 +9797,7 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
         tableHTML += `<div style="margin-bottom: 0.15rem;">`;
         tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
         tableHTML += `<div style="color: var(--primary); font-weight: 600; font-size: 13px;">DISPO:</div>`;
-        tableHTML += `<button type="button" onclick="editDISPO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit DISPO">✏️</button>`;
+        tableHTML += `<button type="button" onclick="editDISPO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit DISPO">Edit</button>`;
         tableHTML += `</div>`;
         tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2;">`;
         tableHTML += existingDispo || '<em style="color: var(--text-secondary);">No dispo data</em>';
@@ -9879,17 +9822,19 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
                 const medName = line.split(/\s+/)[0].toLowerCase();
                 const homeOrdered = isHomeMedOrdered(line);
                 // ⚠️ = not yet ordered inpatient (needs to be started); 💊 = already ordered
-                const homePrefix = homeOrdered ? '💊 ' : '⚠️ ';
-                const homeColor = homeOrdered ? '#FFFFFF' : '#fbbf24'; // amber tint for unordered
+                const homeTag = homeOrdered
+                    ? '<span style="color:#34d399;font-size:0.65rem;margin-right:4px;">[ordered]</span>'
+                    : '<span style="color:#fbbf24;font-size:0.65rem;margin-right:4px;">[not ordered]</span>';
+                const homeColor = homeOrdered ? '#FFFFFF' : '#fbbf24'
                 tableHTML += `<div style="color: ${homeColor}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
-                tableHTML += `<span title="${homeOrdered ? 'Ordered inpatient' : 'NOT yet ordered inpatient \u2014 consider restarting'}">${homePrefix}${displayLine}</span>`;
+                tableHTML += `<span title="${homeOrdered ? 'Ordered inpatient' : 'NOT yet ordered inpatient — consider restarting'}">${homeTag}${displayLine}</span>`;
                 tableHTML += `<div style="display: flex; gap: 4px;">`;
                 tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
                         class="med-status-btn"
                         data-med-id="${medId}"
                         data-status="stop"
-                        style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; line-height: 1; flex-shrink: 0;"
-                        title="Remove this medication">🟥</button>`;
+                        style="background:none;border:none;padding:0 2px;margin:0;cursor:pointer;font-size:0.7rem;line-height:1;flex-shrink:0;color:#ef4444;font-family:inherit;"
+                        title="Remove this medication">Remove</button>`;
                 tableHTML += `</div>`;
                 tableHTML += '</div>';
             });
