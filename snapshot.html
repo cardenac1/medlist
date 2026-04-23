@@ -322,8 +322,7 @@ function buildFishbone(labs) {
   function v(arr, lo, hi) {
     if (!arr || !arr.length) return '--';
     const n = arr[0].value;
-    const abn = (lo !== null && n < lo) || (hi !== null && n > hi);
-    return abn ? '*' + n + '*' : String(n);
+    return String(n);
   }
 
   // CBC values
@@ -413,7 +412,7 @@ function process() {
   document.getElementById('result-box').style.display = 'block';
 
   const fishboneRaw = buildFishbone(labs);
-  document.getElementById('fishbone-text').innerHTML = renderFishbone(fishboneRaw);
+  document.getElementById('fishbone-text').textContent = fishboneRaw;
   document.getElementById('fishbone-box').style.display = 'block';
   document.getElementById('fishbone-text').dataset.plain = fishboneRaw;
 }
