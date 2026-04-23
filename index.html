@@ -9634,8 +9634,8 @@ else {
             const catColor = categoryColors[categoryName] || 'var(--primary)';
             const btnStyle = `background: none; border: none; padding: 0 2px; margin: 0; cursor: pointer; font-size: 0.7rem; line-height: 1; flex-shrink: 0; color: #888; font-family: inherit;`;
 
-            let html = `<div style="margin-bottom: 0.15rem;">`;
-            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">${categoryName}</div>`;
+            let html = `<div style="margin-bottom: 0.08rem;">`;
+            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 12px; margin-bottom: 0.02rem;">${categoryName}</div>`;
 
             const renderMeds = (meds, routeType) => {
                 const visibleMeds = meds.filter((med, idx) => {
@@ -9644,8 +9644,14 @@ else {
                 });
                 if (visibleMeds.length === 0) return '';
 
-                let s = `<div style="margin-left: 0.5rem; margin-bottom: 0.08rem;">`;
-                s += `<div style="color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.02rem;">${routeType === 'iv' ? 'IV' : 'PO / Other'}</div>`;
+                const label = routeType === 'iv' ? 'IV' : 'PO / Other';
+                const labelColor = routeType === 'iv' ? '#38bdf8' : '#86efac';
+                let s = `<div style="margin-left: 0.3rem; margin-bottom: 0.04rem;">`;
+                s += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.02rem;">`;
+                s += `<span style="flex:1;border-top:1px solid ${labelColor}44;"></span>`;
+                s += `<span style="color:${labelColor};font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${label}</span>`;
+                s += `<span style="flex:1;border-top:1px solid ${labelColor}44;"></span>`;
+                s += `</div>`;
 
                 meds.forEach((med, idx) => {
                     const medId = `med_${categoryName.replace(/\s+/g, '_')}_${routeType}_${idx}`;
@@ -9668,7 +9674,7 @@ else {
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
 
-                    s += `<div style="color:#fff; font-family:'Segoe UI',Arial,sans-serif; font-weight:normal; padding:0; margin-bottom:0.02rem; display:flex; align-items:center; justify-content:space-between; line-height:1.15;">`;
+                    s += `<div style="color:#fff; font-family:'Segoe UI',Arial,sans-serif; font-weight:normal; padding:0; margin-bottom:0; display:flex; align-items:center; justify-content:space-between; line-height:1.05;">`;
                     s += `<span>${tags ? tags + ' ' : ''}${baseText}${prnTag}</span>`;
                     s += `<div style="display:flex;gap:4px;">`;
                     s += `<button type="button" onclick="editMedication(event,'${medId}','${routeType}',${idx},'${categoryName.replace(/'/g, "\\'")}','${escapedText}','${medRoute}',${medIsPRN})" class="med-edit-btn" style="${btnStyle}" title="Edit">Edit</button>`;
@@ -9682,7 +9688,7 @@ else {
 
             html += renderMeds(poMeds, 'po');
             html += renderMeds(ivMeds, 'iv');
-            html += `<div style="border-bottom:1px solid #333;margin-top:0.08rem;"></div>`;
+            html += `<div style="border-bottom:1px solid #2a2a2a;margin-top:0.04rem;"></div>`;
             html += `</div>`;
             return html;
         }
@@ -9826,7 +9832,7 @@ tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
                     ? '<span style="color:#34d399;font-size:0.65rem;margin-right:4px;">[ordered]</span>'
                     : '<span style="color:#fbbf24;font-size:0.65rem;margin-right:4px;">[not ordered]</span>';
                 const homeColor = homeOrdered ? '#FFFFFF' : '#fbbf24'
-                tableHTML += `<div style="color: ${homeColor}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0.02rem; display: flex; align-items: center; justify-content: space-between; line-height: 1.1;">`;
+                tableHTML += `<div style="color: ${homeColor}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; line-height: 1.05;">`;
                 tableHTML += `<span title="${homeOrdered ? 'Ordered inpatient' : 'NOT yet ordered inpatient — consider restarting'}">${homeTag}${displayLine}</span>`;
                 tableHTML += `<div style="display: flex; gap: 4px;">`;
                 tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
