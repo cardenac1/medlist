@@ -5085,7 +5085,7 @@ function displayRows(data = patientData) {
             flex-direction: row;
             border-bottom: 1px solid rgba(60,60,67,0.28);
             border-radius: 0;
-            background: rgba(28,28,30,0.92);
+            background: rgba(0,0,0,0.92);
             margin-bottom: 0;
             cursor: pointer;
             font-size: 0.82rem;
@@ -5188,10 +5188,10 @@ function displayRows(data = patientData) {
 
         // ── Hover / click ─────────────────────────────────────────
         listItem.onmouseenter = () => {
-            listItem.style.background = 'rgba(58,58,60,0.85)';
+            listItem.style.background = 'rgba(30,30,30,0.95)';
         };
         listItem.onmouseleave = () => {
-            listItem.style.background = 'rgba(28,28,30,0.92)';
+            listItem.style.background = 'rgba(0,0,0,0.92)';
         };
         listItem.onclick = (e) => {
             if (!e.target.closest('button') && e.target !== accentBar) showDetails(index);
