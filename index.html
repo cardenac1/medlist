@@ -152,6 +152,10 @@
             width: 32px;
             height: 32px;
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
         }
         .ios-ctrl-wrap .ios-icon-btn {
             position: absolute;
@@ -159,6 +163,9 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .ios-select-overlay {
             position: absolute;
@@ -1106,7 +1113,7 @@ const VIOLIN_DASHBOARD_CSS = `
     min-height: 100%;
 }
 .dashboard-card {
-    background: #1c1c1e;
+    background: #000000;
     border: 0.5px solid rgba(84,84,88,0.5);
     border-radius: 12px;
     overflow: hidden;
@@ -1120,8 +1127,8 @@ const VIOLIN_DASHBOARD_CSS = `
     align-items: center;
     gap: 0.5rem;
     padding: 0.55rem 0.85rem;
-    background: #2c2c2e;
-    border-bottom: 0.5px solid rgba(84,84,88,0.5);
+    background: #0d0d0d;
+    border-bottom: 0.5px solid rgba(84,84,88,0.4);
     cursor: pointer;
     user-select: none;
 }
@@ -1137,10 +1144,11 @@ const VIOLIN_DASHBOARD_CSS = `
     flex: 1;
 }
 .dashboard-card-body {
-    padding: 0.75rem 0.85rem;
+    padding: 0.65rem 0.85rem;
+    background: #000000;
 }
 .patient-header-card {
-    background: #1c1c1e;
+    background: #000000;
     border: 0.5px solid rgba(84,84,88,0.5);
     border-radius: 12px;
     padding: 0.85rem;
@@ -1199,9 +1207,9 @@ const VIOLIN_DASHBOARD_CSS = `
     border-radius: 1rem 1rem 0 0;
 }
 .chartcheck-section {
-    background: rgba(10, 10, 10, 0.7);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 1rem;
+    background: #000000;
+    border: 0.5px solid rgba(84,84,88,0.5);
+    border-radius: 12px;
     overflow: hidden;
 }
 .chartcheck-section.violin-section {
@@ -1211,29 +1219,30 @@ const VIOLIN_DASHBOARD_CSS = `
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.65rem 0.85rem;
-    background: rgba(255,255,255,0.03);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0.55rem 0.85rem;
+    background: #0d0d0d;
+    border-bottom: 0.5px solid rgba(84,84,88,0.4);
 }
 .chartcheck-section-header .section-title {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #94a3b8;
+    color: #8E8E93;
     flex: 1;
 }
 .chartcheck-section-body {
-    padding: 0.75rem 0.85rem;
+    padding: 0.65rem 0.85rem;
+    background: #000000;
 }
 .progress-ring-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 1rem;
-    background: rgba(10, 10, 10, 0.7);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 1rem;
+    background: #000000;
+    border: 0.5px solid rgba(84,84,88,0.5);
+    border-radius: 12px;
 }
 .progress-ring-label {
     margin-top: 0.5rem;
@@ -4279,9 +4288,49 @@ const helpContent = {
                 listEl.appendChild(el);
             });
 
-            // Pending tasks
-            pending.forEach(item => {
-                listEl.appendChild(buildTaskElement(item, parsed, container, patient));
+            // Pending tasks — drag to reorder
+            let _dragSrcIdx = null;
+            pending.forEach((item, pendingIdx) => {
+                const el = buildTaskElement(item, parsed, container, patient);
+                el.draggable = true;
+                el.style.cursor = 'grab';
+                const dragHandle = document.createElement('span');
+                dragHandle.textContent = '⠿';
+                dragHandle.style.cssText = 'color:#3a3a3c;font-size:0.85rem;padding-right:4px;flex-shrink:0;cursor:grab;touch-action:none;';
+                dragHandle.title = 'Drag to reorder';
+                el.insertBefore(dragHandle, el.firstChild);
+                el.addEventListener('dragstart', (e) => {
+                    _dragSrcIdx = pendingIdx;
+                    e.dataTransfer.effectAllowed = 'move';
+                    el.style.opacity = '0.4';
+                });
+                el.addEventListener('dragend', () => { el.style.opacity = ''; });
+                el.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    el.style.borderTop = '2px solid #60a5fa';
+                });
+                el.addEventListener('dragleave', () => { el.style.borderTop = ''; });
+                el.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    el.style.borderTop = '';
+                    if (_dragSrcIdx === null || _dragSrcIdx === pendingIdx) return;
+                    // Reorder within parsed.tasks (only pending)
+                    const allPending = parsed.tasks.filter(t => t.type === 'task' && !t.done);
+                    const moved = allPending.splice(_dragSrcIdx, 1)[0];
+                    allPending.splice(pendingIdx, 0, moved);
+                    // Rebuild parsed.tasks: plains + reordered pending + done
+                    const pl = parsed.tasks.filter(t => t.type === 'plain');
+                    const dn = parsed.tasks.filter(t => t.type === 'task' && t.done);
+                    parsed.tasks.length = 0;
+                    pl.forEach(x => parsed.tasks.push(x));
+                    allPending.forEach(x => parsed.tasks.push(x));
+                    dn.forEach(x => parsed.tasks.push(x));
+                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                    saveToLocalStorage();
+                    renderTodoList(container, patient);
+                });
+                listEl.appendChild(el);
             });
 
             // Completed tasks
@@ -5211,52 +5260,76 @@ function displayRows(data = patientData) {
             cardBody.appendChild(nameEl);
         }
 
-        // Room · MRN subtitle
+        // Room · MRN subtitle — each colored distinctly
         if (room || mrn) {
-            const subEl = document.createElement('span');
-            const parts = [];
-            if (room) parts.push(room);
-            if (mrn)  parts.push(`MRN ${mrn}`);
-            subEl.style.cssText = `font-size: 0.82rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.01em;`;
-            subEl.textContent = parts.join('  ·  ');
+            const subEl = document.createElement('div');
+            subEl.style.cssText = `display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; min-width: 0;`;
+            if (room) {
+                const rmEl = document.createElement('span');
+                rmEl.style.cssText = `font-size: 0.8rem; color: #60a5fa; font-weight: 600; letter-spacing: 0.01em; flex-shrink: 0;`;
+                rmEl.textContent = room;
+                subEl.appendChild(rmEl);
+            }
+            if (room && mrn) {
+                const dot = document.createElement('span');
+                dot.style.cssText = `color: #3a3a3c; font-size: 0.75rem; flex-shrink: 0;`;
+                dot.textContent = '·';
+                subEl.appendChild(dot);
+            }
+            if (mrn) {
+                const mrnEl = document.createElement('span');
+                mrnEl.style.cssText = `font-size: 0.8rem; color: #ff9f0a; font-weight: 500; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+                mrnEl.textContent = `MRN ${mrn}`;
+                subEl.appendChild(mrnEl);
+            }
             cardBody.appendChild(subEl);
         }
 
-        // Todo row — first pending task with mini checkbox + remaining count badge
+        // Todo row — inline tasks with checkboxes, as many as fit, +N badge in red
         if ((patient['To do'] || '').trim()) {
             const _parsed = parseTodoText(patient['To do'] || '');
             const _pending = _parsed.tasks.filter(t => t.type === 'task' && !t.done);
             const _allTasks = _parsed.tasks.filter(t => t.type === 'task');
             if (_allTasks.length > 0) {
                 const todoRow = document.createElement('div');
-                todoRow.style.cssText = `display: flex; align-items: center; gap: 5px; overflow: hidden; min-width: 0;`;
+                todoRow.style.cssText = `display: flex; align-items: center; gap: 4px; overflow: hidden; min-width: 0; flex-wrap: nowrap;`;
                 if (_pending.length > 0) {
-                    const _first = _pending[0];
-                    const _cb = document.createElement('div');
-                    _cb.className = 'todo-checkbox';
-                    _cb.style.cssText = `width: 13px; height: 13px; min-width: 13px; flex-shrink: 0;`;
-                    _cb.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        _first.done = true;
-                        patient['To do'] = serializeTodoItems(_parsed.tasks, _parsed.suggestions);
-                        saveToLocalStorage();
-                        updatePriorityLightFromTodos(patient);
-                        displayRows();
+                    // Show up to 3 pending tasks inline
+                    const _show = _pending.slice(0, 3);
+                    const _extra = _pending.length - _show.length;
+                    _show.forEach((_task, _i) => {
+                        if (_i > 0) {
+                            const _sep = document.createElement('span');
+                            _sep.style.cssText = `color: #3a3a3c; font-size: 0.7rem; flex-shrink: 0;`;
+                            _sep.textContent = '·';
+                            todoRow.appendChild(_sep);
+                        }
+                        const _cb = document.createElement('div');
+                        _cb.className = 'todo-checkbox';
+                        _cb.style.cssText = `width: 12px; height: 12px; min-width: 12px; flex-shrink: 0;`;
+                        _cb.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            _task.done = true;
+                            patient['To do'] = serializeTodoItems(_parsed.tasks, _parsed.suggestions);
+                            saveToLocalStorage();
+                            updatePriorityLightFromTodos(patient);
+                            displayRows();
+                        });
+                        const _txt = document.createElement('span');
+                        _txt.style.cssText = `font-size: 0.76rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 20px; flex-shrink: 1;`;
+                        _txt.textContent = _task.text;
+                        todoRow.appendChild(_cb);
+                        todoRow.appendChild(_txt);
                     });
-                    const _txt = document.createElement('span');
-                    _txt.style.cssText = `font-size: 0.79rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;`;
-                    _txt.textContent = _first.text;
-                    todoRow.appendChild(_cb);
-                    todoRow.appendChild(_txt);
-                    if (_pending.length > 1) {
+                    if (_extra > 0) {
                         const _badge = document.createElement('span');
-                        _badge.style.cssText = `font-size: 0.68rem; color: #636366; white-space: nowrap; flex-shrink: 0; background: #1c1c1e; padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08);`;
-                        _badge.textContent = `+${_pending.length - 1}`;
+                        _badge.style.cssText = `font-size: 0.67rem; color: #ff3b30; white-space: nowrap; flex-shrink: 0; background: rgba(255,59,48,0.12); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(255,59,48,0.25); font-weight: 600;`;
+                        _badge.textContent = `+${_extra}`;
                         todoRow.appendChild(_badge);
                     }
                 } else {
                     const _done = document.createElement('span');
-                    _done.style.cssText = `font-size: 0.79rem; color: #30d158; white-space: nowrap;`;
+                    _done.style.cssText = `font-size: 0.76rem; color: #30d158; white-space: nowrap;`;
                     _done.textContent = '✓ All done';
                     todoRow.appendChild(_done);
                 }
@@ -7876,13 +7949,13 @@ saveToLocalStorage();
 
             // ── TABLE HTML ───────────────────────────────────────────────────────
             var tableHTML = '<style>' +
-                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}' +
-                '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;}' +
-                '.uni-tbl th{background:#1e293b;color:#94a3b8;font-size:0.8rem;padding:3px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#1e293b;}' +
-                '.uni-tbl td:first-child{color:#cbd5e1;font-size:0.75rem;font-weight:600;padding:2px 5px;position:-webkit-sticky;position:sticky;left:0;background:#0a0a14;z-index:1;border-right:1px solid #1e293b;vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
+                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
+                '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
+                '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 5px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
-                '.uni-tbl tr:hover td:first-child{background:#0f0f1e;}' +
+                '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
                 '</style><div class="uni-tbl"><table><tr><th>Parameter / Total</th>';
             for (var _ci = 0; _ci < maxMainCols; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
             if (has24hrTotal) tableHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.75rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;" title="Previous 24h: yesterday 7AM \u2192 today 7AM">Prev\u00a024h</th>';
@@ -9766,10 +9839,9 @@ else {
                 if (visibleMeds.length === 0) return '';
 
                 const label = routeType === 'iv' ? 'IV' : 'PO / Other';
-                const labelColor = routeType === 'iv' ? '#38bdf8' : '#86efac';
+                const labelColor = routeType === 'iv' ? '#ff453a' : '#30d158';
                 let s = `<div style="margin-left: 0.3rem; margin-bottom: 0.04rem;">`;
-                s += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.02rem;">`;
-                s += `<span style="flex:1;border-top:1px solid ${labelColor}44;"></span>`;
+                s += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:0.02rem;justify-content:flex-start;">`;
                 s += `<span style="color:${labelColor};font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${label}</span>`;
                 s += `<span style="flex:1;border-top:1px solid ${labelColor}44;"></span>`;
                 s += `</div>`;
@@ -9815,7 +9887,7 @@ else {
         }
 
         // Build table HTML with toggle buttons
-        let tableHTML = '<div style="background: var(--card-bg); padding: 0.6rem; border-radius: 0.5rem; border: 1px solid var(--primary);">';
+        let tableHTML = '<div style="background: #000000; padding: 0.6rem; border-radius: 12px; border: 0.5px solid rgba(84,84,88,0.5);">';
         tableHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">';
         tableHTML += '<strong style="color: var(--primary); font-size: 16px;">Full Orders List</strong>';
 
@@ -17357,7 +17429,7 @@ function showIOHourlyPopup(label, entries, color) {
         const statusEl = document.getElementById('syncStatus');
         if (!btn) return;
         if (currentUser) {
-            btn.textContent = '👤 ' + (currentUser.email.split('@')[0]);
+            btn.textContent = '👤';
             btn.title = currentUser.email + ' — click to log out';
             if (syncBtn) syncBtn.style.display = '';
             if (forcePushBtn) forcePushBtn.style.display = '';
