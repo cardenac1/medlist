@@ -95,14 +95,7 @@
             box-shadow: none;
         }
 
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
+        /* header-content layout defined below with .header-left/.header-right */
 
         .census {
             font-size: 0.7rem;
@@ -124,11 +117,84 @@
             line-height: 1;
         }
 
+        /* Header layout: census left, icons right */
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-shrink: 0;
+        }
+
+        /* iOS circular icon buttons */
+        .ios-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: #60a5fa;
+            font-size: 1.05rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.14s;
+            flex-shrink: 0;
+            line-height: 1;
+            padding: 0;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        .ios-icon-btn:hover  { background: rgba(255,255,255,0.16); }
+        .ios-icon-btn:active { background: rgba(255,255,255,0.24); }
+        .ios-icon-btn.active-search { background: rgba(96,165,250,0.25); color: #93c5fd; }
+
+        /* Wrapper for overlaying a native select on an icon button */
+        .ios-ctrl-wrap {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+        .ios-ctrl-wrap .ios-icon-btn {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .ios-select-overlay {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            font-size: 16px;
+            border: none;
+            background: transparent;
+        }
+
         /* Container */
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0.75rem 1rem 2rem 1rem;
+            padding: 0.4rem 0 2rem 0;
         }
 
         /* File Input */
@@ -415,8 +481,11 @@ const VIOLIN_DASHBOARD_CSS = `
 
         /* Controls */
 .controls-wrap {
-    margin-bottom: 0.5rem;
-    width: 100%;
+    display: none;
+    height: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 .controls {
     display: flex;
@@ -586,30 +655,53 @@ const VIOLIN_DASHBOARD_CSS = `
         .sync-status.spinning { animation: spinIcon 1s linear infinite; display: inline-block; }
         @keyframes spinIcon { to { transform: rotate(360deg); } }
         #authBtn {
-            background: rgba(59,130,246,0.15);
-            border: 1px solid rgba(59,130,246,0.4);
+            background: rgba(255,255,255,0.08);
+            border: none;
             color: #60a5fa;
-            padding: 0.3rem 0.75rem;
-            border-radius: 0.5rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: background 0.2s;
-            white-space: nowrap;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.14s;
+            padding: 0;
+            flex-shrink: 0;
         }
-        #authBtn:hover { background: rgba(59,130,246,0.3); }
+        #authBtn:hover { background: rgba(255,255,255,0.16); }
         #manualSyncBtn {
-            background: rgba(16,185,129,0.15);
-            border: 1px solid rgba(16,185,129,0.4);
+            background: rgba(255,255,255,0.08);
+            border: none;
             color: #6ee7b7;
-            padding: 0.3rem 0.75rem;
-            border-radius: 0.5rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 0.9rem;
             display: none;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.14s;
+            padding: 0;
+            flex-shrink: 0;
         }
-        #manualSyncBtn:hover { background: rgba(16,185,129,0.3); }
+        #manualSyncBtn:hover { background: rgba(255,255,255,0.16); }
+        #forcePushBtn {
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: #f59e0b;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+        }
         .auth-modal-box {
             background: #0d0d0d;
             border: 1px solid rgba(255,255,255,0.1);
@@ -3287,32 +3379,42 @@ async function testOCRAvailability() {
 
 	
 <body>
-    <!-- Header with Census -->
+    <!-- Header with Census + iOS icon actions -->
     <div class="header">
         <div class="header-content">
-            <div class="census">
-                Census: <span class="census-number" id="censusCount">0</span>
+            <div class="header-left">
+                <div class="census">
+                    Census: <span class="census-number" id="censusCount">0</span>
+                </div>
+                <span id="syncStatus" class="sync-status" title="Sync status"></span>
             </div>
-            <span id="syncStatus" class="sync-status" title="Sync status"></span>
-            <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑ Sync</button>
-            <button id="forcePushBtn" onclick="forcePushToCloud()" title="Force push: replace cloud with local data" style="display:none;">⇑ Force Push</button>
-            <button id="authBtn" onclick="openAuthModal()">☁ Login</button>
+            <div class="header-right">
+                <!-- Import: + icon triggers hidden file input -->
+                <button class="ios-icon-btn" onclick="document.getElementById('fileInput').click()" title="Import JSON/CSV">＋</button>
+                <!-- Sort/Filter: transparent select overlaid on icon -->
+                <div class="ios-ctrl-wrap" title="Sort by column">
+                    <button class="ios-icon-btn" tabindex="-1" aria-hidden="true">≡</button>
+                    <select id="columnSelect" onchange="sortRows()" class="ios-select-overlay">
+                        <option value="">Sort by…</option>
+                    </select>
+                </div>
+                <!-- Search -->
+                <button class="ios-icon-btn" id="searchToggleBtn" onclick="toggleSearch()" title="Search patients">⌕</button>
+                <!-- Export -->
+                <button class="ios-icon-btn" id="exportButtonMain" onclick="exportData()" title="Export data">⬆</button>
+                <!-- Sync / Auth (existing, kept small) -->
+                <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑</button>
+                <button id="forcePushBtn" onclick="forcePushToCloud()" title="Force push" style="display:none;">⇑</button>
+                <button id="authBtn" onclick="openAuthModal()">☁</button>
+            </div>
         </div>
     </div>
 
     <div class="container">
-        <!-- Controls -->
-        <div class="controls-wrap">
+        <!-- Controls bar kept in DOM for JS compatibility, visually hidden -->
+        <div class="controls-wrap" style="display:none; height:0; overflow:hidden; margin:0; padding:0;">
             <div class="controls" id="controlsBar">
-                <div class="file-input-wrapper toolbar-import">
-                    <input type="file" id="fileInput" accept=".json,.csv">
-                    <label for="fileInput" class="file-input-label">Import</label>
-                </div>
-                <select id="columnSelect" onchange="sortRows()">
-                    <option value="">Sort by</option>
-                </select>
-                <button onclick="toggleSearch()">Search</button>
-                <button id="exportButtonMain" onclick="exportData()">Export</button>
+                <input type="file" id="fileInput" accept=".json,.csv" style="display:none;">
             </div>
         </div>
 
@@ -5457,13 +5559,15 @@ function displayRows(data = patientData) {
         function toggleSearch() {
             const searchContainer = document.getElementById('searchContainer');
             const searchWrapper = document.querySelector('.search-wrapper');
-            
+            const btn = document.getElementById('searchToggleBtn');
             searchContainer.classList.toggle('active');
             if (searchContainer.classList.contains('active')) {
                 searchWrapper.classList.add('expanded');
                 document.getElementById('searchInput').focus();
+                if (btn) btn.classList.add('active-search');
             } else {
                 searchWrapper.classList.remove('expanded');
+                if (btn) btn.classList.remove('active-search');
             }
         }
 
