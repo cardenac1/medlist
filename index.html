@@ -464,8 +464,7 @@ const VIOLIN_DASHBOARD_CSS = `
 .toolbar-import {
     flex: 1 1 0;
     display: flex;
-    height: 26px;
-    box-sizing: border-box;
+    align-items: center;
 }
 /* Individual button colors */
 .controls .toolbar-import .file-input-label { background: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
@@ -5098,7 +5097,7 @@ function displayRows(data = patientData) {
         const cardMain = document.createElement('div');
         cardMain.style.cssText = `
             display: flex; align-items: center; gap: 0.3rem;
-            padding: 0.07rem 0.35rem 0.07rem 0.45rem; min-width: 0;
+            padding: 0.28rem 0.35rem 0.07rem 0.45rem; min-width: 0;
         `;
 
         // Identity cluster — plain div (name + badges, not clickable)
