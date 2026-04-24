@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient List — Redesign Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #080809;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #e8e8ea;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  .app-header {
+    background: rgba(10,10,12,0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(20px);
+  }
+  .app-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #ffffff;
+  }
+  .census-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.06);
+    color: #888;
+    padding: 0.18rem 0.55rem;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .header-spacer { flex: 1; }
+  .header-label {
+    font-size: 0.68rem;
+    color: #444;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Column headers ── */
+  .col-headers {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.6rem 0.35rem 1rem;
+    gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .col-h {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #3a3a45;
+  }
+  .col-h-room  { width: 68px; flex-shrink: 0; }
+  .col-h-name  { flex: 1; }
+  .col-h-mrn   { width: 110px; flex-shrink: 0; }
+  .col-h-tasks { flex: 1.2; }
+  .col-h-copy  { width: 44px; flex-shrink: 0; text-align: right; }
+
+  /* ── Patient row ── */
+  .patient-list {
+    list-style: none;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.055);
+    background: #0a0a0c;
+    cursor: pointer;
+    transition: background 100ms ease;
+    overflow: hidden;
+  }
+  .row:hover {
+    background: #111114;
+  }
+  .row:hover .accent {
+    box-shadow: inset 4px 0 14px var(--pc);
+  }
+
+  /* priority glow on hover via --pc */
+  .row { --pc: transparent; }
+
+  /* left accent bar */
+  .accent {
+    width: 4px;
+    flex-shrink: 0;
+    align-self: stretch;
+    background: var(--ac, #000);
+    transition: width 140ms ease, box-shadow 140ms ease;
+  }
+  .row:hover .accent { width: 5px; }
+
+  /* inner content */
+  .row-inner {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 0;
+    padding: 0.5rem 0.6rem 0.5rem 0.55rem;
+    min-width: 0;
+  }
+
+  /* room pill */
+  .room-pill {
+    width: 68px;
+    flex-shrink: 0;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 100px;
+    padding: 0.08rem 0.44rem;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .pill-room {
+    background: rgba(0,200,255,0.13);
+    color: #00C8FF;
+  }
+  .pill-mrn {
+    background: rgba(186,255,0,0.12);
+    color: #BAFF00;
+  }
+
+  /* patient name */
+  .pt-name {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 0.5rem;
+  }
+
+  /* mrn col */
+  .mrn-col {
+    width: 110px;
+    flex-shrink: 0;
+  }
+
+  /* tasks */
+  .tasks-col {
+    flex: 1.2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.55rem;
+    align-items: center;
+    min-width: 0;
+    padding-right: 0.5rem;
+  }
+  .task-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    cursor: pointer;
+  }
+  .cb {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    border: 1.5px solid #3a3a50;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.12s;
+  }
+  .cb.done {
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+  .cb.done::after {
+    content: '';
+    width: 3px;
+    height: 6px;
+    border: solid #000;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+    margin-bottom: 1px;
+  }
+  .task-text {
+    font-size: 0.8rem;
+    color: #b0b0b8;
+    white-space: nowrap;
+  }
+  .task-text.done {
+    color: #505058;
+    text-decoration: line-through;
+  }
+  .more-chip {
+    font-size: 0.68rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #404050;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 100px;
+    padding: 0.06rem 0.4rem;
+    white-space: nowrap;
+  }
+
+  /* copy btn */
+  .copy-col {
+    width: 44px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .copy-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.28rem 0.5rem;
+    cursor: pointer;
+    color: #636366;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+  }
+  .copy-btn:hover {
+    color: #23CC72;
+    border-color: rgba(35,204,114,0.35);
+  }
+
+  /* priority color map */
+  .p-critical  { --ac: #FF1111; --pc: rgba(255,17,17,0.25); }
+  .p-high      { --ac: #8B0000; --pc: rgba(139,0,0,0.25); }
+  .p-medium    { --ac: #FF8800; --pc: rgba(255,136,0,0.25); }
+  .p-medlow    { --ac: #FFD700; --pc: rgba(255,215,0,0.25); }
+  .p-low       { --ac: #9333EA; --pc: rgba(147,51,234,0.25); }
+  .p-verylow   { --ac: #3B82F6; --pc: rgba(59,130,246,0.25); }
+  .p-complete  { --ac: #23CC72; --pc: rgba(35,204,114,0.25); }
+  .p-none      { --ac: #000000; --pc: transparent; }
+
+  /* ── Label banner ── */
+  .preview-label {
+    text-align: center;
+    padding: 2rem 1rem 0.75rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #2a2a38;
+    font-weight: 600;
+  }
+
+  /* ── Side-by-side comparison wrapper ── */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+  .pane {
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .pane:last-child { border-right: none; }
+  .pane-label {
+    padding: 0.55rem 1rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #2a2a38;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pane-label span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .dot-old { background: #444; }
+  .dot-new { background: #23CC72; }
+
+  /* ── OLD LAYOUT (current) ── */
+  .old-row {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid rgba(100,100,110,0.5);
+    background: rgba(0,0,0,0.92);
+    cursor: pointer;
+    overflow: hidden;
+    transition: background 100ms;
+    min-height: 52px;
+  }
+  .old-row:hover { background: rgba(30,30,30,0.95); }
+  .old-accent {
+    width: 5px;
+    flex-shrink: 0;
+    background: var(--ac, #000);
+  }
+  .old-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-width: 0;
+  }
+  .old-cardmain {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.4rem 0.1rem 0.5rem;
+  }
+  .old-identity {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .old-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .old-badges {
+    display: flex;
+    gap: 0.18rem;
+    flex-wrap: wrap;
+  }
+  .old-pill {
+    display: inline-flex;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 100px;
+    padding: 0.07rem 0.42rem;
+    white-space: nowrap;
+  }
+  .old-pill-room { background: rgba(0,200,255,0.14); color: #00C8FF; }
+  .old-pill-mrn  { background: rgba(186,255,0,0.13); color: #BAFF00; }
+  .old-copybtn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.28rem 0.5rem;
+    cursor: pointer;
+    color: #636366;
+    font-size: 0.9rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .old-todos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.5rem;
+    padding: 0.12rem 0.5rem 0.3rem 0.5rem;
+    border-top: 1px solid rgba(60,60,67,0.2);
+  }
+  .old-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0;
+  }
+  .old-task-text { font-size: 0.84rem; color: #b0b0b8; }
+  .old-task-text.done { color: #606068; text-decoration: line-through; }
+
+  /* scrollable wrapper */
+  .scroll-pane {
+    overflow-y: auto;
+    max-height: 82vh;
+  }
+
+  /* ── Redesign only full-width showcase ── */
+  .full-showcase {
+    max-width: 900px;
+    margin: 1.5rem auto 0;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .showcase-header {
+    padding: 0.7rem 1rem;
+    background: rgba(255,255,255,0.025);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #2a2a38;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">MedList</div>
+  <div class="census-badge">8 pts</div>
+  <div class="header-spacer"></div>
+  <div class="header-label">Redesign Preview</div>
+</div>
+
+<div class="preview-label">Side-by-side comparison</div>
+
+<div class="comparison">
+  <!-- OLD -->
+  <div class="pane">
+    <div class="pane-label"><span class="dot-old"></span> Current layout</div>
+    <div class="scroll-pane">
+      <ul class="patient-list">
+
+        <!-- Row 1 -->
+        <li class="old-row p-critical">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">SMITH, JOHN THOMAS</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">302</span>
+                  <span class="old-pill old-pill-mrn">MRN 184920</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+            <div class="old-todos">
+              <span class="old-chip"><div class="cb"></div><span class="old-task-text">Cardiology consult</span></span>
+              <span class="old-chip"><div class="cb"></div><span class="old-task-text">CBC order</span></span>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 2 -->
+        <li class="old-row p-high">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">DOE, JANE</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">411</span>
+                  <span class="old-pill old-pill-mrn">MRN 293847</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+            <div class="old-todos">
+              <span class="old-chip"><div class="cb done"></div><span class="old-task-text done">Discharge note</span></span>
+              <span class="old-chip"><div class="cb"></div><span class="old-task-text">Family meeting</span></span>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 3 -->
+        <li class="old-row p-medium">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">PATEL, RAVI KUMAR</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">ICU2</span>
+                  <span class="old-pill old-pill-mrn">MRN 019283</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 4 -->
+        <li class="old-row p-low">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">CHEN, LINDA</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">208</span>
+                  <span class="old-pill old-pill-mrn">MRN 748201</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+            <div class="old-todos">
+              <span class="old-chip"><div class="cb"></div><span class="old-task-text">Renal function panel</span></span>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 5 -->
+        <li class="old-row p-complete">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">NGUYEN, PETER</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">315</span>
+                  <span class="old-pill old-pill-mrn">MRN 662910</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 6 -->
+        <li class="old-row p-medlow">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">GARCIA, MARIA</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">107</span>
+                  <span class="old-pill old-pill-mrn">MRN 330184</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+            <div class="old-todos">
+              <span class="old-chip"><div class="cb"></div><span class="old-task-text">Echo results review</span></span>
+              <span class="old-chip"><div class="cb done"></div><span class="old-task-text done">Vitals check</span></span>
+              <span class="old-chip"><div class="cb"></div><span class="old-task-text">PT consult</span></span>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 7 -->
+        <li class="old-row p-verylow">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">WILSON, ROBERT E.</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">220</span>
+                  <span class="old-pill old-pill-mrn">MRN 501739</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+            <div class="old-todos">
+              <span class="old-chip"><div class="cb done"></div><span class="old-task-text done">AM labs</span></span>
+            </div>
+          </div>
+        </li>
+
+        <!-- Row 8 -->
+        <li class="old-row p-none">
+          <div class="old-accent"></div>
+          <div class="old-body">
+            <div class="old-cardmain">
+              <div class="old-identity">
+                <span class="old-name">ADAMS, CAROL</span>
+                <div class="old-badges">
+                  <span class="old-pill old-pill-room">509</span>
+                  <span class="old-pill old-pill-mrn">MRN 192847</span>
+                </div>
+              </div>
+              <button class="old-copybtn">⧉</button>
+            </div>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+
+  <!-- NEW REDESIGN -->
+  <div class="pane">
+    <div class="pane-label"><span class="dot-new"></span> Redesign — Clinical Dense</div>
+    <div class="scroll-pane">
+      <div class="col-headers">
+        <div class="col-h col-h-room">Room</div>
+        <div class="col-h col-h-name">Patient</div>
+        <div class="col-h col-h-mrn">MRN</div>
+        <div class="col-h col-h-tasks">Tasks</div>
+        <div class="col-h col-h-copy"></div>
+      </div>
+      <ul class="patient-list">
+
+        <!-- Row 1 -->
+        <li class="row p-critical">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">302</span></div>
+            <div class="pt-name">SMITH, JOHN THOMAS</div>
+            <div class="mrn-col"><span class="pill pill-mrn">184920</span></div>
+            <div class="tasks-col">
+              <span class="task-chip"><div class="cb"></div><span class="task-text">Cardiology consult</span></span>
+              <span class="task-chip"><div class="cb"></div><span class="task-text">CBC order</span></span>
+            </div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 2 -->
+        <li class="row p-high">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">411</span></div>
+            <div class="pt-name">DOE, JANE</div>
+            <div class="mrn-col"><span class="pill pill-mrn">293847</span></div>
+            <div class="tasks-col">
+              <span class="task-chip"><div class="cb done"></div><span class="task-text done">Discharge note</span></span>
+              <span class="task-chip"><div class="cb"></div><span class="task-text">Family meeting</span></span>
+            </div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 3 - no tasks -->
+        <li class="row p-medium">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">ICU2</span></div>
+            <div class="pt-name">PATEL, RAVI KUMAR</div>
+            <div class="mrn-col"><span class="pill pill-mrn">019283</span></div>
+            <div class="tasks-col"></div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 4 -->
+        <li class="row p-low">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">208</span></div>
+            <div class="pt-name">CHEN, LINDA</div>
+            <div class="mrn-col"><span class="pill pill-mrn">748201</span></div>
+            <div class="tasks-col">
+              <span class="task-chip"><div class="cb"></div><span class="task-text">Renal function panel</span></span>
+            </div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 5 - complete, no tasks -->
+        <li class="row p-complete">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">315</span></div>
+            <div class="pt-name">NGUYEN, PETER</div>
+            <div class="mrn-col"><span class="pill pill-mrn">662910</span></div>
+            <div class="tasks-col"></div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 6 - many tasks, show +1 more -->
+        <li class="row p-medlow">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">107</span></div>
+            <div class="pt-name">GARCIA, MARIA</div>
+            <div class="mrn-col"><span class="pill pill-mrn">330184</span></div>
+            <div class="tasks-col">
+              <span class="task-chip"><div class="cb"></div><span class="task-text">Echo results</span></span>
+              <span class="task-chip"><div class="cb done"></div><span class="task-text done">Vitals</span></span>
+              <span class="more-chip">+1 more</span>
+            </div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 7 -->
+        <li class="row p-verylow">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">220</span></div>
+            <div class="pt-name">WILSON, ROBERT E.</div>
+            <div class="mrn-col"><span class="pill pill-mrn">501739</span></div>
+            <div class="tasks-col">
+              <span class="task-chip"><div class="cb done"></div><span class="task-text done">AM labs</span></span>
+            </div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+        <!-- Row 8 - no priority -->
+        <li class="row p-none">
+          <div class="accent"></div>
+          <div class="row-inner">
+            <div class="room-pill"><span class="pill pill-room">509</span></div>
+            <div class="pt-name">ADAMS, CAROL</div>
+            <div class="mrn-col"><span class="pill pill-mrn">192847</span></div>
+            <div class="tasks-col"></div>
+            <div class="copy-col"><button class="copy-btn">⧉</button></div>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
