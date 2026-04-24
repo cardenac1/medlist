@@ -2985,12 +2985,34 @@ select,
 		
 .row-item {
     position: relative;
-    transition: all 0.3s ease;
-    display: grid;
-    grid-template-columns: 1fr 8px;
-    min-height: 60px;
-    gap: 1rem;
+    transition: background 100ms ease, box-shadow 140ms ease;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 44px;
 }
+
+/* Column headers above the patient list */
+.list-col-headers {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.55rem 0.35rem calc(4px + 0.55rem);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    gap: 0;
+}
+.list-col-headers span {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #3a3a45;
+    flex-shrink: 0;
+}
+.lch-room  { width: 68px; }
+.lch-name  { flex: 1; }
+.lch-mrn   { width: 110px; }
+.lch-tasks { flex: 1.2; }
+.lch-copy  { width: 44px; }
 
 .row-item-content {
     grid-column: 1;
@@ -3336,6 +3358,13 @@ async function testOCRAvailability() {
         </div>
 
         <!-- Row List -->
+        <div class="list-col-headers">
+          <span class="lch-room">Room</span>
+          <span class="lch-name">Patient</span>
+          <span class="lch-mrn">MRN</span>
+          <span class="lch-tasks">Tasks</span>
+          <span class="lch-copy"></span>
+        </div>
         <ul class="row-list" id="rowList"></ul>
 
         <!-- Floating Action Button -->
@@ -5076,84 +5105,126 @@ function displayRows(data = patientData) {
         const patientName = patient['Name'] || patient['Pt Name'] || '';
         const room        = patient['RM']   || patient['Room']      || '';
         const mrn         = patient['MRN']  || '';
-        // ── Card ─────────────────────────────────────────────────
+
+        // Glow color for hover effect per priority
+        const glowMap = {
+            'priority-critical':   'rgba(255,17,17,0.2)',
+            'priority-high':       'rgba(139,0,0,0.28)',
+            'priority-medium':     'rgba(255,136,0,0.2)',
+            'priority-medium-low': 'rgba(255,215,0,0.18)',
+            'priority-low':        'rgba(147,51,234,0.2)',
+            'priority-very-low':   'rgba(59,130,246,0.2)',
+            'priority-complete':   'rgba(35,204,114,0.2)',
+            'priority-default':    'transparent',
+        };
+        const glowColor = glowMap[priorityClass] || 'transparent';
+
+        // ── Card ──────────────────────────────────────────────────
         const listItem = document.createElement('li');
         listItem.className = `row-item ${priorityClass}`;
         listItem.style.cssText = `
-            position: relative;
-            display: flex;
-            flex-direction: row;
             border-bottom: 1px solid rgba(100,100,110,0.5);
-            border-radius: 0;
             background: rgba(0,0,0,0.92);
-            margin-bottom: 0;
             cursor: pointer;
             font-size: 0.88rem;
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
-            transition: background 100ms ease;
             overflow: hidden;
         `;
 
         // Clickable accent bar (priority selector)
         const accentBar = document.createElement('div');
         const priorityName = getPriorityName(patient.Priority);
-        accentBar.style.cssText = `
-            width: 5px; flex-shrink: 0; background: ${color};
-            cursor: pointer; transition: width 140ms ease;
-        `;
+        accentBar.style.cssText = `width:4px;flex-shrink:0;align-self:stretch;background:${color};cursor:pointer;transition:width 140ms ease;`;
         accentBar.title = `Priority: ${priorityName} (Click to change)`;
         accentBar.onclick = (e) => {
             e.stopPropagation();
             showStatusSelector(patient, index, accentBar);
         };
-        accentBar.onmouseenter = () => { accentBar.style.width = '9px'; };
-        accentBar.onmouseleave = () => { accentBar.style.width = '5px'; };
+        accentBar.onmouseenter = () => { accentBar.style.width = '6px'; };
+        accentBar.onmouseleave = () => { accentBar.style.width = '4px'; };
         listItem.appendChild(accentBar);
 
-        // Card body (flex column)
-        const cardBody = document.createElement('div');
-        cardBody.style.cssText = `flex: 1; min-width: 0; display: flex; flex-direction: column;`;
+        // ── Single horizontal row ──────────────────────────────────
+        const rowInner = document.createElement('div');
+        rowInner.style.cssText = `display:flex;align-items:center;flex:1;padding:0.5rem 0.55rem;gap:0;min-width:0;`;
 
-        // ── Identity row ──────────────────────────────────────────
-        const cardMain = document.createElement('div');
-        cardMain.style.cssText = `
-            display: flex; align-items: center; gap: 0.4rem;
-            padding: 0.1rem 0.4rem 0.1rem 0.5rem; min-width: 0;
-        `;
-
-        // Identity cluster — plain div (name + badges, not clickable)
-        const identity = document.createElement('div');
-        identity.style.cssText = `
-            display: flex; flex-direction: column; align-items: flex-start;
-            gap: 0.1rem; flex: 1; min-width: 0;
-        `;
-
-        if (patientName) {
-            const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 600; font-size: 0.92rem; color: #ffffff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
-            nameEl.textContent = patientName;
-            identity.appendChild(nameEl);
-        }
-
-        const badge = (text, bg, fg) => {
+        const pill = (text, bg, fg) => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.07rem 0.42rem; border-radius: 100px; font-size: 0.72rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
+            el.style.cssText = `display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:600;border-radius:100px;padding:0.08rem 0.44rem;white-space:nowrap;letter-spacing:0.02em;background:${bg};color:${fg};`;
             el.textContent = text;
             return el;
         };
 
-        const badgeRow = document.createElement('div');
-        badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
-        if (room) badgeRow.appendChild(badge(room, 'rgba(0,200,255,0.14)',  '#00C8FF'));
-        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(186,255,0,0.13)',  '#BAFF00'));
-        if (room || mrn) identity.appendChild(badgeRow);
+        // Room pill (fixed 68px)
+        const roomCol = document.createElement('div');
+        roomCol.style.cssText = `width:68px;flex-shrink:0;`;
+        if (room) roomCol.appendChild(pill(room, 'rgba(0,200,255,0.14)', '#00C8FF'));
+        rowInner.appendChild(roomCol);
 
-        cardMain.appendChild(identity);
+        // Patient name (flex: 1)
+        const nameEl = document.createElement('div');
+        nameEl.style.cssText = `flex:1;font-size:0.9rem;font-weight:600;color:#ffffff;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:0.5rem;`;
+        nameEl.textContent = patientName;
+        rowInner.appendChild(nameEl);
 
-        // Small dedicated copy button
+        // MRN pill (fixed 110px)
+        const mrnCol = document.createElement('div');
+        mrnCol.style.cssText = `width:110px;flex-shrink:0;`;
+        if (mrn) mrnCol.appendChild(pill(mrn, 'rgba(186,255,0,0.13)', '#BAFF00'));
+        rowInner.appendChild(mrnCol);
+
+        // Tasks inline (flex: 1.2) — max 2 visible then "+N more"
+        const tasksCol = document.createElement('div');
+        tasksCol.style.cssText = `flex:1.2;display:flex;flex-wrap:wrap;gap:0.25rem 0.55rem;align-items:center;min-width:0;padding-right:0.5rem;`;
+
+        const renderRowTasks = () => {
+            tasksCol.innerHTML = '';
+            const parsed = parseTodoText(patient['To do'] || '');
+            const taskItems = parsed.tasks.filter(t => t.type === 'task');
+            const visible = taskItems.slice(0, 2);
+            const hiddenCount = taskItems.length - visible.length;
+
+            visible.forEach(item => {
+                const chip = document.createElement('span');
+                chip.style.cssText = `display:inline-flex;align-items:center;gap:0.28rem;cursor:pointer;`;
+
+                const cb = document.createElement('div');
+                cb.className = 'todo-checkbox' + (item.done ? ' checked' : '');
+                cb.style.cssText = 'width:14px;height:14px;min-width:14px;flex-shrink:0;';
+                cb.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    item.done = !item.done;
+                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                    saveToLocalStorage();
+                    renderRowTasks();
+                    updatePriorityLightFromTodos(patient);
+                });
+
+                const txt = document.createElement('span');
+                txt.style.cssText = `font-size:0.8rem;color:${item.done ? '#606068' : '#b0b0b8'};text-decoration:${item.done ? 'line-through' : 'none'};white-space:nowrap;`;
+                txt.textContent = item.text;
+
+                chip.appendChild(cb);
+                chip.appendChild(txt);
+                tasksCol.appendChild(chip);
+            });
+
+            if (hiddenCount > 0) {
+                const more = document.createElement('span');
+                more.style.cssText = `font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:#505060;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:100px;padding:0.06rem 0.42rem;white-space:nowrap;`;
+                more.textContent = `+${hiddenCount} more`;
+                tasksCol.appendChild(more);
+            }
+        };
+        renderRowTasks();
+        rowInner.appendChild(tasksCol);
+
+        // Copy button (fixed 44px, right-aligned)
+        const copyCol = document.createElement('div');
+        copyCol.style.cssText = `width:44px;flex-shrink:0;display:flex;justify-content:flex-end;`;
         const copyBtn = document.createElement('button');
-        copyBtn.style.cssText = `background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 0.28rem 0.5rem; cursor: pointer; color: #636366; flex-shrink: 0; font-size: 0.9rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
+        copyBtn.style.cssText = `background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.28rem 0.5rem;cursor:pointer;color:#636366;font-size:0.9rem;line-height:1;transition:color 0.15s,border-color 0.15s;`;
         copyBtn.title = 'Copy patient info';
         copyBtn.textContent = '⧉';
         copyBtn.onclick = (e) => {
@@ -5176,29 +5247,19 @@ function displayRows(data = patientData) {
                 document.body.removeChild(ta);
             });
         };
-        cardMain.appendChild(copyBtn);
-        cardBody.appendChild(cardMain);
+        copyCol.appendChild(copyBtn);
+        rowInner.appendChild(copyCol);
 
-        // ── Todos row — inline wrapping chips (only when present) ────
-        if ((patient['To do'] || '').trim()) {
-            const todosRow = document.createElement('div');
-            todosRow.style.cssText = `
-                display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
-                padding: 0.08rem 0.5rem 0.2rem 0.5rem;
-                border-top: 1px solid rgba(60,60,67,0.2);
-            `;
-            renderTodoInline(todosRow, patient);
-            cardBody.appendChild(todosRow);
-        }
-
-        listItem.appendChild(cardBody);
+        listItem.appendChild(rowInner);
 
         // ── Hover / click ─────────────────────────────────────────
         listItem.onmouseenter = () => {
-            listItem.style.background = 'rgba(30,30,30,0.95)';
+            listItem.style.background = 'rgba(17,17,20,0.95)';
+            if (glowColor !== 'transparent') listItem.style.boxShadow = `inset 4px 0 18px ${glowColor}`;
         };
         listItem.onmouseleave = () => {
             listItem.style.background = 'rgba(0,0,0,0.92)';
+            listItem.style.boxShadow = 'none';
         };
         listItem.onclick = (e) => {
             if (!e.target.closest('button') && e.target !== accentBar) showDetails(index);
