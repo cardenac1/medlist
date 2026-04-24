@@ -422,74 +422,46 @@ const VIOLIN_DASHBOARD_CSS = `
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0.25rem;
-    padding: 0.25rem;
-    background: rgba(10, 10, 10, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.5rem;
+    gap: 0.18rem;
+    padding: 0.18rem;
+    background: #252526;
+    border: 1px solid #3e3e42;
+    border-radius: 0.4rem;
     width: 100%;
     box-sizing: border-box;
 }
-.controls button {
+.controls button,
+.controls select,
+.toolbar-import .file-input-label {
     flex: 1 1 0;
-    font-size: 0.72rem !important;
-    padding: 0.45rem 0.3rem !important;
-    border-radius: 0.4rem !important;
+    font-size: 0.7rem !important;
+    padding: 0.32rem 0.2rem !important;
+    border-radius: 0.3rem !important;
     white-space: nowrap;
     min-width: 0;
     text-align: center;
-    background: rgba(255,255,255,0.07) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    color: #e2e8f0 !important;
+    background: #2d2d2d !important;
+    border: 1px solid #3e3e42 !important;
+    color: #c8c8c8 !important;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s, box-shadow 0.15s;
-}
-.controls button:hover {
-    background: rgba(255,255,255,0.13) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-.controls select {
-    flex: 1 1 0;
-    font-size: 0.72rem;
-    padding: 0.45rem 0.3rem;
-    border-radius: 0.4rem;
-    white-space: nowrap;
-    background: rgba(255,255,255,0.07);
-    color: #e2e8f0;
-    border: 1px solid rgba(255,255,255,0.12);
-    cursor: pointer;
-    min-width: 0;
-    text-align: center;
+    transition: background 0.12s;
+    box-shadow: none !important;
+    line-height: 1.4;
     appearance: none;
     -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.controls button:hover,
+.controls select:hover,
+.toolbar-import:hover .file-input-label {
+    background: #383838 !important;
 }
 .toolbar-import {
     flex: 1 1 0;
     display: flex;
-}
-.toolbar-import .file-input-label {
-    flex: 1;
-    padding: 0.45rem 0.3rem !important;
-    font-size: 0.72rem !important;
-    border-radius: 0.4rem !important;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background: rgba(255,255,255,0.07) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    color: #e2e8f0 !important;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s, box-shadow 0.15s;
-    box-shadow: none !important;
-}
-.toolbar-import:hover .file-input-label {
-    background: rgba(255,255,255,0.13) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
 }
 
 /* Navigation buttons */
@@ -2979,7 +2951,7 @@ select,
 .priority-low        { --priority-color: #9333EA; } /* Low – purple */
 .priority-very-low   { --priority-color: #3B82F6; } /* Very Low – blue */
 .priority-complete   { --priority-color: #23CC72; } /* Complete – green */
-.priority-default    { --priority-color: #000000; } /* No priority – black (matches background) */
+.priority-default    { --priority-color: #555555; } /* No priority – dark gray */
 
 
 		
@@ -4807,7 +4779,7 @@ function getChecklistStatus(patient, patientIndex) {
 	function getPriorityStatus(patient) {
     const priority = (patient.Priority || '').toString().trim().toLowerCase();
 
-    if (!priority) return { color: '#000000', title: 'No priority set' };
+    if (!priority) return { color: '#555555', title: 'No priority set' };
 
     const map = {
         'critical':   { color: '#FF1111', title: 'Critical – Evaluating a critical patient' },
@@ -4832,7 +4804,7 @@ function getChecklistStatus(patient, patientIndex) {
         return map['very-low'];
     }
 
-    return { color: '#000000', title: priority };
+    return { color: '#555555', title: priority };
 }
 		
 
@@ -4960,7 +4932,7 @@ function renderTodoInline(container, patient) {
     const items = parsed.tasks;
     if (!items.length) {
         const s = document.createElement('span');
-        s.style.cssText = 'font-size:0.82rem;color:#9090a0;';
+        s.style.cssText = 'font-size:0.75rem;color:#64748b;';
         s.textContent = value;
         container.appendChild(s);
         return;
@@ -4984,7 +4956,7 @@ function renderTodoInline(container, patient) {
         cb.addEventListener('click', (e) => { e.stopPropagation(); item.done = !item.done; refresh(); });
 
         const txt = document.createElement('span');
-        txt.style.cssText = `font-size:0.84rem;line-height:1.3;color:${item.done ? '#606068' : '#b0b0b8'};text-decoration:${item.done ? 'line-through' : 'none'};`;
+        txt.style.cssText = `font-size:0.78rem;line-height:1.3;color:${item.done ? '#4a4a4a' : '#858585'};text-decoration:${item.done ? 'line-through' : 'none'};`;
         txt.textContent = item.text;
 
         chip.appendChild(cb);
@@ -5083,14 +5055,12 @@ function displayRows(data = patientData) {
             position: relative;
             display: flex;
             flex-direction: row;
-            border-bottom: 1px solid rgba(100,100,110,0.5);
+            border-bottom: 1px solid #3e3e42;
             border-radius: 0;
-            background: rgba(0,0,0,0.92);
+            background: #1e1e1e;
             margin-bottom: 0;
             cursor: pointer;
-            font-size: 0.88rem;
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            font-size: 0.82rem;
             transition: background 100ms ease;
             overflow: hidden;
         `;
@@ -5131,29 +5101,29 @@ function displayRows(data = patientData) {
 
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 600; font-size: 0.92rem; color: #ffffff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
+            nameEl.style.cssText = `font-weight: 600; font-size: 0.84rem; color: #d4d4d4; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
             nameEl.textContent = patientName;
             identity.appendChild(nameEl);
         }
 
         const badge = (text, bg, fg) => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.07rem 0.42rem; border-radius: 100px; font-size: 0.72rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
+            el.style.cssText = `padding: 0.04rem 0.38rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
             el.textContent = text;
             return el;
         };
 
         const badgeRow = document.createElement('div');
         badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
-        if (room) badgeRow.appendChild(badge(room, 'rgba(0,200,255,0.14)',  '#00C8FF'));
-        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(186,255,0,0.13)',  '#BAFF00'));
+        if (room) badgeRow.appendChild(badge(room, 'rgba(86,156,214,0.15)', '#569cd6'));
+        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(181,206,168,0.13)', '#b5cea8'));
         if (room || mrn) identity.appendChild(badgeRow);
 
         cardMain.appendChild(identity);
 
         // Small dedicated copy button
         const copyBtn = document.createElement('button');
-        copyBtn.style.cssText = `background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 0.28rem 0.5rem; cursor: pointer; color: #636366; flex-shrink: 0; font-size: 0.9rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
+        copyBtn.style.cssText = `background: transparent; border: 1px solid #3e3e42; border-radius: 4px; padding: 0.05rem 0.14rem; cursor: pointer; color: #858585; flex-shrink: 0; font-size: 0.58rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
         copyBtn.title = 'Copy patient info';
         copyBtn.textContent = '⧉';
         copyBtn.onclick = (e) => {
@@ -5161,12 +5131,12 @@ function displayRows(data = patientData) {
             const textToCopy = [patientName, room, mrn].filter(Boolean).join('\n');
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyBtn.textContent = '✓';
-                copyBtn.style.color = '#23CC72';
-                copyBtn.style.borderColor = 'rgba(35,204,114,0.35)';
+                copyBtn.style.color = '#4ec994';
+                copyBtn.style.borderColor = '#3e5a42';
                 setTimeout(() => {
                     copyBtn.textContent = '⧉';
-                    copyBtn.style.color = '#636366';
-                    copyBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                    copyBtn.style.color = '#858585';
+                    copyBtn.style.borderColor = '#3e3e42';
                 }, 1200);
             }).catch(() => {
                 const ta = document.createElement('textarea');
@@ -5185,7 +5155,7 @@ function displayRows(data = patientData) {
             todosRow.style.cssText = `
                 display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
                 padding: 0.08rem 0.5rem 0.2rem 0.5rem;
-                border-top: 1px solid rgba(60,60,67,0.2);
+                border-top: 1px solid #3e3e42;
             `;
             renderTodoInline(todosRow, patient);
             cardBody.appendChild(todosRow);
@@ -5195,10 +5165,10 @@ function displayRows(data = patientData) {
 
         // ── Hover / click ─────────────────────────────────────────
         listItem.onmouseenter = () => {
-            listItem.style.background = 'rgba(30,30,30,0.95)';
+            listItem.style.background = '#252526';
         };
         listItem.onmouseleave = () => {
-            listItem.style.background = 'rgba(0,0,0,0.92)';
+            listItem.style.background = '#1e1e1e';
         };
         listItem.onclick = (e) => {
             if (!e.target.closest('button') && e.target !== accentBar) showDetails(index);
