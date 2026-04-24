@@ -435,7 +435,9 @@ const VIOLIN_DASHBOARD_CSS = `
 .toolbar-import .file-input-label {
     flex: 1 1 0;
     font-size: 0.7rem !important;
-    padding: 0.32rem 0.2rem !important;
+    padding: 0 0.2rem !important;
+    height: 26px !important;
+    box-sizing: border-box !important;
     border-radius: 0.3rem !important;
     white-space: nowrap;
     min-width: 0;
@@ -447,7 +449,7 @@ const VIOLIN_DASHBOARD_CSS = `
     cursor: pointer;
     transition: background 0.12s;
     box-shadow: none !important;
-    line-height: 1.4;
+    line-height: 26px !important;
     appearance: none;
     -webkit-appearance: none;
     display: flex;
@@ -462,6 +464,8 @@ const VIOLIN_DASHBOARD_CSS = `
 .toolbar-import {
     flex: 1 1 0;
     display: flex;
+    height: 26px;
+    box-sizing: border-box;
 }
 /* Individual button colors */
 .controls .toolbar-import .file-input-label { background: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
@@ -2965,7 +2969,6 @@ select,
     transition: all 0.3s ease;
     display: grid;
     grid-template-columns: 1fr 8px;
-    min-height: 60px;
     gap: 1rem;
 }
 
@@ -5060,10 +5063,11 @@ function displayRows(data = patientData) {
             position: relative;
             display: flex;
             flex-direction: row;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.13);
             border-radius: 0;
             background: #000000;
             margin-bottom: 0;
+            min-height: 0;
             cursor: pointer;
             font-size: 0.82rem;
             transition: background 100ms ease;
@@ -5111,17 +5115,17 @@ function displayRows(data = patientData) {
             identity.appendChild(nameEl);
         }
 
-        const badge = (text, bg, fg) => {
+        const badge = (text, borderColor, textColor, bgColor = 'transparent') => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.02rem 0.3rem; border-radius: 100px; font-size: 0.62rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: transparent; border: 1px solid ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
+            el.style.cssText = `padding: 0.02rem 0.3rem; border-radius: 100px; font-size: 0.62rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bgColor}; border: 1px solid ${borderColor}; color: ${textColor}; letter-spacing: 0.01em;`;
             el.textContent = text;
             return el;
         };
 
         const badgeRow = document.createElement('div');
         badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
-        if (room) badgeRow.appendChild(badge(room, 'rgba(86,156,214,0.55)', '#569cd6'));
-        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(181,206,168,0.45)', '#b5cea8'));
+        if (room) badgeRow.appendChild(badge(room, '#00aaff', '#00ccff', 'rgba(0,170,255,0.1)'));
+        if (mrn)  badgeRow.appendChild(badge(mrn,  '#ff2244', '#ff4455', 'rgba(255,34,68,0.1)'));
         if (room || mrn) identity.appendChild(badgeRow);
 
         cardMain.appendChild(identity);
