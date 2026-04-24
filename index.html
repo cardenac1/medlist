@@ -5062,90 +5062,82 @@ function displayRows(data = patientData) {
             position: relative;
             display: flex;
             flex-direction: row;
-            border-bottom: 1px solid rgba(255,255,255,0.13);
-            border-radius: 0;
+            align-items: center;
+            border-bottom: 0.5px solid rgba(84,84,88,0.65);
             background: #000000;
             margin-bottom: 0;
             min-height: 0;
             cursor: pointer;
-            font-size: 0.82rem;
+            padding: 10px 12px 10px 16px;
             transition: background 100ms ease;
             overflow: hidden;
         `;
 
-        // Clickable accent bar (priority selector)
+        // Avatar circle — priority color + initials, clickable for priority selector
         const accentBar = document.createElement('div');
         const priorityName = getPriorityName(patient.Priority);
+        const initials = patientName.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
         accentBar.style.cssText = `
-            width: 5px; flex-shrink: 0; background: ${color};
-            cursor: pointer; transition: width 140ms ease;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: ${color}; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; font-weight: 700; color: #ffffff;
+            margin-right: 13px; cursor: pointer;
+            transition: transform 120ms ease;
+            letter-spacing: -0.5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            user-select: none;
         `;
-        accentBar.title = `Priority: ${priorityName} (Click to change)`;
+        accentBar.title = `Priority: ${priorityName} — tap to change`;
+        accentBar.textContent = initials || '?';
         accentBar.onclick = (e) => {
             e.stopPropagation();
             showStatusSelector(patient, index, accentBar);
         };
-        accentBar.onmouseenter = () => { accentBar.style.width = '9px'; };
-        accentBar.onmouseleave = () => { accentBar.style.width = '5px'; };
+        accentBar.onmouseenter = () => { accentBar.style.transform = 'scale(1.07)'; };
+        accentBar.onmouseleave = () => { accentBar.style.transform = 'scale(1)'; };
         listItem.appendChild(accentBar);
 
-        // Card body (flex column)
+        // Content column
         const cardBody = document.createElement('div');
-        cardBody.style.cssText = `flex: 1; min-width: 0; display: flex; flex-direction: column;`;
+        cardBody.style.cssText = `flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;`;
 
-        // ── Identity row ──────────────────────────────────────────
-        const cardMain = document.createElement('div');
-        cardMain.style.cssText = `
-            display: flex; align-items: center; gap: 0.3rem;
-            padding: 0.28rem 0.35rem 0.07rem 0.45rem; min-width: 0;
-        `;
-
-        // Identity cluster — plain div (name + badges, not clickable)
-        const identity = document.createElement('div');
-        identity.style.cssText = `
-            display: flex; flex-direction: column; align-items: flex-start;
-            gap: 0.1rem; flex: 1; min-width: 0;
-        `;
-
+        // Patient name
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 600; font-size: 0.84rem; color: #d4d4d4; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
+            nameEl.style.cssText = `font-weight: 600; font-size: 1.06rem; color: #ffffff; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
             nameEl.textContent = patientName;
-            identity.appendChild(nameEl);
+            cardBody.appendChild(nameEl);
         }
 
-        const badge = (text, borderColor, textColor, bgColor = 'transparent') => {
-            const el = document.createElement('span');
-            el.style.cssText = `padding: 0.02rem 0.3rem; border-radius: 100px; font-size: 0.62rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bgColor}; border: 1px solid ${borderColor}; color: ${textColor}; letter-spacing: 0.01em;`;
-            el.textContent = text;
-            return el;
-        };
+        // Room · MRN subtitle
+        if (room || mrn) {
+            const subEl = document.createElement('span');
+            const parts = [];
+            if (room) parts.push(`RM ${room}`);
+            if (mrn)  parts.push(`MRN ${mrn}`);
+            subEl.style.cssText = `font-size: 0.82rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.01em;`;
+            subEl.textContent = parts.join('  ·  ');
+            cardBody.appendChild(subEl);
+        }
 
-        const badgeRow = document.createElement('div');
-        badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
-        if (room) badgeRow.appendChild(badge(room, '#00aaff', '#00ccff', 'rgba(0,170,255,0.1)'));
-        if (mrn)  badgeRow.appendChild(badge(mrn,  '#ff2244', '#ff4455', 'rgba(255,34,68,0.1)'));
-        if (room || mrn) identity.appendChild(badgeRow);
-
-        cardMain.appendChild(identity);
-        cardBody.appendChild(cardMain);
-
-        // ── Todos row — inline wrapping chips (only when present) ────
+        // Todo preview line (first item, plain text)
         if ((patient['To do'] || '').trim()) {
-            const todosRow = document.createElement('div');
-            todosRow.style.cssText = `
-                display: flex; flex-wrap: wrap; gap: 0.18rem 0.45rem;
-                padding: 0.06rem 0.45rem 0.1rem 0.45rem;
-            `;
-            renderTodoInline(todosRow, patient);
-            cardBody.appendChild(todosRow);
+            const firstTodo = (patient['To do'] || '').trim().split('\n')[0].replace(/^[-*•✓□]\s*/, '');
+            const todoPreview = document.createElement('span');
+            todoPreview.style.cssText = `font-size: 0.79rem; color: #636366; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+            todoPreview.textContent = firstTodo;
+            cardBody.appendChild(todoPreview);
         }
 
         listItem.appendChild(cardBody);
 
-        // Copy button — full-height right strip
+        // Right side: copy icon + chevron
+        const rightSide = document.createElement('div');
+        rightSide.style.cssText = `display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 5px; flex-shrink: 0; margin-left: 8px;`;
+
         const copyBtn = document.createElement('button');
-        copyBtn.style.cssText = `background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.05); width: 22px; flex-shrink: 0; align-self: stretch; cursor: pointer; color: #3a3a3a; font-size: 0.62rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: color 0.15s, background 0.15s; padding: 0;`;
+        copyBtn.style.cssText = `background: transparent; border: none; cursor: pointer; color: #48484A; font-size: 0.82rem; padding: 2px 4px; display: flex; align-items: center; transition: color 0.15s; line-height: 1;`;
         copyBtn.title = 'Copy patient info';
         copyBtn.textContent = '⧉';
         copyBtn.onclick = (e) => {
@@ -5153,10 +5145,10 @@ function displayRows(data = patientData) {
             const textToCopy = [patientName, room, mrn].filter(Boolean).join('\n');
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyBtn.textContent = '✓';
-                copyBtn.style.color = '#4ec994';
+                copyBtn.style.color = '#30d158';
                 setTimeout(() => {
                     copyBtn.textContent = '⧉';
-                    copyBtn.style.color = '#3a3a3a';
+                    copyBtn.style.color = '#48484A';
                 }, 1200);
             }).catch(() => {
                 const ta = document.createElement('textarea');
@@ -5166,13 +5158,20 @@ function displayRows(data = patientData) {
                 document.body.removeChild(ta);
             });
         };
-        copyBtn.onmouseenter = () => { copyBtn.style.color = '#858585'; copyBtn.style.background = 'rgba(255,255,255,0.04)'; };
-        copyBtn.onmouseleave = () => { copyBtn.style.color = '#3a3a3a'; copyBtn.style.background = 'transparent'; };
-        listItem.appendChild(copyBtn);
+        copyBtn.onmouseenter = () => { copyBtn.style.color = '#aeaeb2'; };
+        copyBtn.onmouseleave = () => { copyBtn.style.color = '#48484A'; };
+
+        const chevron = document.createElement('span');
+        chevron.style.cssText = `color: #3a3a3c; font-size: 1.1rem; line-height: 1; pointer-events: none; font-weight: 300;`;
+        chevron.textContent = '›';
+
+        rightSide.appendChild(copyBtn);
+        rightSide.appendChild(chevron);
+        listItem.appendChild(rightSide);
 
         // ── Hover / click ─────────────────────────────────────────
         listItem.onmouseenter = () => {
-            listItem.style.background = '#0d0d0d';
+            listItem.style.background = '#1c1c1e';
         };
         listItem.onmouseleave = () => {
             listItem.style.background = '#000000';
