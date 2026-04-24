@@ -5119,47 +5119,55 @@ function displayRows(data = patientData) {
         const cardMain = document.createElement('div');
         cardMain.style.cssText = `
             display: flex; align-items: center; gap: 0.4rem;
-            padding: 0.2rem 0.4rem 0.2rem 0.5rem; min-width: 0;
+            padding: 0.1rem 0.4rem 0.1rem 0.5rem; min-width: 0;
         `;
 
-        // Clickable identity cluster (copies name / RM / MRN)
-        // Two-row layout: name on top, badges below — stays aligned on all screen sizes
-        const identity = document.createElement('button');
+        // Identity cluster — plain div (name + badges, not clickable)
+        const identity = document.createElement('div');
         identity.style.cssText = `
             display: flex; flex-direction: column; align-items: flex-start;
-            gap: 0.18rem; flex: 1; min-width: 0;
-            background: transparent; border: none; padding: 0;
-            cursor: pointer; color: inherit;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif, sans-serif; text-align: left;
+            gap: 0.1rem; flex: 1; min-width: 0;
         `;
 
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 600; font-size: 0.86rem; color: #ffffff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
+            nameEl.style.cssText = `font-weight: 600; font-size: 0.84rem; color: #ffffff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
             nameEl.textContent = patientName;
             identity.appendChild(nameEl);
         }
 
         const badge = (text, bg, fg) => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.05rem 0.45rem; border-radius: 100px; font-size: 0.68rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
+            el.style.cssText = `padding: 0.04rem 0.38rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
             el.textContent = text;
             return el;
         };
 
         const badgeRow = document.createElement('div');
-        badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.22rem; align-items: center;`;
+        badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
         if (room) badgeRow.appendChild(badge(room, 'rgba(255,69,58,0.18)',  '#ff6961'));
         if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(48,209,88,0.15)',  '#34c759'));
         if (room || mrn) identity.appendChild(badgeRow);
 
-        identity.onclick = (e) => {
+        cardMain.appendChild(identity);
+
+        // Small dedicated copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.style.cssText = `background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 0.18rem 0.28rem; cursor: pointer; color: #636366; flex-shrink: 0; font-size: 0.72rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
+        copyBtn.title = 'Copy patient info';
+        copyBtn.textContent = '⧉';
+        copyBtn.onclick = (e) => {
             e.stopPropagation();
             const textToCopy = [patientName, room, mrn].filter(Boolean).join('\n');
             navigator.clipboard.writeText(textToCopy).then(() => {
-                const orig = identity.innerHTML;
-                identity.innerHTML = '<span style="color:#23CC72;font-weight:bold;font-size:0.8rem;">COPIED!</span>';
-                setTimeout(() => { identity.innerHTML = orig; }, 200);
+                copyBtn.textContent = '✓';
+                copyBtn.style.color = '#23CC72';
+                copyBtn.style.borderColor = 'rgba(35,204,114,0.35)';
+                setTimeout(() => {
+                    copyBtn.textContent = '⧉';
+                    copyBtn.style.color = '#636366';
+                    copyBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                }, 1200);
             }).catch(() => {
                 const ta = document.createElement('textarea');
                 ta.value = textToCopy; ta.style.position = 'fixed'; ta.style.left = '-9999px';
@@ -5168,8 +5176,7 @@ function displayRows(data = patientData) {
                 document.body.removeChild(ta);
             });
         };
-
-        cardMain.appendChild(identity);
+        cardMain.appendChild(copyBtn);
         cardBody.appendChild(cardMain);
 
         // ── Todos row — inline wrapping chips (only when present) ────
@@ -9674,7 +9681,7 @@ else {
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
 
-                    s += `<div style="color:#fff; font-family:'Segoe UI',Arial,sans-serif; font-weight:normal; padding:0; margin-bottom:0; display:flex; align-items:center; justify-content:space-between; line-height:1.05;">`;
+                    s += `<div style="color:#fff; font-family:'Segoe UI',Arial,sans-serif; font-weight:normal; padding:0.07rem 0; margin-bottom:0; display:flex; align-items:center; justify-content:space-between; line-height:1.05; border-bottom:1px solid rgba(255,255,255,0.07);">`;
                     s += `<span>${tags ? tags + ' ' : ''}${baseText}${prnTag}</span>`;
                     s += `<div style="display:flex;gap:4px;">`;
                     s += `<button type="button" onclick="editMedication(event,'${medId}','${routeType}',${idx},'${categoryName.replace(/'/g, "\\'")}','${escapedText}','${medRoute}',${medIsPRN})" class="med-edit-btn" style="${btnStyle}" title="Edit">Edit</button>`;
