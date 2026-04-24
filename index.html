@@ -5097,26 +5097,26 @@ function displayRows(data = patientData) {
         const cardMain = document.createElement('div');
         cardMain.style.cssText = `
             display: flex; align-items: center; gap: 0.3rem;
-            padding: 0.28rem 0.35rem 0.07rem 0.45rem; min-width: 0;
+            padding: 0.14rem 0.35rem 0.03rem 0.45rem; min-width: 0;
         `;
 
         // Identity cluster — plain div (name + badges, not clickable)
         const identity = document.createElement('div');
         identity.style.cssText = `
             display: flex; flex-direction: column; align-items: flex-start;
-            gap: 0.1rem; flex: 1; min-width: 0;
+            gap: 0.07rem; flex: 1; min-width: 0;
         `;
 
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 600; font-size: 0.84rem; color: #d4d4d4; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
+            nameEl.style.cssText = `font-weight: 600; font-size: 0.97rem; color: #d4d4d4; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
             nameEl.textContent = patientName;
             identity.appendChild(nameEl);
         }
 
         const badge = (text, borderColor, textColor, bgColor = 'transparent') => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.02rem 0.3rem; border-radius: 100px; font-size: 0.62rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bgColor}; border: 1px solid ${borderColor}; color: ${textColor}; letter-spacing: 0.01em;`;
+            el.style.cssText = `padding: 0.03rem 0.35rem; border-radius: 100px; font-size: 0.74rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bgColor}; border: 1px solid ${borderColor}; color: ${textColor}; letter-spacing: 0.01em;`;
             el.textContent = text;
             return el;
         };
@@ -5135,7 +5135,7 @@ function displayRows(data = patientData) {
             const todosRow = document.createElement('div');
             todosRow.style.cssText = `
                 display: flex; flex-wrap: wrap; gap: 0.18rem 0.45rem;
-                padding: 0.06rem 0.45rem 0.1rem 0.45rem;
+                padding: 0.03rem 0.45rem 0.07rem 0.45rem;
             `;
             renderTodoInline(todosRow, patient);
             cardBody.appendChild(todosRow);
