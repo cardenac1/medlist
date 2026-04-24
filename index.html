@@ -457,12 +457,17 @@ const VIOLIN_DASHBOARD_CSS = `
 .controls button:hover,
 .controls select:hover,
 .toolbar-import:hover .file-input-label {
-    background: #383838 !important;
+    filter: brightness(1.18);
 }
 .toolbar-import {
     flex: 1 1 0;
     display: flex;
 }
+/* Individual button colors */
+.controls .toolbar-import .file-input-label { background: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
+.controls #columnSelect               { background: #6d28d9 !important; color: #fff !important; border-color: #6d28d9 !important; }
+.controls > button:not(#exportButtonMain) { background: #047857 !important; color: #fff !important; border-color: #047857 !important; }
+.controls #exportButtonMain           { background: #b45309 !important; color: #fff !important; border-color: #b45309 !important; }
 
 /* Navigation buttons */
 .nav-buttons {
@@ -5055,9 +5060,9 @@ function displayRows(data = patientData) {
             position: relative;
             display: flex;
             flex-direction: row;
-            border-bottom: 1px solid #3e3e42;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             border-radius: 0;
-            background: #1e1e1e;
+            background: #000000;
             margin-bottom: 0;
             cursor: pointer;
             font-size: 0.82rem;
@@ -5088,8 +5093,8 @@ function displayRows(data = patientData) {
         // ── Identity row ──────────────────────────────────────────
         const cardMain = document.createElement('div');
         cardMain.style.cssText = `
-            display: flex; align-items: center; gap: 0.4rem;
-            padding: 0.1rem 0.4rem 0.1rem 0.5rem; min-width: 0;
+            display: flex; align-items: center; gap: 0.3rem;
+            padding: 0.07rem 0.35rem 0.07rem 0.45rem; min-width: 0;
         `;
 
         // Identity cluster — plain div (name + badges, not clickable)
@@ -5108,22 +5113,36 @@ function displayRows(data = patientData) {
 
         const badge = (text, bg, fg) => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.04rem 0.38rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
+            el.style.cssText = `padding: 0.02rem 0.3rem; border-radius: 100px; font-size: 0.62rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: transparent; border: 1px solid ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
             el.textContent = text;
             return el;
         };
 
         const badgeRow = document.createElement('div');
         badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
-        if (room) badgeRow.appendChild(badge(room, 'rgba(86,156,214,0.15)', '#569cd6'));
-        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(181,206,168,0.13)', '#b5cea8'));
+        if (room) badgeRow.appendChild(badge(room, 'rgba(86,156,214,0.55)', '#569cd6'));
+        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(181,206,168,0.45)', '#b5cea8'));
         if (room || mrn) identity.appendChild(badgeRow);
 
         cardMain.appendChild(identity);
+        cardBody.appendChild(cardMain);
 
-        // Small dedicated copy button
+        // ── Todos row — inline wrapping chips (only when present) ────
+        if ((patient['To do'] || '').trim()) {
+            const todosRow = document.createElement('div');
+            todosRow.style.cssText = `
+                display: flex; flex-wrap: wrap; gap: 0.18rem 0.45rem;
+                padding: 0.06rem 0.45rem 0.1rem 0.45rem;
+            `;
+            renderTodoInline(todosRow, patient);
+            cardBody.appendChild(todosRow);
+        }
+
+        listItem.appendChild(cardBody);
+
+        // Copy button — full-height right strip
         const copyBtn = document.createElement('button');
-        copyBtn.style.cssText = `background: transparent; border: 1px solid #3e3e42; border-radius: 4px; padding: 0.05rem 0.14rem; cursor: pointer; color: #858585; flex-shrink: 0; font-size: 0.58rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
+        copyBtn.style.cssText = `background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.05); width: 22px; flex-shrink: 0; align-self: stretch; cursor: pointer; color: #3a3a3a; font-size: 0.62rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: color 0.15s, background 0.15s; padding: 0;`;
         copyBtn.title = 'Copy patient info';
         copyBtn.textContent = '⧉';
         copyBtn.onclick = (e) => {
@@ -5132,11 +5151,9 @@ function displayRows(data = patientData) {
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyBtn.textContent = '✓';
                 copyBtn.style.color = '#4ec994';
-                copyBtn.style.borderColor = '#3e5a42';
                 setTimeout(() => {
                     copyBtn.textContent = '⧉';
-                    copyBtn.style.color = '#858585';
-                    copyBtn.style.borderColor = '#3e3e42';
+                    copyBtn.style.color = '#3a3a3a';
                 }, 1200);
             }).catch(() => {
                 const ta = document.createElement('textarea');
@@ -5146,29 +5163,16 @@ function displayRows(data = patientData) {
                 document.body.removeChild(ta);
             });
         };
-        cardMain.appendChild(copyBtn);
-        cardBody.appendChild(cardMain);
-
-        // ── Todos row — inline wrapping chips (only when present) ────
-        if ((patient['To do'] || '').trim()) {
-            const todosRow = document.createElement('div');
-            todosRow.style.cssText = `
-                display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
-                padding: 0.08rem 0.5rem 0.2rem 0.5rem;
-                border-top: 1px solid #3e3e42;
-            `;
-            renderTodoInline(todosRow, patient);
-            cardBody.appendChild(todosRow);
-        }
-
-        listItem.appendChild(cardBody);
+        copyBtn.onmouseenter = () => { copyBtn.style.color = '#858585'; copyBtn.style.background = 'rgba(255,255,255,0.04)'; };
+        copyBtn.onmouseleave = () => { copyBtn.style.color = '#3a3a3a'; copyBtn.style.background = 'transparent'; };
+        listItem.appendChild(copyBtn);
 
         // ── Hover / click ─────────────────────────────────────────
         listItem.onmouseenter = () => {
-            listItem.style.background = '#252526';
+            listItem.style.background = '#0d0d0d';
         };
         listItem.onmouseleave = () => {
-            listItem.style.background = '#1e1e1e';
+            listItem.style.background = '#000000';
         };
         listItem.onclick = (e) => {
             if (!e.target.closest('button') && e.target !== accentBar) showDetails(index);
