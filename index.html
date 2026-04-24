@@ -97,25 +97,7 @@
 
         /* header-content layout defined below with .header-left/.header-right */
 
-        .census {
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .census-number {
-            font-size: 1rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-        }
+        .census-btn { cursor: default !important; }
 
         /* Header layout: census left, icons right */
         .header-content {
@@ -3383,8 +3365,8 @@ async function testOCRAvailability() {
     <div class="header">
         <div class="header-content">
             <div class="header-left">
-                <div class="census">
-                    Census: <span class="census-number" id="censusCount">0</span>
+                <div class="ios-icon-btn census-btn" title="Patient census" style="font-size:0.85rem; font-weight:700; pointer-events:none; color:#ffffff;">
+                    <span id="censusCount">0</span>
                 </div>
                 <span id="syncStatus" class="sync-status" title="Sync status"></span>
             </div>
