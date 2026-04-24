@@ -2979,7 +2979,7 @@ select,
 .priority-low        { --priority-color: #9333EA; } /* Low – purple */
 .priority-very-low   { --priority-color: #3B82F6; } /* Very Low – blue */
 .priority-complete   { --priority-color: #23CC72; } /* Complete – green */
-.priority-default    { --priority-color: #555555; } /* No priority – dark gray */
+.priority-default    { --priority-color: #000000; } /* No priority – black (matches background) */
 
 
 		
@@ -4807,7 +4807,7 @@ function getChecklistStatus(patient, patientIndex) {
 	function getPriorityStatus(patient) {
     const priority = (patient.Priority || '').toString().trim().toLowerCase();
 
-    if (!priority) return { color: '#555555', title: 'No priority set' };
+    if (!priority) return { color: '#000000', title: 'No priority set' };
 
     const map = {
         'critical':   { color: '#FF1111', title: 'Critical – Evaluating a critical patient' },
@@ -4832,7 +4832,7 @@ function getChecklistStatus(patient, patientIndex) {
         return map['very-low'];
     }
 
-    return { color: '#555555', title: priority };
+    return { color: '#000000', title: priority };
 }
 		
 
@@ -4960,7 +4960,7 @@ function renderTodoInline(container, patient) {
     const items = parsed.tasks;
     if (!items.length) {
         const s = document.createElement('span');
-        s.style.cssText = 'font-size:0.75rem;color:#64748b;';
+        s.style.cssText = 'font-size:0.82rem;color:#9090a0;';
         s.textContent = value;
         container.appendChild(s);
         return;
@@ -4984,7 +4984,7 @@ function renderTodoInline(container, patient) {
         cb.addEventListener('click', (e) => { e.stopPropagation(); item.done = !item.done; refresh(); });
 
         const txt = document.createElement('span');
-        txt.style.cssText = `font-size:0.78rem;line-height:1.3;color:${item.done ? '#48484a' : '#8e8e93'};text-decoration:${item.done ? 'line-through' : 'none'};`;
+        txt.style.cssText = `font-size:0.84rem;line-height:1.3;color:${item.done ? '#606068' : '#b0b0b8'};text-decoration:${item.done ? 'line-through' : 'none'};`;
         txt.textContent = item.text;
 
         chip.appendChild(cb);
@@ -5083,12 +5083,12 @@ function displayRows(data = patientData) {
             position: relative;
             display: flex;
             flex-direction: row;
-            border-bottom: 1px solid rgba(60,60,67,0.28);
+            border-bottom: 1px solid rgba(100,100,110,0.5);
             border-radius: 0;
             background: rgba(0,0,0,0.92);
             margin-bottom: 0;
             cursor: pointer;
-            font-size: 0.82rem;
+            font-size: 0.88rem;
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             transition: background 100ms ease;
@@ -5131,29 +5131,29 @@ function displayRows(data = patientData) {
 
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 600; font-size: 0.84rem; color: #ffffff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
+            nameEl.style.cssText = `font-weight: 600; font-size: 0.92rem; color: #ffffff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;`;
             nameEl.textContent = patientName;
             identity.appendChild(nameEl);
         }
 
         const badge = (text, bg, fg) => {
             const el = document.createElement('span');
-            el.style.cssText = `padding: 0.04rem 0.38rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
+            el.style.cssText = `padding: 0.07rem 0.42rem; border-radius: 100px; font-size: 0.72rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; background: ${bg}; color: ${fg}; letter-spacing: 0.01em;`;
             el.textContent = text;
             return el;
         };
 
         const badgeRow = document.createElement('div');
         badgeRow.style.cssText = `display: flex; flex-wrap: wrap; gap: 0.18rem; align-items: center;`;
-        if (room) badgeRow.appendChild(badge(room, 'rgba(255,69,58,0.18)',  '#ff6961'));
-        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(48,209,88,0.15)',  '#34c759'));
+        if (room) badgeRow.appendChild(badge(room, 'rgba(0,200,255,0.14)',  '#00C8FF'));
+        if (mrn)  badgeRow.appendChild(badge(mrn,  'rgba(186,255,0,0.13)',  '#BAFF00'));
         if (room || mrn) identity.appendChild(badgeRow);
 
         cardMain.appendChild(identity);
 
         // Small dedicated copy button
         const copyBtn = document.createElement('button');
-        copyBtn.style.cssText = `background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 0.18rem 0.28rem; cursor: pointer; color: #636366; flex-shrink: 0; font-size: 0.72rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
+        copyBtn.style.cssText = `background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 0.28rem 0.5rem; cursor: pointer; color: #636366; flex-shrink: 0; font-size: 0.9rem; line-height: 1; transition: color 0.15s, border-color 0.15s;`;
         copyBtn.title = 'Copy patient info';
         copyBtn.textContent = '⧉';
         copyBtn.onclick = (e) => {
