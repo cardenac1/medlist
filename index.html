@@ -3059,7 +3059,7 @@ select,
 .priority-low        { --priority-color: #9333EA; } /* Low – purple */
 .priority-very-low   { --priority-color: #3B82F6; } /* Very Low – blue */
 .priority-complete   { --priority-color: #23CC72; } /* Complete – green */
-.priority-default    { --priority-color: #555555; } /* No priority – dark gray */
+.priority-default    { --priority-color: #000000; } /* No priority – invisible */
 
 
 		
@@ -4936,7 +4936,7 @@ function getChecklistStatus(patient, patientIndex) {
 	function getPriorityStatus(patient) {
     const priority = (patient.Priority || '').toString().trim().toLowerCase();
 
-    if (!priority) return { color: '#555555', title: 'No priority set' };
+    if (!priority) return { color: '#000000', title: 'No priority set' };
 
     const map = {
         'critical':   { color: '#FF1111', title: 'Critical – Evaluating a critical patient' },
@@ -15237,7 +15237,7 @@ function showPriorityStatus(index) {
 
 function showStatusSelector(patient, index, statusElement) {
     const priorityOptions = [
-        { num: '',           name: 'No Priority',                                                         color: '#555555' },
+        { num: '',           name: 'No Priority',                                                         color: '#000000' },
         { num: 'critical',   name: 'Critical – Evaluating a critical patient',                            color: '#FF1111' },
         { num: 'high',       name: 'High – Evaluating urgent patient / Following up urgent scans',        color: '#8B0000' },
         { num: 'medium',     name: 'Medium – Ordering urgent medication or therapy / Non-urgent consult', color: '#FF8800' },
