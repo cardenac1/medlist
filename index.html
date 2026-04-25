@@ -13243,142 +13243,120 @@ function generateFullChecklistHTML() {
 
   // ========= DATA =========
   const consultItems = [
-    // STAFF / NOTE
-    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Add to list' },
-    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Review Hx / Vitals / I&Os / Labs / Imaging' },
-    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Staff with attending' },
-    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Complete NOTE (include HCP)' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Add to list' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Review Hx / Vitals / I&Os / Labs / Imaging' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Staff with attending' },
+    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Complete NOTE (include HCP)' },
 
-    // RECOMMENDATIONS
-    { section: 'RECOMMENDATIONS', color: '#9333ea', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
-    { section: 'RECOMMENDATIONS', color: '#9333ea', text: 'Sign out to primary team/ED' },
+    { section: '☎️ RECOMMENDATIONS', color: '#9333ea', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
+    { section: '☎️ RECOMMENDATIONS', color: '#9333ea', text: 'Sign out to primary team/ED' },
 
-    // ✍️ ORDERS
-    { section: 'ORDERS', color: '#d97706', text: 'Extra scans / consults' },
-    { section: 'ORDERS', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
+    { section: '✍️ ORDERS', color: '#d97706', text: 'Extra scans / consults' },
+    { section: '✍️ ORDERS', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
 
-    // 🔪 OR
-    { section: 'OR', color: '#dc2626', text: 'NPO at midnight ± IVF' },
-    { section: 'OR', color: '#dc2626', text: 'Book OR + Call OR' },
-    { section: 'OR', color: '#dc2626', text: 'Obtain Consent' },
-    { section: 'OR', color: '#dc2626', text: 'Type & Screen (within 3 days + historical)' },
-    { section: 'OR', color: '#dc2626', text: '2U PRBCs on hold' },
-    { section: 'OR', color: '#dc2626', text: 'Urine HCG' },
-    { section: 'OR', color: '#dc2626', text: 'Preoperative risk stratification' },
-    { section: 'OR', color: '#dc2626', text: 'EKG, CXR, Preop testing' },
-    { section: 'OR', color: '#dc2626', text: 'Coags' },
-    { section: 'OR', color: '#dc2626', text: 'Special instruments/booking needs' },
+    { section: '🔪 OR', color: '#dc2626', text: 'NPO at midnight ± IVF' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Book OR + Call OR' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Obtain Consent' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Type & Screen (within 3 days + historical)' },
+    { section: '🔪 OR', color: '#dc2626', text: '2U PRBCs on hold' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Urine HCG' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Preoperative risk stratification' },
+    { section: '🔪 OR', color: '#dc2626', text: 'EKG, CXR, Preop testing' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Coags' },
+    { section: '🔪 OR', color: '#dc2626', text: 'Special instruments/booking needs' },
 
-    // PATIENT CARE
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
 
-    // ACTIVITY
-    { section: 'ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
-    { section: 'ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
 
-    // DIET / NUTRITION
-    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
-    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
 
-    // MEDICATIONS
-    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
-    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
-    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
 
-    // LABORATORY
-    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp)' },
-    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp)' },
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
 
-    // RESPIRATORY
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Nebs' },
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Nebs' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
 
-    // EVIDENCE BASED
-    { section: 'EVIDENCE BASED', color: '#0d9488', text: 'Ongoing evidence-based management' },
+    { section: '🧑‍⚕️ EVIDENCE BASED', color: '#0d9488', text: 'Ongoing evidence-based management' },
   ];
 
   const traumaItems = [
     // STAFF / NOTE
-    { section: 'STAFF / NOTE', color: '#dc2626', text: 'Staff with attending' },
-    { section: 'STAFF / NOTE', color: '#dc2626', text: 'Order scans' },
-    { section: 'STAFF / NOTE', color: '#dc2626', text: 'Complete NOTE (include HCP)' },
-    { section: 'STAFF / NOTE', color: '#dc2626', text: 'PROCEDURES NOTE' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Staff with attending' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Order scans' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Complete NOTE (include HCP)' },
+    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'PROCEDURES NOTE' },
 
-    // IMAGING & LAB REVIEW
-    { section: 'IMAGING & LAB REVIEW', color: '#9333ea', text: 'Primary review of imaging (CTH, CT C/T/L Spine, CT Chest/Abdomen/Pelvis, Additional scans as needed)' },
-    { section: 'IMAGING & LAB REVIEW', color: '#9333ea', text: 'Follow-up attending reads' },
-    { section: 'IMAGING & LAB REVIEW', color: '#9333ea', text: 'Review labs' },
+    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Primary review of imaging (CTH, CT C/T/L Spine, CT Chest/Abdomen/Pelvis, Additional scans as needed)' },
+    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Follow-up attending reads' },
+    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Review labs' },
 
-    // DISPO
-    { section: 'DISPO', color: '#c026d3', text: 'Sign-out (ICU / Floor / ED)' },
-    { section: 'DISPO', color: '#c026d3', text: 'Update family' },
-    { section: 'DISPO', color: '#c026d3', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
+    { section: '☎️ DISPO', color: '#c026d3', text: 'Sign-out (ICU / Floor / ED)' },
+    { section: '☎️ DISPO', color: '#c026d3', text: 'Update family' },
+    { section: '☎️ DISPO', color: '#c026d3', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
 
-    // ✍️ ORDERS
-    { section: 'ORDERS', color: '#d97706', text: 'Extra scans / consults' },
-    { section: 'ORDERS', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
+    { section: '✍️ ORDERS', color: '#d97706', text: 'Extra scans / consults' },
+    { section: '✍️ ORDERS', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
 
-    // PATIENT CARE
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
-    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
+    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
 
-    // ACTIVITY
-    { section: 'ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
-    { section: 'ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
+    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
 
-    // DIET / NUTRITION
-    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
-    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
+    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
 
-    // MEDICATIONS
-    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
-    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
-    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
+    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
 
-    // LABORATORY
-    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp) OR q12 labs for ICU' },
-    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp) OR q12 labs for ICU' },
+    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
 
-    // RESPIRATORY
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Nebs' },
-    { section: 'RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Nebs' },
+    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
 
-    // EVIDENCE-BASED TREATMENT
-    { section: 'EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Evidence-based management of diagnoses' },
-    { section: 'EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Comorbidity management inpatient' },
+    { section: '🧑‍⚕️ EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Evidence-based management of diagnoses' },
+    { section: '🧑‍⚕️ EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Comorbidity management inpatient' },
 
-    // 🔪 OR
-    { section: 'OR', color: '#b91c1c', text: 'NPO at midnight ± IVF' },
-    { section: 'OR', color: '#b91c1c', text: 'Book OR + Call OR' },
-    { section: 'OR', color: '#b91c1c', text: 'Obtain Consent' },
-    { section: 'OR', color: '#b91c1c', text: 'Type & Screen (within 3 days + historical)' },
-    { section: 'OR', color: '#b91c1c', text: '2U PRBCs on hold' },
-    { section: 'OR', color: '#b91c1c', text: 'Urine HCG' },
-    { section: 'OR', color: '#b91c1c', text: 'Preoperative risk stratification' },
-    { section: 'OR', color: '#b91c1c', text: 'EKG, CXR, Preop testing' },
-    { section: 'OR', color: '#b91c1c', text: 'Coags' },
-    { section: 'OR', color: '#b91c1c', text: 'Special instruments/booking needs' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'NPO at midnight ± IVF' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Book OR + Call OR' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Obtain Consent' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Type & Screen (within 3 days + historical)' },
+    { section: '🔪 OR', color: '#b91c1c', text: '2U PRBCs on hold' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Urine HCG' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Preoperative risk stratification' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'EKG, CXR, Preop testing' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Coags' },
+    { section: '🔪 OR', color: '#b91c1c', text: 'Special instruments/booking needs' },
   ];
 
   const items = isTrauma ? traumaItems : consultItems;
@@ -13438,17 +13416,24 @@ function generateFullChecklistHTML() {
   // ========= RENDER EACH SECTION (supports children) =========
   Object.entries(sections).forEach(([sectionName, sectionItems]) => {
     const sectionColor = sectionItems[0].color;
-    const isOrders = /ORDERS \(if|OR \(if/i.test(sectionName);
-    const sectionId = sectionName.replace(/[^a-zA-Z0-9]/g, '_');
+    const isCollapsible = /ORDERS|🔪/.test(sectionName);
+    const sectionId = 'sec_' + sectionName.replace(/[^a-zA-Z0-9]/g, '_');
 
     html += `
       <div style="margin-bottom:0.3rem;">
-        <h4 style="color:${sectionColor}; margin-bottom:0.1rem; font-size:0.85rem; font-weight:bold; cursor:${isOrders ? 'pointer' : 'default'}; letter-spacing:0.03em;"
-            ${isOrders ? `onclick="toggleSection('${sectionId}')"` : ''}>
-          ${sectionName} ${isOrders ? '▸' : ''}
+        <h4 style="color:${sectionColor}; margin-bottom:0.1rem; font-size:0.85rem; font-weight:bold;
+                   cursor:pointer; letter-spacing:0.03em; display:flex; align-items:center; gap:0.35rem; user-select:none;"
+            onclick="(function(el){
+              var c=document.getElementById('${sectionId}');
+              var open=c.style.display!=='none';
+              c.style.display=open?'none':'grid';
+              el.querySelector('.chk-arrow').textContent=open?'▸':'▾';
+            })(this)">
+          ${sectionName}
+          <span class="chk-arrow" style="font-size:0.7rem; opacity:0.7;">${isCollapsible ? '▸' : '▾'}</span>
         </h4>
-        <div id="${isOrders ? sectionId : ''}"
-             style="margin-left:0.5rem; display:grid; gap:0.02rem; ${isOrders ? 'display:none;' : ''}">
+        <div id="${sectionId}"
+             style="margin-left:0.5rem; display:${isCollapsible ? 'none' : 'grid'}; gap:0.02rem;">
     `;
 
     sectionItems.forEach(item => {
