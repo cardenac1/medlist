@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Problems List — Design Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #000;
+    color: #e5e5ea;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0 0.9rem;
+  }
+  .page-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  .add-problem-btn {
+    background: #0a84ff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* ── Problem Card ── */
+  .problem-card {
+    background: #1c1c1e;
+    border: 0.5px solid rgba(84,84,88,0.45);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  /* Card header bar — colored left accent */
+  .problem-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 0.5px solid rgba(84,84,88,0.3);
+  }
+  .problem-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .problem-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .problem-status {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-radius: 6px;
+    padding: 2px 7px;
+  }
+  .status-active  { background: rgba(255,69,58,0.15);  color: #ff453a; }
+  .status-chronic { background: rgba(255,159,10,0.15); color: #ff9f0a; }
+  .status-resolved{ background: rgba(48,209,88,0.15);  color: #30d158; }
+
+  .chevron {
+    font-size: 11px;
+    color: #636366;
+    transition: transform 0.2s;
+  }
+  .problem-card.collapsed .chevron { transform: rotate(-90deg); }
+
+  /* Card body */
+  .problem-body {
+    padding: 10px 14px 12px;
+  }
+  .problem-card.collapsed .problem-body { display: none; }
+
+  /* Sub-section rows */
+  .subsection {
+    margin-bottom: 8px;
+  }
+  .subsection-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .label-done    { color: #30d158; }
+  .label-pending { color: #ff9f0a; }
+
+  /* Item rows */
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 4px 0 4px 6px;
+    border-bottom: 0.5px solid rgba(255,255,255,0.05);
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #e5e5ea;
+  }
+  .item-row:last-child { border-bottom: none; }
+
+  .item-bullet-done    { color: #30d158; font-size: 10px; flex-shrink: 0; margin-top: 2px; }
+  .item-bullet-pending { color: #ff9f0a; font-size: 10px; flex-shrink: 0; margin-top: 2px; }
+
+  .item-text { flex: 1; }
+  .item-tag {
+    font-size: 8.5px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .tag-consult { background: rgba(96,165,250,0.18); color: #60a5fa; }
+  .tag-lab     { background: rgba(167,139,250,0.18); color: #a78bfa; }
+  .tag-imaging { background: rgba(251,191,36,0.18);  color: #fbbf24; }
+  .tag-rx      { background: rgba(52,211,153,0.18);  color: #34d399; }
+  .tag-proc    { background: rgba(255,159,10,0.18);  color: #ff9f0a; }
+
+  .item-rm-btn {
+    background: none;
+    border: none;
+    color: #636366;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0 3px;
+    flex-shrink: 0;
+    line-height: 1;
+    font-family: inherit;
+    margin-top: 1px;
+  }
+  .item-rm-btn:hover { color: #ff453a; }
+
+  /* Add-item row */
+  .add-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding-left: 6px;
+  }
+  .add-item-input {
+    flex: 1;
+    background: rgba(118,118,128,0.12);
+    border: 0.5px solid rgba(84,84,88,0.5);
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 12px;
+    color: #e5e5ea;
+    font-family: inherit;
+  }
+  .add-item-input::placeholder { color: #636366; }
+  .add-item-input:focus { outline: none; border-color: #0a84ff; }
+  .add-item-btn {
+    background: rgba(10,132,255,0.15);
+    border: 0.5px solid rgba(10,132,255,0.4);
+    color: #0a84ff;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  /* Divider between Done / Pending */
+  .subsection-divider {
+    border: none;
+    border-top: 0.5px solid rgba(84,84,88,0.3);
+    margin: 8px 0;
+  }
+
+  /* Empty state */
+  .empty-state {
+    color: #48484a;
+    font-size: 12px;
+    font-style: italic;
+    padding: 2px 0 4px 6px;
+  }
+
+  /* Preview label */
+  .preview-note {
+    background: rgba(10,132,255,0.12);
+    border: 0.5px solid rgba(10,132,255,0.35);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #60a5fa;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <span class="page-title">🩺 Problems</span>
+  <button class="add-problem-btn" onclick="addNewProblem()">+ Problem</button>
+</div>
+
+<div class="preview-note">Design preview — tap cards to expand/collapse · items are editable in the real app</div>
+
+<div id="problemsList"></div>
+
+<script>
+const PROBLEMS = [
+  {
+    title: 'RLQ Pain / Acute Appendicitis',
+    status: 'active',
+    color: '#ff453a',
+    done: [
+      { text: 'CT Abd/Pelvis: uncomplicated appendicitis, no perforation', tag: 'imaging' },
+      { text: 'Surgery consult placed — Dr. Herrera paged', tag: 'consult' },
+      { text: 'IV access x2, LR @ 125 mL/hr started', tag: 'rx' },
+      { text: 'NPO, consent obtained', tag: null },
+    ],
+    pending: [
+      { text: 'OR scheduling — laparoscopic appendectomy', tag: 'proc' },
+      { text: 'Anesthesia pre-op clearance', tag: 'consult' },
+      { text: 'Pre-op CBC, BMP, coags', tag: 'lab' },
+    ]
+  },
+  {
+    title: 'Hypertension',
+    status: 'chronic',
+    color: '#ff9f0a',
+    done: [
+      { text: 'Home metoprolol 25 mg PO BID continued', tag: 'rx' },
+      { text: 'BP 138/82 this AM — acceptable peri-op', tag: null },
+    ],
+    pending: []
+  },
+  {
+    title: 'Leukocytosis (WBC 14.2)',
+    status: 'active',
+    color: '#ff453a',
+    done: [
+      { text: 'CBC on admission: WBC 14.2 / Hgb 13.1 / Plt 210', tag: 'lab' },
+    ],
+    pending: [
+      { text: 'Repeat CBC post-op day 1', tag: 'lab' },
+      { text: 'Monitor for fever / wound infection', tag: null },
+    ]
+  },
+  {
+    title: 'Type 2 Diabetes',
+    status: 'chronic',
+    color: '#ff9f0a',
+    done: [
+      { text: 'Metformin held (NPO / contrast)', tag: 'rx' },
+      { text: 'Insulin sliding scale ordered', tag: 'rx' },
+      { text: 'HbA1c 7.4% (from records)', tag: 'lab' },
+    ],
+    pending: [
+      { text: 'Resume home metformin when tolerating PO post-op', tag: 'rx' },
+    ]
+  },
+  {
+    title: 'Post-op Nausea / Pain Control',
+    status: 'active',
+    color: '#30d158',
+    done: [],
+    pending: [
+      { text: 'Ondansetron 4 mg IV PRN nausea q6h', tag: 'rx' },
+      { text: 'Ketorolac 15 mg IV q6h x48h + Tylenol ATC', tag: 'rx' },
+      { text: 'Oxycodone 5 mg PO PRN breakthrough', tag: 'rx' },
+      { text: 'Incentive spirometry q1h while awake', tag: 'proc' },
+    ]
+  },
+];
+
+const TAG_LABELS = { imaging: 'Imaging', lab: 'Lab', consult: 'Consult', rx: 'Rx', proc: 'Procedure' };
+
+function renderPill(tag) {
+  if (!tag) return '';
+  return `<span class="item-tag tag-${tag}">${TAG_LABELS[tag] || tag}</span>`;
+}
+
+function renderProblem(p, idx) {
+  const statusClass = `status-${p.status}`;
+  const statusLabel = p.status === 'active' ? 'ACTIVE' : p.status === 'chronic' ? 'CHRONIC' : 'RESOLVED';
+
+  const doneItems = p.done.map((item, i) =>
+    `<div class="item-row">
+      <span class="item-bullet-done">●</span>
+      <span class="item-text">${item.text}</span>
+      ${renderPill(item.tag)}
+      <button class="item-rm-btn" title="Remove">✕</button>
+    </div>`
+  ).join('');
+
+  const pendingItems = p.pending.map((item, i) =>
+    `<div class="item-row">
+      <span class="item-bullet-pending">◌</span>
+      <span class="item-text">${item.text}</span>
+      ${renderPill(item.tag)}
+      <button class="item-rm-btn" title="Remove">✕</button>
+    </div>`
+  ).join('');
+
+  return `
+    <div class="problem-card" id="prob-${idx}">
+      <div class="problem-header" onclick="toggleCard(${idx})">
+        <span class="problem-dot" style="background:${p.color};box-shadow:0 0 6px ${p.color}55;"></span>
+        <span class="problem-title">${p.title}</span>
+        <span class="problem-status ${statusClass}">${statusLabel}</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="problem-body">
+        <div class="subsection">
+          <div class="subsection-label label-done">
+            <span>✅</span><span>Done / Completed</span>
+          </div>
+          ${doneItems || '<div class="empty-state">Nothing done yet</div>'}
+          <div class="add-item-row">
+            <input class="add-item-input" placeholder="Add completed item…" type="text">
+            <button class="add-item-btn">+ Done</button>
+          </div>
+        </div>
+        <hr class="subsection-divider">
+        <div class="subsection">
+          <div class="subsection-label label-pending">
+            <span>⏳</span><span>Pending</span>
+          </div>
+          ${pendingItems || '<div class="empty-state">Nothing pending</div>'}
+          <div class="add-item-row">
+            <input class="add-item-input" placeholder="Add pending item…" type="text">
+            <button class="add-item-btn">+ Pending</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function render() {
+  document.getElementById('problemsList').innerHTML = PROBLEMS.map((p, i) => renderProblem(p, i)).join('');
+}
+
+function toggleCard(idx) {
+  document.getElementById(`prob-${idx}`).classList.toggle('collapsed');
+}
+
+function addNewProblem() {
+  const title = prompt('Problem title:');
+  if (!title) return;
+  PROBLEMS.push({ title, status: 'active', color: '#ff453a', done: [], pending: [] });
+  render();
+}
+
+render();
+// Start with card 1+ collapsed for visual demo
+setTimeout(() => {
+  [1, 3].forEach(i => document.getElementById(`prob-${i}`)?.classList.add('collapsed'));
+}, 0);
+</script>
+</body>
+</html>

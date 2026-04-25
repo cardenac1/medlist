@@ -1460,14 +1460,11 @@ textarea, input[type="text"] {
 
 /* Orders section */
 .orders-section {
-    background: var(--card-bg);
-    padding: 1rem;
-    border-radius: 0.5rem;
+    background: #000;
+    padding: 0;
+    border-radius: 16px;
     margin-bottom: 1rem;
-    white-space: pre-wrap;
-    font-family: monospace;
-    font-size: 0.9rem;
-    border: 1px solid var(--border);
+    border: none;
 }
 
 /* Table view */
@@ -9474,29 +9471,24 @@ else {
 
             if (poMeds.length === 0 && ivMeds.length === 0) return '';
 
-            const catColor = categoryColors[categoryName] || 'var(--primary)';
-            const btnStyle = `background: none; border: none; padding: 0 2px; margin: 0; cursor: pointer; font-size: 0.7rem; line-height: 1; flex-shrink: 0; color: #888; font-family: inherit;`;
+            const catColor = categoryColors[categoryName] || '#0a84ff';
+            const catKey = categoryName.replace(/\s+/g, '_');
+            const btnBase = `background:none;border:none;padding:2px 5px;cursor:pointer;font-size:10px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;border-radius:4px;line-height:1;`;
 
-            let html = `<div style="margin-bottom: 0.08rem;">`;
-            html += `<div style="color: ${catColor}; font-weight: 600; font-size: 12px; margin-bottom: 0.02rem;">${categoryName}</div>`;
+            let html = `<div style="margin-bottom:0.65rem;padding-left:9px;border-left:2px solid ${catColor}55;">`;
+            html += `<div style="color:${catColor};font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;">${categoryName}</div>`;
 
             const renderMeds = (meds, routeType) => {
-                const visibleMeds = meds.filter((med, idx) => {
-                    const medId = `med_${categoryName.replace(/\s+/g, '_')}_${routeType}_${idx}`;
-                    return !deletedOrders.has(medId);
-                });
-                if (visibleMeds.length === 0) return '';
+                const hasVisible = meds.some((_, idx) => !deletedOrders.has(`med_${catKey}_${routeType}_${idx}`));
+                if (!hasVisible) return '';
 
-                const label = routeType === 'iv' ? 'IV' : 'PO / Other';
-                const labelColor = routeType === 'iv' ? '#ff453a' : '#30d158';
-                let s = `<div style="margin-left: 0.3rem; margin-bottom: 0.04rem;">`;
-                s += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:0.02rem;justify-content:flex-start;">`;
-                s += `<span style="color:${labelColor};font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${label}</span>`;
-                s += `<span style="flex:1;border-top:1px solid ${labelColor}44;"></span>`;
-                s += `</div>`;
+                const routeColor = routeType === 'iv' ? '#ff453a' : '#30d158';
+                const routeLabel = routeType === 'iv' ? 'IV' : 'PO';
+                let s = `<div style="margin-bottom:4px;">`;
+                s += `<span style="display:inline-block;background:${routeColor}1a;border:0.5px solid ${routeColor};color:${routeColor};border-radius:5px;padding:0 5px;font-size:8.5px;font-weight:700;letter-spacing:0.07em;margin-bottom:3px;">${routeLabel}</span>`;
 
                 meds.forEach((med, idx) => {
-                    const medId = `med_${categoryName.replace(/\s+/g, '_')}_${routeType}_${idx}`;
+                    const medId = `med_${catKey}_${routeType}_${idx}`;
                     if (deletedOrders.has(medId)) return;
 
                     let medText = med.text, medRoute = med.route, medIsPRN = med.isPRN, isEdited = false;
@@ -9506,21 +9498,22 @@ else {
                     }
 
                     const baseText = showAbbreviatedTable ? abbreviateMedText(medText) : medText;
+                    const pill = (bg, fg, txt) => `<span style="display:inline-block;background:${bg};color:${fg};border-radius:4px;padding:0 4px;font-size:8px;font-weight:700;margin-left:3px;vertical-align:middle;">${txt}</span>`;
                     const tags = [
-                        isEdited      ? '<span style="color:#60a5fa;font-size:0.65rem;">[edited]</span>' : '',
-                        med.isManual  ? '<span style="color:#a78bfa;font-size:0.65rem;">[manual]</span>' : '',
-                        isInpatMedAHomeMed(medText) ? '<span style="color:#34d399;font-size:0.65rem;">[home]</span>' : '',
-                    ].filter(Boolean).join(' ');
-                    const prnTag = medIsPRN ? ' <span style="color:#fbbf24;font-size:0.65rem;">PRN</span>' : '';
+                        medIsPRN              ? pill('rgba(251,191,36,0.18)',  '#fbbf24', 'PRN')    : '',
+                        isEdited              ? pill('rgba(96,165,250,0.18)',  '#60a5fa', 'edited') : '',
+                        med.isManual          ? pill('rgba(167,139,250,0.18)','#a78bfa', 'manual') : '',
+                        isInpatMedAHomeMed(medText) ? pill('rgba(52,211,153,0.18)', '#34d399', 'home') : '',
+                    ].join('');
 
                     const escapedText = medText.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, " ");
                     const medNameForDC = medText.trim().split(/\s+/)[0].toLowerCase();
 
-                    s += `<div style="color:#fff; font-family:'Segoe UI',Arial,sans-serif; font-weight:normal; padding:0.07rem 0; margin-bottom:0; display:flex; align-items:center; justify-content:space-between; line-height:1.05; border-bottom:1px solid rgba(255,255,255,0.07);">`;
-                    s += `<span>${tags ? tags + ' ' : ''}${baseText}${prnTag}</span>`;
-                    s += `<div style="display:flex;gap:4px;">`;
-                    s += `<button type="button" onclick="editMedication(event,'${medId}','${routeType}',${idx},'${categoryName.replace(/'/g, "\\'")}','${escapedText}','${medRoute}',${medIsPRN})" class="med-edit-btn" style="${btnStyle}" title="Edit">Edit</button>`;
-                    s += `<button type="button" onclick="toggleMedStatus(event,'${medId}','stop','${medNameForDC}')" class="med-status-btn" data-med-id="${medId}" data-status="stop" style="${btnStyle};color:#ef4444;" title="Remove">Remove</button>`;
+                    s += `<div style="color:#e5e5ea;font-size:11.5px;padding:4px 0 4px 4px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.05);gap:6px;line-height:1.3;">`;
+                    s += `<span style="flex:1;min-width:0;">${baseText}${tags}</span>`;
+                    s += `<div style="display:flex;gap:1px;flex-shrink:0;align-items:center;">`;
+                    s += `<button type="button" onclick="editMedication(event,'${medId}','${routeType}',${idx},'${categoryName.replace(/'/g,"\\'")}','${escapedText}','${medRoute}',${medIsPRN})" class="med-edit-btn" style="${btnBase}color:#636366;" title="Edit">✎</button>`;
+                    s += `<button type="button" onclick="toggleMedStatus(event,'${medId}','stop','${medNameForDC}')" class="med-status-btn" data-med-id="${medId}" data-status="stop" style="${btnBase}color:#ff453a;" title="Remove">✕</button>`;
                     s += `</div></div>`;
                 });
 
@@ -9530,31 +9523,30 @@ else {
 
             html += renderMeds(poMeds, 'po');
             html += renderMeds(ivMeds, 'iv');
-            html += `<div style="border-bottom:1px solid #2a2a2a;margin-top:0.04rem;"></div>`;
             html += `</div>`;
             return html;
         }
 
         // Build table HTML with toggle buttons
-        let tableHTML = '<div style="background: #000000; padding: 0.6rem; border-radius: 12px; border: 0.5px solid rgba(84,84,88,0.5);">';
-        tableHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">';
-        tableHTML += '<strong style="color: var(--primary); font-size: 16px;">Full Orders List</strong>';
+        const _ff = `-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif`;
+        let tableHTML = `<div style="background:#000;padding:0.8rem 0.875rem;border-radius:16px;border:0.5px solid rgba(84,84,88,0.45);font-family:${_ff};">`;
+        tableHTML += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;">`;
+        tableHTML += `<span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:-0.01em;">Full Orders</span>`;
 
-        // Toggle buttons
-        tableHTML += '<div style="display: flex; gap: 5px;">';
-        tableHTML += `<button type="button" onclick="openAddOrderModal()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;" title="Add manual order">Add Order</button>`;
+        tableHTML += `<div style="display:flex;align-items:center;gap:6px;">`;
+        tableHTML += `<button type="button" onclick="openAddOrderModal()" style="padding:3px 11px;font-size:11px;background:#0a84ff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;" title="Add manual order">+ Add</button>`;
 
-        // Show reset button only if there are manual changes
         if (manualOrders.length > 0 || deletedOrders.size > 0 || editedOrders.size > 0) {
-            tableHTML += `<button type="button" onclick="resetManualChanges()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;" title="Reset all manual changes">Reset</button>`;
+            tableHTML += `<button type="button" onclick="resetManualChanges()" style="padding:3px 11px;font-size:11px;background:rgba(255,69,58,0.15);color:#ff453a;border:0.5px solid rgba(255,69,58,0.4);border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;" title="Reset all manual changes">Reset</button>`;
         }
 
-        tableHTML += `<button type="button" onclick="showAbbreviatedTable = true; renderOrdersTable();" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: ${showAbbreviatedTable ? 'var(--primary)' : '#444'}; color: ${showAbbreviatedTable ? '#000' : '#fff'}; border: none; border-radius: 4px; cursor: pointer; font-weight: ${showAbbreviatedTable ? '600' : '400'};">Abbreviated</button>`;
-        tableHTML += `<button type="button" onclick="showAbbreviatedTable = false; renderOrdersTable();" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: ${!showAbbreviatedTable ? 'var(--primary)' : '#444'}; color: ${!showAbbreviatedTable ? '#000' : '#fff'}; border: none; border-radius: 4px; cursor: pointer; font-weight: ${!showAbbreviatedTable ? '600' : '400'};">Full</button>`;
-        tableHTML += '</div>';
-        tableHTML += '</div>';
+        tableHTML += `<div style="display:inline-flex;background:rgba(118,118,128,0.24);border-radius:8px;padding:2px;gap:1px;">`;
+        tableHTML += `<button type="button" onclick="showAbbreviatedTable=true;renderOrdersTable();" style="padding:3px 8px;font-size:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:inherit;transition:background 0.15s;${showAbbreviatedTable ? 'background:#fff;color:#000;' : 'background:none;color:#aeaeb2;'}">Abr</button>`;
+        tableHTML += `<button type="button" onclick="showAbbreviatedTable=false;renderOrdersTable();" style="padding:3px 8px;font-size:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:inherit;transition:background 0.15s;${!showAbbreviatedTable ? 'background:#fff;color:#000;' : 'background:none;color:#aeaeb2;'}">Full</button>`;
+        tableHTML += `</div>`;
+        tableHTML += `</div></div>`;
 
-        tableHTML += '<div style="font-family: \'Courier New\', monospace; font-size: 11.5px; background: #252525; border-radius: 8px; padding: 0.25rem 0.4rem;">';
+        tableHTML += `<div style="font-family:${_ff};font-size:12px;">`;
 
         // Fetch current orders to read top sections
         const currentOrdersForTop = document.getElementById('field_ORDERS')?.value || '';
@@ -9567,29 +9559,20 @@ else {
             if (liMatch) existingLabsImaging = liMatch[1].trim();
         }
 
+        const _secRow = (color, label, editFn, content, emptyMsg) =>
+            `<div style="margin-bottom:0.7rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:4px;border-bottom:0.5px solid rgba(84,84,88,0.35);margin-bottom:5px;">
+                <span style="color:${color};font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">${label}</span>
+                <button type="button" onclick="${editFn}()" style="background:none;border:none;padding:0;cursor:pointer;font-size:11px;color:${color};font-family:inherit;font-weight:500;opacity:0.75;">Edit</button>
+              </div>
+              <div style="color:#e5e5ea;font-size:12px;line-height:1.4;white-space:pre-wrap;">${content || `<span style="color:#48484a;font-style:italic;font-size:11px;">${emptyMsg}</span>`}</div>
+            </div>`;
+
         // VITALS/INTAKE/OUTPUTS Section
-        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
-        tableHTML += `<div style="color: #10b981; font-weight: 600; font-size: 13px;">VITALS/INTAKE/OUTPUTS:</div>`;
-        tableHTML += `<button type="button" onclick="editVitalsIO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #10b981;" title="Edit Vitals/Intake/Outputs">Edit</button>`;
-        tableHTML += `</div>`;
-        tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
-        tableHTML += existingVitalsIO || '<em style="color: var(--text-secondary);">No vitals/IO orders</em>';
-        tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
-        tableHTML += '</div>';
+        tableHTML += _secRow('#30d158', 'Vitals / Intake / Outputs', 'editVitalsIO', existingVitalsIO, 'No vitals/IO orders');
 
         // LABS/IMAGING Section
-        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
-        tableHTML += `<div style="color: #f59e0b; font-weight: 600; font-size: 13px;">LABS/IMAGING:</div>`;
-        tableHTML += `<button type="button" onclick="editLabsImaging()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #f59e0b;" title="Edit Labs/Imaging">Edit</button>`;
-        tableHTML += `</div>`;
-        tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
-        tableHTML += existingLabsImaging || '<em style="color: var(--text-secondary);">No labs/imaging orders</em>';
-        tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
-        tableHTML += '</div>';
+        tableHTML += _secRow('#f59e0b', 'Labs / Imaging', 'editLabsImaging', existingLabsImaging, 'No labs/imaging orders');
 
         tableHTML += createCategoryRow('NEURO/PAIN/SEDATION', categorizedMeds['neuro']);
         tableHTML += createCategoryRow('PULM', categorizedMeds['pulm']);
@@ -9619,39 +9602,13 @@ else {
         }
 
         // LABS/MISC Section
-        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
-        tableHTML += `<div style="color: #06b6d4; font-weight: 600; font-size: 13px;">LABS/MISC:</div>`;
-        tableHTML += `<button type="button" onclick="editLabsMisc()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: #06b6d4;" title="Edit LABS/MISC">Edit</button>`;
-        tableHTML += `</div>`;
-        tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2; white-space: pre-wrap;">`;
-        tableHTML += existingLabsMisc || '<em style="color: var(--text-secondary);">No labs/misc orders</em>';
-        tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
-        tableHTML += '</div>';
+        tableHTML += _secRow('#06b6d4', 'Labs / Misc', 'editLabsMisc', existingLabsMisc, 'No labs/misc orders');
 
         // LTD Section
-        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
-        tableHTML += `<div style="color: var(--primary); font-weight: 600; font-size: 13px;">LTD:</div>`;
-        tableHTML += `<button type="button" onclick="editLTD()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit LTD">Edit</button>`;
-        tableHTML += `</div>`;
-        tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2;">`;
-        tableHTML += existingLTD || '<em style="color: var(--text-secondary);">No LTD data</em>';
-        tableHTML += `</div>`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
-        tableHTML += '</div>';
+        tableHTML += _secRow('#0a84ff', 'LTD', 'editLTD', existingLTD, 'No LTD data');
 
         // DISPO Section
-        tableHTML += `<div style="margin-bottom: 0.15rem;">`;
-        tableHTML += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">`;
-        tableHTML += `<div style="color: var(--primary); font-weight: 600; font-size: 13px;">DISPO:</div>`;
-        tableHTML += `<button type="button" onclick="editDISPO()" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-size: 0.75rem; color: var(--primary);" title="Edit DISPO">Edit</button>`;
-        tableHTML += `</div>`;
-        tableHTML += `<div style="color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; line-height: 1.2;">`;
-        tableHTML += existingDispo || '<em style="color: var(--text-secondary);">No dispo data</em>';
-        tableHTML += `</div>`;
-        tableHTML += '</div>';
+        tableHTML += _secRow('#bf5af2', 'DISPO', 'editDISPO', existingDispo, 'No dispo data');
 
         // HOME MEDS section (at the very end) — always rendered
         const homeMedsRaw = lastImportedData ? extractHomeMeds(lastImportedData) : '';
@@ -9660,9 +9617,8 @@ else {
                 .map(l => l.trim())
                 .filter(l => l.length > 0 && !l.match(/^(PRN|Scheduled|Continuous|Active|Active\s+PRN|Active\s+Scheduled|Active\s+Continuous|Medications?\s*\(\d+\))$/i))
             : [];
-        tableHTML += `<div style="margin-bottom: 0.1rem; margin-top: 0.2rem;">`;
-        tableHTML += `<div style="border-bottom: 1px solid #444; margin-bottom: 0.2rem;"></div>`;
-        tableHTML += `<div style="color: #a78bfa; font-weight: 600; font-size: 13px; margin-bottom: 0.05rem;">HOME MEDS:</div>`;
+        tableHTML += `<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:0.5px solid rgba(84,84,88,0.35);">`;
+        tableHTML += `<div style="color:#a78bfa;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;">Home Meds</div>`;
         if (homeMedLines.length > 0) {
             homeMedLines.forEach((line, idx) => {
                 const medId = `homed_${idx}`;
@@ -9670,27 +9626,19 @@ else {
                 const displayLine = showAbbreviatedTable ? abbreviateMedText(line) : line;
                 const medName = line.split(/\s+/)[0].toLowerCase();
                 const homeOrdered = isHomeMedOrdered(line);
-                // ⚠️ = not yet ordered inpatient (needs to be started); 💊 = already ordered
-                const homeTag = homeOrdered
-                    ? '<span style="color:#34d399;font-size:0.65rem;margin-right:4px;">[ordered]</span>'
-                    : '<span style="color:#fbbf24;font-size:0.65rem;margin-right:4px;">[not ordered]</span>';
-                const homeColor = homeOrdered ? '#FFFFFF' : '#fbbf24'
-                tableHTML += `<div style="color: ${homeColor}; font-family: 'Segoe UI', Arial, sans-serif; font-weight: normal; padding: 0; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; line-height: 1.05;">`;
-                tableHTML += `<span title="${homeOrdered ? 'Ordered inpatient' : 'NOT yet ordered inpatient — consider restarting'}">${homeTag}${displayLine}</span>`;
-                tableHTML += `<div style="display: flex; gap: 4px;">`;
-                tableHTML += `<button type="button" onclick="toggleMedStatus(event, '${medId}', 'stop', '${medName}')"
-                        class="med-status-btn"
-                        data-med-id="${medId}"
-                        data-status="stop"
-                        style="background:none;border:none;padding:0 2px;margin:0;cursor:pointer;font-size:0.7rem;line-height:1;flex-shrink:0;color:#ef4444;font-family:inherit;"
-                        title="Remove this medication">Remove</button>`;
+                const statusPill = homeOrdered
+                    ? `<span style="display:inline-block;background:rgba(52,211,153,0.15);color:#34d399;border-radius:4px;padding:0 4px;font-size:8px;font-weight:700;margin-left:3px;vertical-align:middle;">ordered</span>`
+                    : `<span style="display:inline-block;background:rgba(251,191,36,0.15);color:#fbbf24;border-radius:4px;padding:0 4px;font-size:8px;font-weight:700;margin-left:3px;vertical-align:middle;">not ordered</span>`;
+                const lineColor = homeOrdered ? '#e5e5ea' : '#fbbf24';
+                tableHTML += `<div style="color:${lineColor};font-size:11.5px;padding:4px 0 4px 4px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.05);gap:6px;line-height:1.3;" title="${homeOrdered ? 'Ordered inpatient' : 'Not yet ordered inpatient — consider restarting'}">`;
+                tableHTML += `<span style="flex:1;min-width:0;">${displayLine}${statusPill}</span>`;
+                tableHTML += `<button type="button" onclick="toggleMedStatus(event,'${medId}','stop','${medName}')" class="med-status-btn" data-med-id="${medId}" data-status="stop" style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:10px;color:#ff453a;font-family:inherit;border-radius:4px;flex-shrink:0;" title="Remove">✕</button>`;
                 tableHTML += `</div>`;
-                tableHTML += '</div>';
             });
         } else {
-            tableHTML += `<div style="color: var(--text-secondary); font-style: italic; font-size: 12px;">No Home Meds</div>`;
+            tableHTML += `<span style="color:#48484a;font-style:italic;font-size:11px;">No home meds</span>`;
         }
-        tableHTML += '</div>';
+        tableHTML += `</div>`;
 
         tableHTML += '</div>';
         tableHTML += '</div>';
