@@ -5895,6 +5895,7 @@ function switchView(mode) {
             {
                 const { card, cardBody } = buildBasicCard('Problems', false);
                 const ta = document.createElement('textarea');
+				autoResizeTextarea(ta);  
                 ta.id = 'field_Problems';
                 ta.value = patient['Problems'] || '';
                 ta.style.cssText = 'margin:0;';
