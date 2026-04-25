@@ -5258,7 +5258,10 @@ function displayRows(data = patientData) {
             subEl.style.cssText = `display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; min-width: 0;`;
             if (room) {
                 const rmEl = document.createElement('span');
-                rmEl.style.cssText = `font-size: 0.8rem; color: #00f0ff; font-weight: 600; letter-spacing: 0.01em; flex-shrink: 0;`;
+                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0;
+                  background: linear-gradient(90deg, #00e5ff, #2979ff);
+                  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                  background-clip: text;`;
                 rmEl.textContent = room;
                 subEl.appendChild(rmEl);
             }
@@ -5270,7 +5273,10 @@ function displayRows(data = patientData) {
             }
             if (mrn) {
                 const mrnEl = document.createElement('span');
-                mrnEl.style.cssText = `font-size: 0.8rem; color: #ff2244; font-weight: 600; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+                mrnEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                  background: linear-gradient(90deg, #ff416c, #ff8c42);
+                  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                  background-clip: text;`;
                 mrnEl.textContent = `MRN ${mrn}`;
                 subEl.appendChild(mrnEl);
             }
