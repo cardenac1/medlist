@@ -300,114 +300,6 @@
 
 
 
-const VIOLIN_DASHBOARD_CSS = `
-.violin-dashboard-container {
-    overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--dark-bg);
-    margin: 1rem 0;
-}
-
-.violin-dashboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-
-.violin-dashboard-table thead {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.violin-dashboard-table th {
-    padding: 1rem;
-    text-align: center;
-    font-weight: 700;
-    color: white;
-    border-bottom: 2px solid var(--primary);
-}
-
-.violin-dashboard-table th:first-child {
-    text-align: left;
-}
-
-.violin-dashboard-table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-primary);
-}
-
-.violin-dashboard-table tbody tr {
-    transition: background-color 0.2s ease;
-}
-
-.violin-dashboard-table tbody tr:hover {
-    background: rgba(59, 130, 246, 0.05);
-}
-
-.violin-section-header {
-    background: rgba(59, 130, 246, 0.05);
-    padding: 0.75rem 1rem;
-    color: var(--primary);
-    font-weight: 700;
-    border-bottom: 1px solid var(--border);
-}
-
-.lab-value {
-    text-align: center;
-    font-weight: 600;
-    color: #60a5fa;
-}
-
-.lab-value.abnormal {
-    background: rgba(220, 38, 38, 0.15);
-    color: #ff6b6b;
-    padding: 0.5rem;
-    border-radius: 6px;
-    font-weight: 700;
-    box-shadow: inset 0 0 8px rgba(220, 38, 38, 0.1);
-}
-
-.lab-value.warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #fcd34d;
-    padding: 0.5rem;
-    border-radius: 6px;
-    font-weight: 700;
-    box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.1);
-}
-
-.lab-value.normal {
-    color: #6ee7b7;
-}
-
-.lab-reference {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    text-align: center;
-}
-
-.lab-trend {
-    text-align: center;
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.trend-up {
-    color: #dc2626;
-}
-
-.trend-down {
-    color: #10b981;
-}
-
-.trend-stable {
-    color: #64748b;
-}
-`;
 
 
 
@@ -1598,46 +1490,6 @@ textarea, input[type="text"] {
 
 
 
-/* Chart Check Mode Split Layout */
-.chart-check-layout {
-    display: flex;
-    gap: 1rem;
-    height: calc(100vh - 200px);
-}
-
-.chart-check-left {
-    flex: 2;
-    overflow-y: auto;
-    padding-right: 1rem;
-}
-
-.chart-check-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--card-bg);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    border: 2px solid var(--primary);
-}
-
-.chart-check-right h3 {
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-}
-
-.chart-check-right textarea {
-    flex: 1;
-    resize: none;
-    background: var(--dark-bg);
-    border: 1px solid var(--border);
-    border-radius: 0.25rem;
-    padding: 0.75rem;
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.9rem;
-}
 
 /* Interactive Todo List */
 .todo-container {
@@ -2197,52 +2049,10 @@ textarea, input[type="text"] {
     display: block;
   }
   
-  /* Fix chart check layout text alignment */
-  .chart-check-left label,
-  .chart-check-left input,
-  .chart-check-left textarea,
-  .chart-check-left .violin-field,
-  .chart-check-right textarea {
-    text-align: left !important;
-  }
-
-
-
-
-
-
-
-
-
-/* Chart Check Mode — uniform iOS borders */
-.chart-check-left input[type="text"],
-.chart-check-left textarea,
-.chart-check-right textarea {
-    border: 0.5px solid rgba(84,84,88,0.45) !important;
-    box-shadow: none !important;
-}
-
-
-
-
-
-
-
+  
 
 @media (max-width: 768px) {
-    .chart-check-layout {
-        flex-direction: column;
-        height: auto;
-    }
-    
-    .chart-check-left {
-        padding-right: 0;
-    }
-    
-    .chart-check-right {
-        margin-top: 1rem;
-        max-height: 300px;
-    }
+
 }
 
 
@@ -2959,36 +2769,6 @@ select,
 		
 
 
-/* Chart Check Mode Colorful Borders */
-.chart-check-left label:nth-of-type(1) + input,
-.chart-check-left label:nth-of-type(1) + textarea {
-    border-color: #your-new-color-1;
-    box-shadow: 0 0 0 1px rgba(your-rgba-values, 0.2);
-}
-
-.chart-check-left label:nth-of-type(2) + input,
-.chart-check-left label:nth-of-type(2) + textarea {
-    border-color: #your-new-color-2;
-    box-shadow: 0 0 0 1px rgba(your-rgba-values, 0.2);
-}
-
-.chart-check-left label:nth-of-type(3) + input,
-.chart-check-left label:nth-of-type(3) + textarea {
-    border-color: #your-new-color-3;
-    box-shadow: 0 0 0 1px rgba(your-rgba-values, 0.2);
-}
-
-.chart-check-left label:nth-of-type(4) + input,
-.chart-check-left label:nth-of-type(4) + textarea {
-    border-color: #your-new-color-4;
-    box-shadow: 0 0 0 1px rgba(your-rgba-values, 0.2);
-}
-
-
-		
-
-
-
 
 /* Priority Color Variables - ANSI Color Scheme (GREEN reserved for Priority C only) */
 .priority-critical   { --priority-color: #FF1111; } /* Critical – bright red */
@@ -3110,85 +2890,6 @@ select,
 
 
 
-/* Chart Check Mode Split Layout */
-.chart-check-layout {
-    display: flex;
-    gap: 1rem;
-    height: calc(100vh - 250px);
-    border: 3px solid var(--border);
-    border-radius: 0.5rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    padding: 1rem;
-    background: var(--card-bg);
-}
-
-.chart-check-left-panel {
-    flex: 2;
-    overflow-y: auto;
-    padding-right: 1rem;
-    border-right: 1px solid var(--border);
-}
-
-.chart-check-right-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--dark-bg);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    border: 2px solid var(--primary);
-}
-
-.chart-check-right-panel h3 {
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-}
-
-.chart-check-right-panel textarea {
-    flex: 1;
-    resize: none;
-    background: var(--dark-bg);
-    border: 1px solid var(--border);
-    border-radius: 0.25rem;
-    padding: 0.75rem;
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.9rem;
-}
-
-.chart-check-field-checkbox {
-    width: 18px;
-    height: 18px;
-    margin-left: 0.5rem;
-    cursor: pointer;
-    accent-color: var(--primary);
-    vertical-align: middle;
-}
-
-@media (max-width: 768px) {
-    .chart-check-layout {
-        flex-direction: column;
-        height: auto;
-    }
-    
-    .chart-check-left-panel {
-        padding-right: 0;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 1rem;
-    }
-    
-    .chart-check-right-panel {
-        margin-top: 1rem;
-        max-height: 300px;
-    }
-}
-
-
-
-
-
 
 /* ===== VIOLIN PROGRESS TOOL STYLES ===== */
 .prog-section {
@@ -3270,38 +2971,6 @@ select,
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
 	
 <script>
-// Simple function to check if Tesseract is available
-function isTesseractAvailable() {
-    return typeof Tesseract !== 'undefined';
-}
-
-// Test function for OCR availability
-async function testOCRAvailability() {
-    if (!isTesseractAvailable()) {
-        throw new Error('Tesseract.js not loaded');
-    }
-    
-    try {
-        // Create a simple test canvas with text
-        const canvas = document.createElement('canvas');
-        canvas.width = 200;
-        canvas.height = 50;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 200, 50);
-        ctx.fillStyle = 'black';
-        ctx.font = '20px Arial';
-        ctx.fillText('TEST', 50, 30);
-        
-        const imageData = canvas.toDataURL();
-        const { data: { text } } = await Tesseract.recognize(imageData, 'eng');
-        
-        return text.toLowerCase().includes('test');
-    } catch (error) {
-        console.error('OCR test failed:', error);
-        return false;
-    }
-}
 </script>
 
 
@@ -5461,43 +5130,6 @@ function displayRows(data = patientData) {
 
 
 
-        function displayFilteredRows(filteredData) {
-            const rowList = document.getElementById('rowList');
-            rowList.innerHTML = '';
-
-            if (filteredData.length === 0) {
-                const noResultsItem = document.createElement('li');
-                noResultsItem.className = 'row-item';
-                noResultsItem.style.textAlign = 'center';
-                noResultsItem.style.color = 'var(--text-secondary)';
-                noResultsItem.textContent = 'No results found';
-                rowList.appendChild(noResultsItem);
-            } else {
-                filteredData.forEach((patient, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'row-item';
-                    
-                    // Display the selected columns vertically
-                    selectedColumns.forEach((colIndex, idx) => {
-                        const header = MASTER_HEADERS[colIndex];
-                        const value = patient[header] || '';
-                        if (value) {
-                            const span = document.createElement('span');
-                            span.className = colors[idx % colors.length];
-                            span.textContent = value;
-                            span.style.display = 'block';
-                            listItem.appendChild(span);
-                        }
-                    });
-                    
-                    const originalIndex = filteredIndexes[index];
-                    listItem.onclick = () => showDetails(originalIndex);
-                    
-                    rowList.appendChild(listItem);
-                });
-            }
-        }
-
         function populateColumnSelector() {
             const columnSelector = document.getElementById('columnSelector');
             columnSelector.innerHTML = '';
@@ -5606,24 +5238,6 @@ function displayRows(data = patientData) {
 
 
 	    
-
-        function resortRows() {
-            sortRows();
-        }
-
-        function toggleColumnDropdown() {
-            const dropdown = document.getElementById('columnDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // ============ CONTROLS COLLAPSE ============
-        function toggleControls() {
-            const bar = document.getElementById('controlsBar');
-            const arrow = document.getElementById('controlsArrow');
-            const isOpen = bar.style.display !== 'none';
-            bar.style.display = isOpen ? 'none' : 'flex';
-            arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
-        }
 
         // ============ SEARCH FUNCTIONS ============
         function toggleSearch() {
@@ -5845,7 +5459,7 @@ function switchView(mode) {
                 // Card header
                 const cardHeader = document.createElement('div');
                 cardHeader.className = 'dashboard-card-header';
-                cardHeader.innerHTML = `<span class="card-icon">${cardIcons[header] || ''}</span><span class="card-title" style="color:${cardColors[header] || '#94a3b8'}">${DISPLAY_LABELS[header] || header}</span>`;
+                cardHeader.innerHTML = `<span class="card-icon">${cardIcons[header] || '📄'}</span><span class="card-title" style="color:${cardColors[header] || '#94a3b8'}">${DISPLAY_LABELS[header] || header}</span>`;
 
                 // Help button
                 if (helpContent[header]) {
@@ -7099,26 +6713,6 @@ const DISPLAY_LABELS = {
 
 
 
-
-
-
-
-
-
-
-
-        // ============ CONSULT MODE FUNCTIONS ============
-        function updateConvertButton() {
-            const patient = patientData[currentPatientIndex];
-            const btn = document.getElementById('convertTypeBtn');
-            if (btn) {
-                if (patient.Type === 'Consult') {
-                    btn.textContent = '🔄 Convert to Patient';
-                } else {
-                    btn.textContent = '🔄 Convert to Consult';
-                }
-            }
-        }
 
 
 
@@ -13407,16 +13001,58 @@ function generateFullChecklistHTML() {
   `;
 
   // ========= GROUP BY SECTION =========
+  // Sections that live nested inside the ORDERS collapsible
+  const ORDERS_SUBSECTIONS = new Set([
+    '🫀 PATIENT CARE', '🏃 ACTIVITY', '🍔 DIET / NUTRITION',
+    '💊 MEDICATIONS', '🧪 LABORATORY', '🫁 RESPIRATORY',
+    '🧑‍⚕️ EVIDENCE BASED', '🧑‍⚕️ EVIDENCE-BASED TREATMENT'
+  ]);
+
   const sections = {};
   items.forEach((item, index) => {
     if (!sections[item.section]) sections[item.section] = [];
     sections[item.section].push({ ...item, index });
   });
 
-  // ========= RENDER EACH SECTION (supports children) =========
+  // Helper: render a list of items as checkboxes
+  function renderItems(sectionItems, sectionColor) {
+    let s = '';
+    sectionItems.forEach(item => {
+      const parentChecked = !!states[`item_${item.index}`];
+      s += `
+        <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.06rem 0.3rem; border-radius:0.2rem; transition:background .2s; border:1px solid transparent;"
+               onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';"
+               onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
+          <input type="checkbox" ${parentChecked ? 'checked' : ''}
+                 onchange="updateFullChecklist('${patientKey}', '${item.index}', this.checked, ${totalItems})"
+                 style="width:14px; height:14px; min-width:14px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
+          <span style="color:var(--text-primary); font-size:0.82rem; line-height:1.25;">${item.text}</span>
+        </label>`;
+      if (Array.isArray(item.children) && item.children.length) {
+        s += `<ul style="margin:0.05rem 0 0.15rem 1rem; padding-left:0.3rem; list-style:none; border-left:2px solid ${sectionColor}30;">`;
+        item.children.forEach((childText, idx) => {
+          const childKey = `${item.index}_child_${idx}`;
+          const childChecked = !!states[`item_${childKey}`];
+          s += `<li><label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.04rem 0.25rem; border-radius:0.2rem;">
+                  <input type="checkbox" ${childChecked ? 'checked' : ''}
+                         onchange="updateFullChecklist('${patientKey}', '${childKey}', this.checked, ${totalItems})"
+                         style="width:13px; height:13px; min-width:13px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
+                  <span style="color:var(--text-primary); font-size:0.79rem; line-height:1.2;">${childText}</span>
+                </label></li>`;
+        });
+        s += `</ul>`;
+      }
+    });
+    return s;
+  }
+
+  // ========= RENDER EACH SECTION =========
   Object.entries(sections).forEach(([sectionName, sectionItems]) => {
+    if (ORDERS_SUBSECTIONS.has(sectionName)) return; // rendered inside ORDERS below
+
     const sectionColor = sectionItems[0].color;
-    const isCollapsible = /ORDERS|🔪/.test(sectionName);
+    const isOrders = sectionName.includes('ORDERS');
+    const isCollapsible = isOrders || sectionName.includes('🔪');
     const sectionId = 'sec_' + sectionName.replace(/[^a-zA-Z0-9]/g, '_');
 
     html += `
@@ -13426,55 +13062,42 @@ function generateFullChecklistHTML() {
             onclick="(function(el){
               var c=document.getElementById('${sectionId}');
               var open=c.style.display!=='none';
-              c.style.display=open?'none':'grid';
+              c.style.display=open?'none':'block';
               el.querySelector('.chk-arrow').textContent=open?'▸':'▾';
             })(this)">
           ${sectionName}
           <span class="chk-arrow" style="font-size:0.7rem; opacity:0.7;">${isCollapsible ? '▸' : '▾'}</span>
         </h4>
-        <div id="${sectionId}"
-             style="margin-left:0.5rem; display:${isCollapsible ? 'none' : 'grid'}; gap:0.02rem;">
-    `;
+        <div id="${sectionId}" style="display:${isCollapsible ? 'none' : 'block'}; margin-left:0.5rem;">
+          <div style="display:grid; gap:0.02rem;">
+            ${renderItems(sectionItems, sectionColor)}
+          </div>`;
 
-    sectionItems.forEach(item => {
-      const parentChecked = !!states[`item_${item.index}`];
-
-      // Parent row
-      html += `
-        <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.06rem 0.3rem; border-radius:0.2rem; transition:background .2s; border:1px solid transparent;"
-               onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';"
-               onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
-          <input type="checkbox" ${parentChecked ? 'checked' : ''}
-                 onchange="updateFullChecklist('${patientKey}', '${item.index}', this.checked, ${/* total items */ totalItems})"
-                 style="width:14px; height:14px; min-width:14px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
-          <span style="color:var(--text-primary); font-size:0.82rem; line-height:1.25;">
-            ${item.text}
-          </span>
-        </label>
-      `;
-
-      // Children (if any)
-      if (Array.isArray(item.children) && item.children.length) {
-        html += `<ul style="margin:0.05rem 0 0.15rem 1rem; padding-left:0.3rem; list-style:none; border-left:2px solid ${sectionColor}30;">`;
-        item.children.forEach((childText, idx) => {
-          const childKey = `${item.index}_child_${idx}`;
-          const childChecked = !!states[`item_${childKey}`];
-          html += `
-            <li>
-              <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.04rem 0.25rem; border-radius:0.2rem;">
-                <input type="checkbox" ${childChecked ? 'checked' : ''}
-                       onchange="updateFullChecklist('${patientKey}', '${childKey}', this.checked, ${totalItems})"
-                       style="width:13px; height:13px; min-width:13px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
-                <span style="color:var(--text-primary); font-size:0.79rem; line-height:1.2;">
-                  ${childText}
-                </span>
-              </label>
-            </li>
-          `;
-        });
-        html += `</ul>`;
-      }
-    });
+    // Nest sub-sections inside ORDERS
+    if (isOrders) {
+      Object.entries(sections).forEach(([subName, subItems]) => {
+        if (!ORDERS_SUBSECTIONS.has(subName)) return;
+        const subColor = subItems[0].color;
+        const subId = 'sec_' + subName.replace(/[^a-zA-Z0-9]/g, '_');
+        html += `
+          <div style="margin-top:0.4rem;">
+            <h5 style="color:${subColor}; margin:0.15rem 0 0.05rem; font-size:0.8rem; font-weight:600;
+                       cursor:pointer; display:flex; align-items:center; gap:0.3rem; user-select:none; letter-spacing:0.02em;"
+                onclick="(function(el){
+                  var c=document.getElementById('${subId}');
+                  var open=c.style.display!=='none';
+                  c.style.display=open?'none':'grid';
+                  el.querySelector('.chk-arrow').textContent=open?'▸':'▾';
+                })(this)">
+              ${subName}
+              <span class="chk-arrow" style="font-size:0.65rem; opacity:0.7;">▾</span>
+            </h5>
+            <div id="${subId}" style="display:grid; gap:0.02rem; margin-left:0.4rem;">
+              ${renderItems(subItems, subColor)}
+            </div>
+          </div>`;
+      });
+    }
 
     html += `</div></div>`;
   });
@@ -13493,21 +13116,6 @@ function generateFullChecklistHTML() {
   `;
 
   return html;
-}
-
-// Collapsible helper (unchanged)
-function toggleSection(sectionId) {
-  const section = document.getElementById(sectionId);
-  if (!section) return;
-  const nowHidden = section.style.display === 'none';
-  section.style.display = nowHidden ? 'grid' : 'none';
-  const header = section.previousElementSibling;
-  if (!header) return;
-  if (header.innerHTML.includes('▸')) {
-    header.innerHTML = header.innerHTML.replace('▸', '▾');
-  } else {
-    header.innerHTML = header.innerHTML.replace('▾', '▸');
-  }
 }
 
 // Update state & progress (supports child keys like "3_child_2")
@@ -14939,71 +14547,6 @@ function copyFishboneToClipboard() {
 
 
 
-function toggleFishboneDisplay() {
-    const fishboneDisplay = document.getElementById('fishboneDisplay');
-    const fishboneContent = document.getElementById('fishboneContent');
-    
-    if (!fishboneDisplay || !fishboneContent) {
-        console.error('Fishbone display elements not found');
-        return;
-    }
-    
-    if (fishboneDisplay.classList.contains('hidden')) {
-        // Show fishbone - generate it if needed
-        const patient = patientData[currentPatientIndex];
-
-
-		
-        if (patient && patient.VIOLIN) {
-            // Format content with red styling for abnormal values
- fishboneContent.innerHTML = '';
-    const preElement = document.createElement('pre');
-    preElement.style.margin = '0';
-    preElement.style.fontFamily = 'inherit';
-    preElement.style.fontSize = 'inherit';
-    preElement.style.lineHeight = 'inherit';
-    preElement.style.whiteSpace = 'pre-wrap';
-    preElement.style.wordWrap = 'break-word';
-    
-    // Apply red styling while preserving exact spacing
-preElement.innerHTML = patient.VIOLIN.replace(/\*([^*]+)\*/g, '<span style="color: #ff4444; font-weight: bold;">*$1*</span>');
-			
-    fishboneContent.appendChild(preElement);
-            
-            // Add missing values if available
-            if (labData && Object.keys(labData).length > 0) {
-                const missingValues = generateMissingValuesMessages(labData);
-                if (missingValues) {
-                    const missingDiv = document.createElement('div');
-                    missingDiv.style.marginTop = '1rem';
-                    missingDiv.style.padding = '0.75rem';
-                    missingDiv.style.background = 'rgba(100, 100, 100, 0.1)';
-                    missingDiv.style.borderRadius = '0.25rem';
-                    missingDiv.style.fontSize = '0.85rem';
-                    missingDiv.innerHTML = `<strong style="color: var(--text-secondary);">Missing Values:</strong><br><span style="font-style: italic; color: var(--text-secondary);">${missingValues}</span>`;
-                    fishboneContent.appendChild(missingDiv);
-                }
-            }
-        } else {
-            fishboneContent.innerHTML = '<em style="color: var(--text-secondary);">No VIOLIN data available. Import data first.</em>';
-        }
-        
-        fishboneDisplay.classList.remove('hidden');
-        
-        // Scroll the fishbone into view
-        setTimeout(() => {
-            fishboneDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
-    } else {
-        // Hide fishbone
-        fishboneDisplay.classList.add('hidden');
-    }
-}
-
-		
-
-
-		
 function showFishboneInline() {
     if (currentPatientIndex === -1 || !patientData[currentPatientIndex]) {
         alert('No patient selected');
