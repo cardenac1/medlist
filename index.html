@@ -754,7 +754,25 @@
         }
 
         .sticky-copy-btn {
-            display: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(59,130,246,0.12);
+            color: #60a5fa;
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 0.35rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 26px;
+            white-space: nowrap;
+        }
+        .sticky-copy-btn:active {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
         }
 
         .view-selector {
@@ -2235,28 +2253,6 @@ select,
     border: 1px solid rgba(6,182,212,0.3);
   }
 
-  /* Copy button in sticky header */
-  .sticky-copy-btn {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: rgba(59,130,246,0.12);
-    color: #60a5fa;
-    border: 1px solid rgba(59,130,246,0.3);
-    border-radius: 0.35rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.65rem;
-    font-weight: 600;
-    cursor: pointer;
-    min-height: 28px;
-    white-space: nowrap;
-  }
-  .sticky-copy-btn:active {
-    background: var(--success);
-    color: #fff;
-    border-color: var(--success);
-  }
 
   /* Hide the patient-header-card display elements on mobile (name + badges are in sticky header) */
   .patient-header-card .patient-name-display {
