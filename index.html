@@ -5532,7 +5532,9 @@ function displayRows(data = patientData) {
         function populateColumnSelect() {
             const columnSelect = document.getElementById('columnSelect');
             columnSelect.innerHTML = '<option value="">Sort by</option>';
-            MASTER_HEADERS.slice(0, -2).forEach((header, index) => {
+            const SORT_FIELDS = ['Name', 'RM', 'MRN', 'Priority', 'Type', 'Att'];
+            MASTER_HEADERS.slice(0, -2).forEach((header) => {
+                if (!SORT_FIELDS.includes(header)) return;
                 const option = document.createElement('option');
                 option.value = header;
                 option.textContent = header;
