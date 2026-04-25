@@ -13001,16 +13001,58 @@ function generateFullChecklistHTML() {
   `;
 
   // ========= GROUP BY SECTION =========
+  // Sections that live nested inside the ORDERS collapsible
+  const ORDERS_SUBSECTIONS = new Set([
+    '🫀 PATIENT CARE', '🏃 ACTIVITY', '🍔 DIET / NUTRITION',
+    '💊 MEDICATIONS', '🧪 LABORATORY', '🫁 RESPIRATORY',
+    '🧑‍⚕️ EVIDENCE BASED', '🧑‍⚕️ EVIDENCE-BASED TREATMENT'
+  ]);
+
   const sections = {};
   items.forEach((item, index) => {
     if (!sections[item.section]) sections[item.section] = [];
     sections[item.section].push({ ...item, index });
   });
 
-  // ========= RENDER EACH SECTION (supports children) =========
+  // Helper: render a list of items as checkboxes
+  function renderItems(sectionItems, sectionColor) {
+    let s = '';
+    sectionItems.forEach(item => {
+      const parentChecked = !!states[`item_${item.index}`];
+      s += `
+        <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.06rem 0.3rem; border-radius:0.2rem; transition:background .2s; border:1px solid transparent;"
+               onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';"
+               onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
+          <input type="checkbox" ${parentChecked ? 'checked' : ''}
+                 onchange="updateFullChecklist('${patientKey}', '${item.index}', this.checked, ${totalItems})"
+                 style="width:14px; height:14px; min-width:14px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
+          <span style="color:var(--text-primary); font-size:0.82rem; line-height:1.25;">${item.text}</span>
+        </label>`;
+      if (Array.isArray(item.children) && item.children.length) {
+        s += `<ul style="margin:0.05rem 0 0.15rem 1rem; padding-left:0.3rem; list-style:none; border-left:2px solid ${sectionColor}30;">`;
+        item.children.forEach((childText, idx) => {
+          const childKey = `${item.index}_child_${idx}`;
+          const childChecked = !!states[`item_${childKey}`];
+          s += `<li><label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.04rem 0.25rem; border-radius:0.2rem;">
+                  <input type="checkbox" ${childChecked ? 'checked' : ''}
+                         onchange="updateFullChecklist('${patientKey}', '${childKey}', this.checked, ${totalItems})"
+                         style="width:13px; height:13px; min-width:13px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
+                  <span style="color:var(--text-primary); font-size:0.79rem; line-height:1.2;">${childText}</span>
+                </label></li>`;
+        });
+        s += `</ul>`;
+      }
+    });
+    return s;
+  }
+
+  // ========= RENDER EACH SECTION =========
   Object.entries(sections).forEach(([sectionName, sectionItems]) => {
+    if (ORDERS_SUBSECTIONS.has(sectionName)) return; // rendered inside ORDERS below
+
     const sectionColor = sectionItems[0].color;
-    const isCollapsible = /ORDERS|🔪/.test(sectionName);
+    const isOrders = sectionName.includes('ORDERS');
+    const isCollapsible = isOrders || sectionName.includes('🔪');
     const sectionId = 'sec_' + sectionName.replace(/[^a-zA-Z0-9]/g, '_');
 
     html += `
@@ -13020,55 +13062,42 @@ function generateFullChecklistHTML() {
             onclick="(function(el){
               var c=document.getElementById('${sectionId}');
               var open=c.style.display!=='none';
-              c.style.display=open?'none':'grid';
+              c.style.display=open?'none':'block';
               el.querySelector('.chk-arrow').textContent=open?'▸':'▾';
             })(this)">
           ${sectionName}
           <span class="chk-arrow" style="font-size:0.7rem; opacity:0.7;">${isCollapsible ? '▸' : '▾'}</span>
         </h4>
-        <div id="${sectionId}"
-             style="margin-left:0.5rem; display:${isCollapsible ? 'none' : 'grid'}; gap:0.02rem;">
-    `;
+        <div id="${sectionId}" style="display:${isCollapsible ? 'none' : 'block'}; margin-left:0.5rem;">
+          <div style="display:grid; gap:0.02rem;">
+            ${renderItems(sectionItems, sectionColor)}
+          </div>`;
 
-    sectionItems.forEach(item => {
-      const parentChecked = !!states[`item_${item.index}`];
-
-      // Parent row
-      html += `
-        <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.06rem 0.3rem; border-radius:0.2rem; transition:background .2s; border:1px solid transparent;"
-               onmouseover="this.style.background='var(--card-hover)'; this.style.borderColor='${sectionColor}30';"
-               onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
-          <input type="checkbox" ${parentChecked ? 'checked' : ''}
-                 onchange="updateFullChecklist('${patientKey}', '${item.index}', this.checked, ${/* total items */ totalItems})"
-                 style="width:14px; height:14px; min-width:14px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
-          <span style="color:var(--text-primary); font-size:0.82rem; line-height:1.25;">
-            ${item.text}
-          </span>
-        </label>
-      `;
-
-      // Children (if any)
-      if (Array.isArray(item.children) && item.children.length) {
-        html += `<ul style="margin:0.05rem 0 0.15rem 1rem; padding-left:0.3rem; list-style:none; border-left:2px solid ${sectionColor}30;">`;
-        item.children.forEach((childText, idx) => {
-          const childKey = `${item.index}_child_${idx}`;
-          const childChecked = !!states[`item_${childKey}`];
-          html += `
-            <li>
-              <label style="display:flex; align-items:flex-start; gap:0.3rem; cursor:pointer; padding:0.04rem 0.25rem; border-radius:0.2rem;">
-                <input type="checkbox" ${childChecked ? 'checked' : ''}
-                       onchange="updateFullChecklist('${patientKey}', '${childKey}', this.checked, ${totalItems})"
-                       style="width:13px; height:13px; min-width:13px; margin-top:2px; accent-color:${sectionColor}; cursor:pointer;">
-                <span style="color:var(--text-primary); font-size:0.79rem; line-height:1.2;">
-                  ${childText}
-                </span>
-              </label>
-            </li>
-          `;
-        });
-        html += `</ul>`;
-      }
-    });
+    // Nest sub-sections inside ORDERS
+    if (isOrders) {
+      Object.entries(sections).forEach(([subName, subItems]) => {
+        if (!ORDERS_SUBSECTIONS.has(subName)) return;
+        const subColor = subItems[0].color;
+        const subId = 'sec_' + subName.replace(/[^a-zA-Z0-9]/g, '_');
+        html += `
+          <div style="margin-top:0.4rem;">
+            <h5 style="color:${subColor}; margin:0.15rem 0 0.05rem; font-size:0.8rem; font-weight:600;
+                       cursor:pointer; display:flex; align-items:center; gap:0.3rem; user-select:none; letter-spacing:0.02em;"
+                onclick="(function(el){
+                  var c=document.getElementById('${subId}');
+                  var open=c.style.display!=='none';
+                  c.style.display=open?'none':'grid';
+                  el.querySelector('.chk-arrow').textContent=open?'▸':'▾';
+                })(this)">
+              ${subName}
+              <span class="chk-arrow" style="font-size:0.65rem; opacity:0.7;">▾</span>
+            </h5>
+            <div id="${subId}" style="display:grid; gap:0.02rem; margin-left:0.4rem;">
+              ${renderItems(subItems, subColor)}
+            </div>
+          </div>`;
+      });
+    }
 
     html += `</div></div>`;
   });
