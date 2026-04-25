@@ -5892,21 +5892,25 @@ function switchView(mode) {
             }
 
             // ── Left: HPI (collapsed by default) ──
-            {
-                const { card, cardBody } = buildBasicCard('Problems', false);
-                const ta = document.createElement('textarea');
-				autoResizeTextarea(ta);  
-                ta.id = 'field_Problems';
-                ta.value = patient['Problems'] || '';
-                ta.style.cssText = 'margin:0;';
-                ta.addEventListener('input', function() {
-                    patient['Problems'] = this.value;
-                    saveToLocalStorage();
-                    autoResizeTextarea(this);
-                });
-                cardBody.appendChild(ta);
-                leftCol.appendChild(card);
-            }
+           {
+    const { card, cardBody } = buildBasicCard('Problems', false);
+
+    const ta = document.createElement('textarea');
+    ta.id = 'field_Problems';
+    ta.value = patient['Problems'] || '';
+    ta.style.cssText = 'margin:0;';
+
+    ta.addEventListener('input', function() {
+        patient['Problems'] = this.value;
+        saveToLocalStorage();
+        autoResizeTextarea(this);
+    });
+
+    cardBody.appendChild(ta);
+    leftCol.appendChild(card);
+
+    setTimeout(() => autoResizeTextarea(ta), 0);
+}
 
             // ── Left: Problems list card ──
             {
