@@ -3226,6 +3226,7 @@ select,
                     <div id="stickyTextContainer" class="sticky-text"></div>
                     <div id="stickyMetaBadges" class="sticky-meta-badges"></div>
                     <button id="stickyCopyBtn" class="sticky-copy-btn" onclick="copyStickyPatientInfo()" title="Copy Name/RM/MRN">Copy</button>
+                    <button id="stickyEditBtn" class="sticky-copy-btn" onclick="toggleStickyEdit()" title="Edit Name / RM / MRN" style="margin-left:3px;">Edit</button>
                 </div>
                 <div class="view-selector">
                     <button class="view-button active" onclick="switchView('basic')">Details</button>
@@ -5335,6 +5336,10 @@ function clearSearch() {
         return;
     }
 
+    // Close any open edit panel when switching patient
+    const _ep = document.getElementById('stickyEditPanel');
+    if (_ep) { _ep.remove(); const _eb = document.getElementById('stickyEditBtn'); if (_eb) _eb.textContent = 'Edit'; }
+
     updateStickyHeader(patient);
 
     // Always open the main details page when navigating to a patient
@@ -5347,6 +5352,61 @@ function clearSearch() {
     detailsView.style.display = 'block';
     updateNavButtons();
 
+}
+
+function toggleStickyEdit() {
+    const patient = patientData[currentPatientIndex];
+    if (!patient) return;
+    const btn = document.getElementById('stickyEditBtn');
+    const existing = document.getElementById('stickyEditPanel');
+    if (existing) {
+        existing.remove();
+        btn.textContent = 'Edit';
+        return;
+    }
+    const panel = document.createElement('div');
+    panel.id = 'stickyEditPanel';
+    panel.style.cssText = `
+        display: flex; gap: 6px; padding: 6px 10px 8px;
+        background: #000; flex-wrap: wrap; align-items: center;
+        border-bottom: 0.5px solid rgba(84,84,88,0.5);
+    `;
+    [['Name', 'Patient name'], ['RM', 'Room'], ['MRN', 'MRN']].forEach(([field, ph]) => {
+        const lbl = document.createElement('span');
+        lbl.textContent = field;
+        lbl.style.cssText = 'font-size:0.72rem; color:#8e8e93; white-space:nowrap; flex-shrink:0;';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = patient[field] || '';
+        inp.placeholder = ph;
+        inp.style.cssText = `
+            font-size: 0.82rem; padding: 4px 8px; border-radius: 8px;
+            border: 0.5px solid rgba(84,84,88,0.6); background: #1c1c1e;
+            color: #fff; width: ${field === 'Name' ? '130px' : '80px'};
+            margin: 0; flex-shrink: 0;
+        `;
+        inp.addEventListener('input', function() {
+            patient[field] = this.value;
+            updateStickyHeader(patient);
+            displayRows();
+            saveToLocalStorage();
+        });
+        panel.appendChild(lbl);
+        panel.appendChild(inp);
+    });
+    const doneBtn = document.createElement('button');
+    doneBtn.textContent = 'Done';
+    doneBtn.style.cssText = `
+        font-size: 0.75rem; padding: 4px 12px; border-radius: 8px;
+        background: #0a84ff; color: #fff; border: none; cursor: pointer;
+        flex-shrink: 0; margin-left: auto;
+    `;
+    doneBtn.onclick = () => { panel.remove(); btn.textContent = 'Edit'; };
+    panel.appendChild(doneBtn);
+    const headerTop = document.querySelector('.details-header-top');
+    headerTop.insertAdjacentElement('afterend', panel);
+    btn.textContent = 'Done';
+    panel.querySelector('input').focus();
 }
 
 function updateStickyHeader(patient) {
@@ -5414,38 +5474,6 @@ function switchView(mode) {
             // Modern dashboard layout for basic/details mode
             const dashGrid = document.createElement('div');
             dashGrid.className = 'dashboard-grid';
-
-            // Patient header card
-            const headerCard = document.createElement('div');
-            headerCard.className = 'patient-header-card';
-
-            // Input fields with labels only — NAME | RM | MRN shown in sticky header above
-            const shortFieldsRow = document.createElement('div');
-            shortFieldsRow.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;';
-            [['Name', 'Patient name'], ['RM', 'Room number'], ['MRN', 'MRN']].forEach(([header, placeholder]) => {
-                const wrap = document.createElement('div');
-                wrap.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
-                const lbl = document.createElement('label');
-                lbl.textContent = header + ':';
-                lbl.style.cssText = 'margin:0;min-width:2.8rem;font-size:0.78rem;color:#94a3b8;white-space:nowrap;';
-                const inp = document.createElement('input');
-                inp.type = 'text';
-                inp.id = `field_${header.replace(/\s+/g, '_')}`;
-                inp.value = patient[header] || '';
-                inp.placeholder = placeholder;
-                inp.style.cssText = 'margin:0;padding:0.35rem 0.6rem;font-size:0.8rem;flex:1;';
-                inp.addEventListener('input', function() {
-                    patient[header] = this.value;
-                    updateStickyHeader(patient);
-                    saveToLocalStorage();
-                });
-                wrap.appendChild(lbl);
-                wrap.appendChild(inp);
-                shortFieldsRow.appendChild(wrap);
-            });
-            headerCard.appendChild(shortFieldsRow);
-
-            dashGrid.appendChild(headerCard);
 
             // Dashboard cards for text fields
             const cardIcons = { 'Problems': '', 'ICS': '', 'To do': '', 'Priority': '' };
