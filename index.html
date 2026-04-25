@@ -914,8 +914,8 @@ const VIOLIN_DASHBOARD_CSS = `
 
         textarea:focus, input[type="text"]:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+            border-color: rgba(84,84,88,0.8);
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.25);
         }
 
         label {
@@ -1430,15 +1430,15 @@ const VIOLIN_DASHBOARD_CSS = `
 
 textarea, input[type="text"] {
     background: rgba(10, 10, 10, 0.7);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 0.75rem;
-    padding: 0.65rem 0.85rem;
+    border: 0.5px solid rgba(84,84,88,0.45);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
     color: #f1f5f9;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
     font-size: 0.85rem;
     width: 100%;
-    transition: all 150ms ease;
-    margin: 0.5rem 0 1rem;
+    transition: border-color 150ms ease;
+    margin: 0.4rem 0 0.9rem;
     resize: none;
     overflow-y: hidden;
     text-align: left;
@@ -2214,73 +2214,12 @@ textarea, input[type="text"] {
 
 
 
-/* Chart Check Mode Colorful Borders */
+/* Chart Check Mode — uniform iOS borders */
 .chart-check-left input[type="text"],
-.chart-check-left textarea {
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.chart-check-left label:nth-of-type(1) + input,
-.chart-check-left label:nth-of-type(1) + textarea {
-    border-color: var(--accent-1);
-    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.2);
-}
-
-.chart-check-left label:nth-of-type(2) + input,
-.chart-check-left label:nth-of-type(2) + textarea {
-    border-color: var(--accent-2);
-    box-shadow: 0 0 0 1px rgba(242, 99, 99, 0.2);
-}
-
-.chart-check-left label:nth-of-type(3) + input,
-.chart-check-left label:nth-of-type(3) + textarea {
-    border-color: var(--accent-3);
-    box-shadow: 0 0 0 1px rgba(121, 232, 159, 0.2);
-}
-
-.chart-check-left label:nth-of-type(4) + input,
-.chart-check-left label:nth-of-type(4) + textarea {
-    border-color: var(--accent-4);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-.chart-check-left label:nth-of-type(5) + input,
-.chart-check-left label:nth-of-type(5) + textarea {
-    border-color: var(--accent-5);
-    box-shadow: 0 0 0 1px rgba(255, 128, 0, 0.2);
-}
-
-.chart-check-left label:nth-of-type(6) + input,
-.chart-check-left label:nth-of-type(6) + textarea {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
-}
-
-.chart-check-left label:nth-of-type(7) + input,
-.chart-check-left label:nth-of-type(7) + textarea {
-    border-color: var(--secondary);
-    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.2);
-}
-
-.chart-check-left label:nth-of-type(8) + input,
-.chart-check-left label:nth-of-type(8) + textarea {
-    border-color: var(--success);
-    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
-}
-
-.chart-check-left input[type="text"]:focus,
-.chart-check-left textarea:focus {
-    box-shadow: 0 0 0 2px currentColor !important;
-}
-
-/* Right panel textarea gets a special color too */
+.chart-check-left textarea,
 .chart-check-right textarea {
-    border-color: var(--primary) !important;
-    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3) !important;
-}
-
-.chart-check-right textarea:focus {
-    box-shadow: 0 0 0 2px var(--primary) !important;
+    border: 0.5px solid rgba(84,84,88,0.45) !important;
+    box-shadow: none !important;
 }
 
 
@@ -5190,7 +5129,7 @@ function renderTodoInListRow(container, patient) {
 
     if (allItems.length === 0) {
         const span = document.createElement('span');
-        span.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: \'Inter\', sans-serif; color: #ffffff; word-wrap: break-word; white-space: pre-wrap; overflow-wrap: break-word;';
+        span.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: -apple-system, BlinkMacSystemFont, \'SF Pro Text\', \'Helvetica Neue\', sans-serif; color: #ffffff; word-wrap: break-word; white-space: pre-wrap; overflow-wrap: break-word;';
         span.textContent = value;
         container.appendChild(span);
         return;
@@ -5214,14 +5153,14 @@ function renderTodoInListRow(container, patient) {
             });
 
             const textEl = document.createElement('span');
-            textEl.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: \'Inter\', sans-serif; word-wrap: break-word; overflow-wrap: break-word; color: ' + (item.done ? '#6b7280' : '#ffffff') + '; text-decoration: ' + (item.done ? 'line-through' : 'none') + ';';
+            textEl.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: -apple-system, BlinkMacSystemFont, \'SF Pro Text\', \'Helvetica Neue\', sans-serif; word-wrap: break-word; overflow-wrap: break-word; color: ' + (item.done ? '#6b7280' : '#ffffff') + '; text-decoration: ' + (item.done ? 'line-through' : 'none') + ';';
             textEl.textContent = item.text;
 
             taskRow.appendChild(checkbox);
             taskRow.appendChild(textEl);
         } else {
             const textEl = document.createElement('span');
-            textEl.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: \'Inter\', sans-serif; color: #ffffff; word-wrap: break-word; overflow-wrap: break-word;';
+            textEl.style.cssText = 'font-size: 0.78rem; line-height: 1.2; font-family: -apple-system, BlinkMacSystemFont, \'SF Pro Text\', \'Helvetica Neue\', sans-serif; color: #ffffff; word-wrap: break-word; overflow-wrap: break-word;';
             textEl.textContent = item.text;
             taskRow.appendChild(textEl);
         }
@@ -9636,7 +9575,8 @@ function saveLabsImaging() {
 	    'neuro': [],          // Pain, sedation, neurological, psychiatric
 	    'pulm': [],           // All respiratory
 	    'cardiovascular': [], // Cardiac, pressors, BP meds, statins
-	    'gi': [],             // Diet, GI meds, bowel regimen
+	    'diet': [],           // Diet orders
+	    'gi': [],             // GI meds, antiemetics, bowel regimen
 	    'renal': [],          // Diuretics, IV fluids
 	    'heme': [],           // Anticoagulants
 	    'infection': [],      // Antibiotics, antifungals, immunosuppressive
@@ -9646,7 +9586,7 @@ function saveLabsImaging() {
 
         // Add diet order if found
         if (dietMatch) {
-            categorizedMeds['gi'].push({
+            categorizedMeds['diet'].push({
                 text: `Diet: ${dietMatch[1].trim()}`,
                 route: 'PO',
                 isPRN: false
@@ -9784,8 +9724,9 @@ else {
             'NEURO/PAIN/SEDATION': '#c084fc', // purple
             'PULM':                '#38bdf8', // sky blue
             'CV/PRESSORS':         '#f87171', // red/coral
-            'GI/DIET':             '#fb923c', // orange
-            'RENAL/FLUIDS':        '#34d399', // emerald
+            'DIET':                '#34d399', // emerald green
+            'GI MEDS':             '#fb923c', // orange
+            'RENAL/FLUIDS':        '#60a5fa', // blue
             'HEME/AC':             '#f472b6', // pink
             'INFECTION/ABX':       '#a3e635', // lime/green
             'ENDOCRINE/INSULIN':   '#fbbf24', // amber
@@ -10016,15 +9957,16 @@ else {
         tableHTML += `<div style="border-bottom: 1px solid #444; margin-top: 0.1rem;"></div>`;
         tableHTML += '</div>';
 
-      tableHTML += createCategoryRow('NEURO/PAIN/SEDATION', categorizedMeds['neuro']);
-tableHTML += createCategoryRow('PULM', categorizedMeds['pulm']);
-tableHTML += createCategoryRow('CV/PRESSORS', categorizedMeds['cardiovascular']);
-tableHTML += createCategoryRow('GI/DIET', categorizedMeds['gi']);
-tableHTML += createCategoryRow('RENAL/FLUIDS', categorizedMeds['renal']);
-tableHTML += createCategoryRow('HEME/AC', categorizedMeds['heme']);
-tableHTML += createCategoryRow('INFECTION/ABX', categorizedMeds['infection']);
-tableHTML += createCategoryRow('ENDOCRINE/INSULIN', categorizedMeds['endocrine']);
-tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
+        tableHTML += createCategoryRow('NEURO/PAIN/SEDATION', categorizedMeds['neuro']);
+        tableHTML += createCategoryRow('PULM', categorizedMeds['pulm']);
+        tableHTML += createCategoryRow('CV/PRESSORS', categorizedMeds['cardiovascular']);
+        tableHTML += createCategoryRow('DIET', categorizedMeds['diet']);
+        tableHTML += createCategoryRow('GI MEDS', categorizedMeds['gi']);
+        tableHTML += createCategoryRow('RENAL/FLUIDS', categorizedMeds['renal']);
+        tableHTML += createCategoryRow('HEME/AC', categorizedMeds['heme']);
+        tableHTML += createCategoryRow('INFECTION/ABX', categorizedMeds['infection']);
+        tableHTML += createCategoryRow('ENDOCRINE/INSULIN', categorizedMeds['endocrine']);
+        tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
 
         // Add LABS/MISC, LTD and DISPO sections
         const currentOrders = document.getElementById('field_ORDERS')?.value || '';
@@ -13299,142 +13241,142 @@ function generateFullChecklistHTML() {
 
   // ========= DATA =========
   const consultItems = [
-    // 🩺 STAFF / NOTE
-    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Add to list' },
-    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Review Hx / Vitals / I&Os / Labs / Imaging' },
-    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Staff with attending' },
-    { section: '🩺 STAFF / NOTE', color: '#3b82f6', text: 'Complete NOTE (include HCP)' },
+    // STAFF / NOTE
+    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Add to list' },
+    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Review Hx / Vitals / I&Os / Labs / Imaging' },
+    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Staff with attending' },
+    { section: 'STAFF / NOTE', color: '#3b82f6', text: 'Complete NOTE (include HCP)' },
 
-    // ☎️ RECOMMENDATIONS
-    { section: '☎️ RECOMMENDATIONS', color: '#9333ea', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
-    { section: '☎️ RECOMMENDATIONS', color: '#9333ea', text: 'Sign out to primary team/ED' },
+    // RECOMMENDATIONS
+    { section: 'RECOMMENDATIONS', color: '#9333ea', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
+    { section: 'RECOMMENDATIONS', color: '#9333ea', text: 'Sign out to primary team/ED' },
 
     // ✍️ ORDERS
-    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'Extra scans / consults' },
-    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
+    { section: 'ORDERS', color: '#d97706', text: 'Extra scans / consults' },
+    { section: 'ORDERS', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
 
     // 🔪 OR
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'NPO at midnight ± IVF' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Book OR + Call OR' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Obtain Consent' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Type & Screen (within 3 days + historical)' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: '2U PRBCs on hold' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Urine HCG' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Preoperative risk stratification' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'EKG, CXR, Preop testing' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Coags' },
-    { section: '🔪 OR (if applicable)', color: '#dc2626', text: 'Special instruments/booking needs' },
+    { section: 'OR', color: '#dc2626', text: 'NPO at midnight ± IVF' },
+    { section: 'OR', color: '#dc2626', text: 'Book OR + Call OR' },
+    { section: 'OR', color: '#dc2626', text: 'Obtain Consent' },
+    { section: 'OR', color: '#dc2626', text: 'Type & Screen (within 3 days + historical)' },
+    { section: 'OR', color: '#dc2626', text: '2U PRBCs on hold' },
+    { section: 'OR', color: '#dc2626', text: 'Urine HCG' },
+    { section: 'OR', color: '#dc2626', text: 'Preoperative risk stratification' },
+    { section: 'OR', color: '#dc2626', text: 'EKG, CXR, Preop testing' },
+    { section: 'OR', color: '#dc2626', text: 'Coags' },
+    { section: 'OR', color: '#dc2626', text: 'Special instruments/booking needs' },
 
-    // 🫀 PATIENT CARE
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
+    // PATIENT CARE
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
 
-    // 🏃 ACTIVITY
-    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
-    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
+    // ACTIVITY
+    { section: 'ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
+    { section: 'ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
 
-    // 🍔 DIET / NUTRITION
-    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
-    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
+    // DIET / NUTRITION
+    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
+    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
 
-    // 💊 MEDICATIONS
-    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
-    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
-    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
+    // MEDICATIONS
+    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
+    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
+    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
 
-    // 🧪 LABORATORY
-    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp)' },
-    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
+    // LABORATORY
+    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp)' },
+    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
 
-    // 🫁 RESPIRATORY
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Nebs' },
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
+    // RESPIRATORY
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Nebs' },
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
 
-    // 🧑‍⚕️ EVIDENCE BASED
-    { section: '🧑‍⚕️ EVIDENCE BASED', color: '#0d9488', text: 'Ongoing evidence-based management' },
+    // EVIDENCE BASED
+    { section: 'EVIDENCE BASED', color: '#0d9488', text: 'Ongoing evidence-based management' },
   ];
 
   const traumaItems = [
-    // 📝 STAFF / NOTE
-    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Staff with attending' },
-    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Order scans' },
-    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'Complete NOTE (include HCP)' },
-    { section: '📝 STAFF / NOTE', color: '#dc2626', text: 'PROCEDURES NOTE' },
+    // STAFF / NOTE
+    { section: 'STAFF / NOTE', color: '#dc2626', text: 'Staff with attending' },
+    { section: 'STAFF / NOTE', color: '#dc2626', text: 'Order scans' },
+    { section: 'STAFF / NOTE', color: '#dc2626', text: 'Complete NOTE (include HCP)' },
+    { section: 'STAFF / NOTE', color: '#dc2626', text: 'PROCEDURES NOTE' },
 
-    // 🩻 IMAGING & LAB REVIEW
-    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Primary review of imaging (CTH, CT C/T/L Spine, CT Chest/Abdomen/Pelvis, Additional scans as needed)' },
-    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Follow-up attending reads' },
-    { section: '🩻 IMAGING & LAB REVIEW', color: '#9333ea', text: 'Review labs' },
+    // IMAGING & LAB REVIEW
+    { section: 'IMAGING & LAB REVIEW', color: '#9333ea', text: 'Primary review of imaging (CTH, CT C/T/L Spine, CT Chest/Abdomen/Pelvis, Additional scans as needed)' },
+    { section: 'IMAGING & LAB REVIEW', color: '#9333ea', text: 'Follow-up attending reads' },
+    { section: 'IMAGING & LAB REVIEW', color: '#9333ea', text: 'Review labs' },
 
-    // ☎️ DISPO
-    { section: '☎️ DISPO', color: '#c026d3', text: 'Sign-out (ICU / Floor / ED)' },
-    { section: '☎️ DISPO', color: '#c026d3', text: 'Update family' },
-    { section: '☎️ DISPO', color: '#c026d3', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
+    // DISPO
+    { section: 'DISPO', color: '#c026d3', text: 'Sign-out (ICU / Floor / ED)' },
+    { section: 'DISPO', color: '#c026d3', text: 'Update family' },
+    { section: 'DISPO', color: '#c026d3', text: 'Add addendum with evidence-based recommendations for diagnosis + comorbidities' },
 
     // ✍️ ORDERS
-    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'Extra scans / consults' },
-    { section: '✍️ ORDERS (if admitting)', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
+    { section: 'ORDERS', color: '#d97706', text: 'Extra scans / consults' },
+    { section: 'ORDERS', color: '#d97706', text: 'PSO (if admitting) + call bed board' },
 
-    // 🫀 PATIENT CARE
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
-    { section: '🫀 PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
+    // PATIENT CARE
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Blood glucose monitoring' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Cardiac telemetry' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intake & output' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Intermittent pneumatic compression devices' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Neuro / neurovascular checks' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Notify provider of abnormal vital signs' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Drain/Line Care: NGT / OGT, Foley, Chest tube, Central line, Arterial line, Peripheral IV' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Pulse oximetry continuous' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Vital signs' },
+    { section: 'PATIENT CARE', color: '#0ea5e9', text: 'Weight daily' },
 
-    // 🏃 ACTIVITY
-    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
-    { section: '🏃 ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
+    // ACTIVITY
+    { section: 'ACTIVITY', color: '#16a34a', text: 'Activity level (OOB / assist / bedrest)' },
+    { section: 'ACTIVITY', color: '#16a34a', text: 'Weight-bearing status' },
 
-    // 🍔 DIET / NUTRITION
-    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
-    { section: '🍔 DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
+    // DIET / NUTRITION
+    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'Diet order vs NPO/IVF (Use caution with CHF / CKD / cirrhosis)' },
+    { section: 'DIET / NUTRITION', color: '#ea580c', text: 'TPN/PPN/Nutrition consult' },
 
-    // 💊 MEDICATIONS
-    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
-    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
-    { section: '💊 MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
+    // MEDICATIONS
+    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Pain meds + bowel regimen' },
+    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'DVT prophylaxis' },
+    { section: 'MEDICATIONS', color: '#8b5cf6', text: 'Home medications' },
 
-    // 🧪 LABORATORY
-    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp) OR q12 labs for ICU' },
-    { section: '🧪 LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
+    // LABORATORY
+    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily 2 AM labs (6 AM txp) OR q12 labs for ICU' },
+    { section: 'LABORATORY', color: '#06b6d4', text: 'Daily Imaging' },
 
-    // 🫁 RESPIRATORY
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Nebs' },
-    { section: '🫁 RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
+    // RESPIRATORY
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Incentive spirometry' },
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Vent settings' },
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Nebs' },
+    { section: 'RESPIRATORY', color: '#2563eb', text: 'Chest PT/RT' },
 
-    // 🧑‍⚕️ EVIDENCE-BASED TREATMENT
-    { section: '🧑‍⚕️ EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Evidence-based management of diagnoses' },
-    { section: '🧑‍⚕️ EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Comorbidity management inpatient' },
+    // EVIDENCE-BASED TREATMENT
+    { section: 'EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Evidence-based management of diagnoses' },
+    { section: 'EVIDENCE-BASED TREATMENT', color: '#0d9488', text: 'Comorbidity management inpatient' },
 
     // 🔪 OR
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'NPO at midnight ± IVF' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Book OR + Call OR' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Obtain Consent' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Type & Screen (within 3 days + historical)' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: '2U PRBCs on hold' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Urine HCG' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Preoperative risk stratification' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'EKG, CXR, Preop testing' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Coags' },
-    { section: '🔪 OR (if applicable)', color: '#b91c1c', text: 'Special instruments/booking needs' },
+    { section: 'OR', color: '#b91c1c', text: 'NPO at midnight ± IVF' },
+    { section: 'OR', color: '#b91c1c', text: 'Book OR + Call OR' },
+    { section: 'OR', color: '#b91c1c', text: 'Obtain Consent' },
+    { section: 'OR', color: '#b91c1c', text: 'Type & Screen (within 3 days + historical)' },
+    { section: 'OR', color: '#b91c1c', text: '2U PRBCs on hold' },
+    { section: 'OR', color: '#b91c1c', text: 'Urine HCG' },
+    { section: 'OR', color: '#b91c1c', text: 'Preoperative risk stratification' },
+    { section: 'OR', color: '#b91c1c', text: 'EKG, CXR, Preop testing' },
+    { section: 'OR', color: '#b91c1c', text: 'Coags' },
+    { section: 'OR', color: '#b91c1c', text: 'Special instruments/booking needs' },
   ];
 
   const items = isTrauma ? traumaItems : consultItems;
