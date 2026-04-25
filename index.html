@@ -4288,17 +4288,39 @@ const helpContent = {
                 listEl.appendChild(el);
             });
 
-            // Pending tasks — drag to reorder
+            // Pending tasks — drag to reorder (mouse + touch)
             let _dragSrcIdx = null;
+            let _touchGhost = null;
+            let _touchTargetIdx = null;
+
+            function doReorder(fromIdx, toIdx) {
+                if (fromIdx === null || fromIdx === toIdx) return;
+                const allPending = parsed.tasks.filter(t => t.type === 'task' && !t.done);
+                const moved = allPending.splice(fromIdx, 1)[0];
+                allPending.splice(toIdx, 0, moved);
+                const pl = parsed.tasks.filter(t => t.type === 'plain');
+                const dn = parsed.tasks.filter(t => t.type === 'task' && t.done);
+                parsed.tasks.length = 0;
+                pl.forEach(x => parsed.tasks.push(x));
+                allPending.forEach(x => parsed.tasks.push(x));
+                dn.forEach(x => parsed.tasks.push(x));
+                patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                saveToLocalStorage();
+                renderTodoList(container, patient);
+            }
+
             pending.forEach((item, pendingIdx) => {
                 const el = buildTaskElement(item, parsed, container, patient);
+                el.dataset.pendingIdx = pendingIdx;
                 el.draggable = true;
                 el.style.cursor = 'grab';
                 const dragHandle = document.createElement('span');
                 dragHandle.textContent = '⠿';
-                dragHandle.style.cssText = 'color:#3a3a3c;font-size:0.85rem;padding-right:4px;flex-shrink:0;cursor:grab;touch-action:none;';
+                dragHandle.style.cssText = 'color:#3a3a3c;font-size:0.85rem;padding-right:4px;flex-shrink:0;cursor:grab;touch-action:none;user-select:none;';
                 dragHandle.title = 'Drag to reorder';
                 el.insertBefore(dragHandle, el.firstChild);
+
+                // Mouse drag
                 el.addEventListener('dragstart', (e) => {
                     _dragSrcIdx = pendingIdx;
                     e.dataTransfer.effectAllowed = 'move';
@@ -4308,28 +4330,64 @@ const helpContent = {
                 el.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                    el.style.borderTop = '2px solid #60a5fa';
+                    el.style.borderTop = '2px solid #00c6ff';
                 });
                 el.addEventListener('dragleave', () => { el.style.borderTop = ''; });
                 el.addEventListener('drop', (e) => {
                     e.preventDefault();
                     el.style.borderTop = '';
-                    if (_dragSrcIdx === null || _dragSrcIdx === pendingIdx) return;
-                    // Reorder within parsed.tasks (only pending)
-                    const allPending = parsed.tasks.filter(t => t.type === 'task' && !t.done);
-                    const moved = allPending.splice(_dragSrcIdx, 1)[0];
-                    allPending.splice(pendingIdx, 0, moved);
-                    // Rebuild parsed.tasks: plains + reordered pending + done
-                    const pl = parsed.tasks.filter(t => t.type === 'plain');
-                    const dn = parsed.tasks.filter(t => t.type === 'task' && t.done);
-                    parsed.tasks.length = 0;
-                    pl.forEach(x => parsed.tasks.push(x));
-                    allPending.forEach(x => parsed.tasks.push(x));
-                    dn.forEach(x => parsed.tasks.push(x));
-                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
-                    saveToLocalStorage();
-                    renderTodoList(container, patient);
+                    doReorder(_dragSrcIdx, pendingIdx);
                 });
+
+                // Touch drag (iOS)
+                dragHandle.addEventListener('touchstart', (e) => {
+                    _dragSrcIdx = pendingIdx;
+                    _touchTargetIdx = pendingIdx;
+                    el.style.opacity = '0.4';
+                    _touchGhost = el.cloneNode(true);
+                    const rect = el.getBoundingClientRect();
+                    Object.assign(_touchGhost.style, {
+                        position: 'fixed', pointerEvents: 'none', opacity: '0.85',
+                        zIndex: '9999', width: rect.width + 'px', left: rect.left + 'px',
+                        top: rect.top + 'px', background: '#1c1c1e', borderRadius: '8px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+                    });
+                    document.body.appendChild(_touchGhost);
+                    e.preventDefault();
+                }, { passive: false });
+
+                dragHandle.addEventListener('touchmove', (e) => {
+                    if (!_touchGhost) return;
+                    const touch = e.touches[0];
+                    const rect = _touchGhost.getBoundingClientRect();
+                    _touchGhost.style.top = (touch.clientY - rect.height / 2) + 'px';
+
+                    // Find closest pending item by Y midpoint
+                    _touchGhost.style.display = 'none';
+                    const items = listEl.querySelectorAll('[data-pending-idx]');
+                    items.forEach(item => item.style.borderTop = '');
+                    let closest = null, closestDist = Infinity;
+                    items.forEach(it => {
+                        const r = it.getBoundingClientRect();
+                        const dist = Math.abs(touch.clientY - (r.top + r.height / 2));
+                        if (dist < closestDist) { closestDist = dist; closest = it; }
+                    });
+                    _touchGhost.style.display = '';
+                    if (closest) {
+                        _touchTargetIdx = parseInt(closest.dataset.pendingIdx);
+                        if (_touchTargetIdx !== _dragSrcIdx) closest.style.borderTop = '2px solid #00c6ff';
+                    }
+                    e.preventDefault();
+                }, { passive: false });
+
+                dragHandle.addEventListener('touchend', () => {
+                    if (_touchGhost) { _touchGhost.remove(); _touchGhost = null; }
+                    el.style.opacity = '';
+                    listEl.querySelectorAll('[data-pending-idx]').forEach(it => it.style.borderTop = '');
+                    doReorder(_dragSrcIdx, _touchTargetIdx);
+                    _dragSrcIdx = null; _touchTargetIdx = null;
+                });
+
                 listEl.appendChild(el);
             });
 
@@ -5283,28 +5341,37 @@ function displayRows(data = patientData) {
             cardBody.appendChild(subEl);
         }
 
-        // Todo row — inline tasks with checkboxes, as many as fit, +N badge in red
+        // Todo row — fill available width with tasks; +N badge for overflow
         if ((patient['To do'] || '').trim()) {
             const _parsed = parseTodoText(patient['To do'] || '');
             const _pending = _parsed.tasks.filter(t => t.type === 'task' && !t.done);
             const _allTasks = _parsed.tasks.filter(t => t.type === 'task');
             if (_allTasks.length > 0) {
                 const todoRow = document.createElement('div');
-                todoRow.style.cssText = `display: flex; align-items: center; gap: 4px; overflow: hidden; min-width: 0; flex-wrap: nowrap;`;
-                if (_pending.length > 0) {
-                    // Show up to 3 pending tasks inline
-                    const _show = _pending.slice(0, 3);
-                    const _extra = _pending.length - _show.length;
-                    _show.forEach((_task, _i) => {
-                        if (_i > 0) {
-                            const _sep = document.createElement('span');
-                            _sep.style.cssText = `color: #3a3a3c; font-size: 0.7rem; flex-shrink: 0;`;
-                            _sep.textContent = '·';
-                            todoRow.appendChild(_sep);
-                        }
-                        const _cb = document.createElement('div');
-                        _cb.className = 'todo-checkbox';
-                        _cb.style.cssText = `width: 12px; height: 12px; min-width: 12px; flex-shrink: 0;`;
+                todoRow.style.cssText = `display: flex; align-items: center; gap: 0; overflow: hidden; min-width: 0; flex-wrap: nowrap;`;
+
+                const _tasksToShow = _pending.length > 0 ? _pending : _allTasks.filter(t => t.done);
+                const _isDoneOnly = _pending.length === 0;
+
+                // Badge appended last so it stays at the right edge
+                const _badge = document.createElement('span');
+                _badge.style.cssText = `font-size: 0.67rem; color: #ff3b30; white-space: nowrap; flex-shrink: 0;
+                  background: rgba(255,59,48,0.12); padding: 1px 5px; border-radius: 4px;
+                  border: 1px solid rgba(255,59,48,0.25); font-weight: 600; display: none; margin-left: 4px;`;
+
+                // Build one group per task: [sep?, cb, txt] — stored for trimming
+                const _groups = _tasksToShow.map((_task, _i) => {
+                    const group = [];
+                    if (_i > 0) {
+                        const _sep = document.createElement('span');
+                        _sep.style.cssText = `color: #3a3a3c; font-size: 0.7rem; flex-shrink: 0; padding: 0 3px;`;
+                        _sep.textContent = '·';
+                        group.push(_sep);
+                    }
+                    const _cb = document.createElement('div');
+                    _cb.className = _isDoneOnly ? 'todo-checkbox todo-checkbox-done' : 'todo-checkbox';
+                    _cb.style.cssText = `width: 12px; height: 12px; min-width: 12px; flex-shrink: 0; margin-right: 3px;`;
+                    if (!_isDoneOnly) {
                         _cb.addEventListener('click', (e) => {
                             e.stopPropagation();
                             _task.done = true;
@@ -5313,25 +5380,34 @@ function displayRows(data = patientData) {
                             updatePriorityLightFromTodos(patient);
                             displayRows();
                         });
-                        const _txt = document.createElement('span');
-                        _txt.style.cssText = `font-size: 0.76rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 20px; flex-shrink: 1;`;
-                        _txt.textContent = _task.text;
-                        todoRow.appendChild(_cb);
-                        todoRow.appendChild(_txt);
-                    });
-                    if (_extra > 0) {
-                        const _badge = document.createElement('span');
-                        _badge.style.cssText = `font-size: 0.67rem; color: #ff3b30; white-space: nowrap; flex-shrink: 0; background: rgba(255,59,48,0.12); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(255,59,48,0.25); font-weight: 600;`;
-                        _badge.textContent = `+${_extra}`;
-                        todoRow.appendChild(_badge);
                     }
-                } else {
-                    const _done = document.createElement('span');
-                    _done.style.cssText = `font-size: 0.76rem; color: #30d158; white-space: nowrap;`;
-                    _done.textContent = '✓ All done';
-                    todoRow.appendChild(_done);
-                }
+                    const _txt = document.createElement('span');
+                    _txt.style.cssText = `font-size: 0.76rem; color: ${_isDoneOnly ? '#48484a' : '#8E8E93'};
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                      min-width: 20px; flex-shrink: 1;
+                      ${_isDoneOnly ? 'text-decoration: line-through;' : ''}`;
+                    _txt.textContent = _task.text;
+                    group.push(_cb, _txt);
+                    return group;
+                });
+
+                _groups.forEach(g => g.forEach(el => todoRow.appendChild(el)));
+                todoRow.appendChild(_badge);
                 cardBody.appendChild(todoRow);
+
+                // After layout: trim from the end until row fits, update badge
+                requestAnimationFrame(() => {
+                    let visible = _groups.length;
+                    while (todoRow.scrollWidth > todoRow.offsetWidth + 1 && visible > 1) {
+                        visible--;
+                        _groups[visible].forEach(el => el.remove());
+                    }
+                    const hidden = _tasksToShow.length - visible;
+                    if (hidden > 0) {
+                        _badge.textContent = `+${hidden}`;
+                        _badge.style.display = '';
+                    }
+                });
             }
         }
 
