@@ -5893,7 +5893,7 @@ function switchView(mode) {
 
             // ── Left: HPI (collapsed by default) ──
             {
-                const { card, cardBody } = buildBasicCard('Problems', true);
+                const { card, cardBody } = buildBasicCard('Problems', false);
                 const ta = document.createElement('textarea');
                 ta.id = 'field_Problems';
                 ta.value = patient['Problems'] || '';
