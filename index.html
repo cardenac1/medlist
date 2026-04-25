@@ -5487,7 +5487,7 @@ function switchView(mode) {
                 // Card header
                 const cardHeader = document.createElement('div');
                 cardHeader.className = 'dashboard-card-header';
-                cardHeader.innerHTML = `<span class="card-icon">${cardIcons[header] || '📄'}</span><span class="card-title" style="color:${cardColors[header] || '#94a3b8'}">${DISPLAY_LABELS[header] || header}</span>`;
+                cardHeader.innerHTML = `<span class="card-icon">${cardIcons[header] || ''}</span><span class="card-title" style="color:${cardColors[header] || '#94a3b8'}">${DISPLAY_LABELS[header] || header}</span>`;
 
                 // Help button
                 if (helpContent[header]) {
