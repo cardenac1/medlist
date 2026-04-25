@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Problems List Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1c1c1e;
+    color: #f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    font-size: 13px;
+    padding: 16px;
+  }
+
+  /* ── Page layout: two demo panels side by side ── */
+  .page-title {
+    color: #8e8e93;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 980px;
+  }
+
+  .demo-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #636366;
+    margin-bottom: 8px;
+  }
+
+  /* ── Shared card shell (matches app's .dashboard-card look) ── */
+  .card {
+    background: #2c2c2e;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #3a3a3c;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ebebf5cc;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .btn-icon {
+    background: none;
+    border: none;
+    color: #636366;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .btn-icon:hover { color: #ebebf5; }
+
+  .btn-export {
+    background: #3a3a3c;
+    border: 1px solid #48484a;
+    color: #a8a8b3;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-export:hover { background: #48484a; color: #f2f2f7; }
+
+  /* ── Problem list container ── */
+  .problems-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ── Individual problem row ── */
+  .problem-item {
+    background: #1c1c1e;
+    border-radius: 8px;
+    border-left: 3px solid #636366;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .problem-item.active  { border-left-color: #ff453a; }
+  .problem-item.watch   { border-left-color: #ff9f0a; }
+  .problem-item.stable  { border-left-color: #30d158; }
+  .problem-item.pending { border-left-color: #0a84ff; }
+
+  .problem-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .problem-num {
+    color: #636366;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 14px;
+  }
+
+  .problem-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 12px;
+    color: #f2f2f7;
+  }
+
+  .problem-badges {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+  .badge-done    { background: #1a3a20; color: #30d158; }
+  .badge-pending { background: #2a2a10; color: #ffd60a; }
+  .badge-consult { background: #0a2040; color: #0a84ff; }
+  .badge-study   { background: #2a1040; color: #bf5af2; }
+
+  .chevron {
+    color: #48484a;
+    font-size: 10px;
+    transition: transform 0.2s;
+  }
+  .chevron.open { transform: rotate(90deg); }
+
+  /* ── Expanded problem detail ── */
+  .problem-detail {
+    padding: 0 10px 10px 30px;
+    display: none;
+  }
+  .problem-detail.open { display: block; }
+
+  .detail-section {
+    margin-top: 6px;
+  }
+
+  .detail-section-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #636366;
+    margin-bottom: 4px;
+  }
+
+  .item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .item-icon { font-size: 10px; min-width: 12px; }
+  .item-done    { color: #30d158; }
+  .item-pending { color: #ffd60a; }
+  .item-consult { color: #0a84ff; }
+  .item-study   { color: #bf5af2; }
+
+  .item-text { color: #d1d1d6; }
+  .item-text.done { text-decoration: line-through; color: #636366; }
+
+  .item-sub {
+    font-size: 10px;
+    color: #48484a;
+    margin-left: 17px;
+  }
+
+  /* ── Status dot on problem head ── */
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-active  { background: #ff453a; }
+  .dot-watch   { background: #ff9f0a; }
+  .dot-stable  { background: #30d158; }
+  .dot-pending { background: #0a84ff; }
+
+  /* ── Add problem row ── */
+  .add-problem-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px dashed #3a3a3c;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #636366;
+    font-size: 11px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .add-problem-row:hover { border-color: #636366; color: #ebebf5; }
+
+  /* ── Text export preview box ── */
+  .export-box {
+    background: #1c1c1e;
+    border: 1px solid #3a3a3c;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10.5px;
+    line-height: 1.7;
+    color: #a8a8b3;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* ── "BEFORE" panel — plain textarea ── */
+  .before-card .card-title-row {
+    padding: 10px 14px;
+    background: #3a3a3c;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ebebf5cc;
+  }
+  textarea.old-problems {
+    width: 100%;
+    background: #1c1c1e;
+    border: none;
+    color: #d1d1d6;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 10px 14px;
+    resize: none;
+    outline: none;
+    display: block;
+  }
+
+  /* ── Separator ── */
+  .sep {
+    text-align: center;
+    color: #48484a;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 28px;
+  }
+
+  /* ── HPI card mock above both ── */
+  .hpi-card {
+    max-width: 980px;
+    margin-bottom: 16px;
+  }
+  textarea.hpi-field {
+    width: 100%;
+    background: #1c1c1e;
+    border: none;
+    color: #d1d1d6;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 10px 14px;
+    resize: none;
+    outline: none;
+    display: block;
+    height: 72px;
+  }
+
+  /* ── Inline edit mode ── */
+  .edit-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 4px 0;
+  }
+  .edit-input {
+    flex: 1;
+    background: #2c2c2e;
+    border: 1px solid #48484a;
+    border-radius: 6px;
+    color: #f2f2f7;
+    font-size: 11px;
+    padding: 4px 8px;
+    outline: none;
+  }
+  .edit-input:focus { border-color: #0a84ff; }
+
+  .btn-small {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-confirm { background: #0a84ff; color: white; }
+  .btn-cancel  { background: #3a3a3c; color: #a8a8b3; }
+
+  /* ── Caption notes ── */
+  .caption {
+    font-size: 10px;
+    color: #636366;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* responsive */
+  @media (max-width: 640px) {
+    .demo-grid { grid-template-columns: 1fr; }
+    .sep { padding: 4px 0; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<p class="page-title">Problems List — Design Preview &nbsp;·&nbsp; Not production code</p>
+
+<!-- HPI stays the same -->
+<div class="hpi-card card">
+  <div class="card-header" style="cursor:default">
+    <div class="card-header-left">
+      <span class="card-title">HPI</span>
+    </div>
+    <span style="font-size:10px;color:#636366">unchanged</span>
+  </div>
+  <textarea class="hpi-field" readonly>62M POD3 s/p ex-lap/SBR for SBO (adhesive). PMHx: HTN, DM2, prior appy. Presented with 2d abd pain/emesis, imaging: closed-loop SBO. OR 4/22 — 30cm SBR, primary anastomosis. ICU overnight, transferred floor POD1.</textarea>
+</div>
+
+<div class="demo-grid">
+
+  <!-- ════════════ LEFT: BEFORE ════════════ -->
+  <div>
+    <p class="demo-label">Before — plain textarea</p>
+    <div class="card before-card">
+      <div class="before-card card-title-row">PROBLEMS</div>
+      <textarea class="old-problems" rows="18" readonly>POD3 s/p ex-lap/SBR
+
+- NGT in place, low intermittent suction
+- Check BMP in AM
+- NPO until passing flatus
+- Foley removed POD1 — voiding ok
+- ACS consult seen 4/23, recs noted
+- CT abdomen ordered, not yet done
+- Vanc/pip-tazo day 3 — ID consult if no improvement
+- Blood cultures pending from 4/22
+- Hold heparin SC — check with attending
+- Wound check tomorrow, staples intact
+- PT/OT eval ordered
+- Family meeting re: rehab needs
+- Monitor glucose q6h</textarea>
+    </div>
+    <p class="caption">All items mixed together — hard to tell what's done vs. pending, what belongs to which problem, or what needs action on rounds.</p>
+  </div>
+
+  <!-- ════════════ RIGHT: AFTER ════════════ -->
+  <div>
+    <p class="demo-label">After — structured problem list</p>
+    <div class="card" id="problemsCard">
+
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-title">PROBLEMS</span>
+          <span style="font-size:10px;color:#636366">3 active · 1 stable</span>
+        </div>
+        <div class="card-actions">
+          <button class="btn-export" onclick="showExport()">⬆ TXT</button>
+          <button class="btn-icon" title="Edit all" onclick="toggleEditMode()">✎</button>
+        </div>
+      </div>
+
+      <div class="problems-body" id="problemsBody">
+
+        <!-- Problem 1: Active/Critical -->
+        <div class="problem-item active" id="prob1">
+          <div class="problem-head" onclick="toggleProblem('prob1')">
+            <span class="problem-num">1</span>
+            <span class="status-dot dot-active"></span>
+            <span class="problem-name">POD3 s/p ex-lap / SBR</span>
+            <div class="problem-badges">
+              <span class="badge badge-done">3✓</span>
+              <span class="badge badge-pending">2⏳</span>
+            </div>
+            <span class="chevron open" id="chev-prob1">▶</span>
+          </div>
+          <div class="problem-detail open" id="det-prob1">
+            <div class="detail-section">
+              <p class="detail-section-title">Done</p>
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-done">✓</span>
+                  <span class="item-text done">Foley removed POD1 — voiding ok</span>
+                </div>
+                <div class="item-row">
+                  <span class="item-icon item-done">✓</span>
+                  <span class="item-text done">NGT placed — low intermittent suction</span>
+                </div>
+                <div class="item-row">
+                  <span class="item-icon item-done">✓</span>
+                  <span class="item-text done">PT/OT eval ordered</span>
+                </div>
+              </div>
+            </div>
+            <div class="detail-section">
+              <p class="detail-section-title">Pending</p>
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-pending">○</span>
+                  <span class="item-text">NPO — advance diet when passing flatus</span>
+                </div>
+                <div class="item-row">
+                  <span class="item-icon item-pending">○</span>
+                  <span class="item-text">Wound check tomorrow — staples intact</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 2: Watch/Amber -->
+        <div class="problem-item watch" id="prob2">
+          <div class="problem-head" onclick="toggleProblem('prob2')">
+            <span class="problem-num">2</span>
+            <span class="status-dot dot-watch"></span>
+            <span class="problem-name">Sepsis — GI source</span>
+            <div class="problem-badges">
+              <span class="badge badge-done">2✓</span>
+              <span class="badge badge-pending">1⏳</span>
+              <span class="badge badge-consult">ID</span>
+            </div>
+            <span class="chevron open" id="chev-prob2">▶</span>
+          </div>
+          <div class="problem-detail open" id="det-prob2">
+            <div class="detail-section">
+              <p class="detail-section-title">Done</p>
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-done">✓</span>
+                  <span class="item-text done">Blood cx ×2 — 4/22, NGTD so far</span>
+                </div>
+                <div class="item-row">
+                  <span class="item-icon item-done">✓</span>
+                  <span class="item-text done">Vanc / pip-tazo day 3</span>
+                </div>
+              </div>
+            </div>
+            <div class="detail-section">
+              <p class="detail-section-title">Pending</p>
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-consult">◈</span>
+                  <span class="item-text item-consult">ID consult — if no improvement by AM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 3: Watch — imaging pending -->
+        <div class="problem-item pending" id="prob3">
+          <div class="problem-head" onclick="toggleProblem('prob3')">
+            <span class="problem-num">3</span>
+            <span class="status-dot dot-pending"></span>
+            <span class="problem-name">Post-op ileus vs. leak</span>
+            <div class="problem-badges">
+              <span class="badge badge-pending">1⏳</span>
+              <span class="badge badge-study">CT</span>
+            </div>
+            <span class="chevron" id="chev-prob3">▶</span>
+          </div>
+          <div class="problem-detail" id="det-prob3">
+            <div class="detail-section">
+              <p class="detail-section-title">Studies</p>
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-study">⬡</span>
+                  <span class="item-text">CT A/P with contrast — ordered, not yet done</span>
+                </div>
+              </div>
+            </div>
+            <div class="detail-section">
+              <p class="detail-section-title">Pending</p>
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-pending">○</span>
+                  <span class="item-text">BMP in AM — check lytes / lactate trend</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 4: Stable -->
+        <div class="problem-item stable" id="prob4">
+          <div class="problem-head" onclick="toggleProblem('prob4')">
+            <span class="problem-num">4</span>
+            <span class="status-dot dot-stable"></span>
+            <span class="problem-name">Glycemic control</span>
+            <div class="problem-badges">
+              <span class="badge badge-done">stable</span>
+            </div>
+            <span class="chevron" id="chev-prob4">▶</span>
+          </div>
+          <div class="problem-detail" id="det-prob4">
+            <div class="detail-section">
+              <div class="item-list">
+                <div class="item-row">
+                  <span class="item-icon item-done">✓</span>
+                  <span class="item-text done">SSI insulin q6h — BG 110–145 range</span>
+                </div>
+                <div class="item-row">
+                  <span class="item-icon item-pending">○</span>
+                  <span class="item-text">Hold heparin SC — confirm with attending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Inline edit mode example (shown below) ── -->
+        <div id="editModeDemo" style="display:none">
+          <div class="edit-row">
+            <span style="color:#636366;font-size:10px;min-width:20px">●</span>
+            <input class="edit-input" placeholder="Problem name…" value="Abx stewardship">
+            <select class="edit-input" style="max-width:80px">
+              <option>active</option>
+              <option>watch</option>
+              <option selected>stable</option>
+              <option>pending</option>
+            </select>
+          </div>
+          <div style="padding-left:26px;margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+            <input class="edit-input" placeholder="+ add item (○ pending / ✓ done / ◈ consult / ⬡ study)…" style="font-size:11px">
+            <button class="btn-small btn-confirm">Add</button>
+            <button class="btn-small btn-cancel">Done</button>
+          </div>
+        </div>
+
+        <!-- Add problem -->
+        <div class="add-problem-row" onclick="showAddProblem()">
+          <span>＋</span>
+          <span>Add problem</span>
+        </div>
+
+      </div><!-- /problems-body -->
+    </div><!-- /card -->
+
+    <p class="caption">
+      <strong style="color:#d1d1d6">Color bar:</strong> red = active/critical &nbsp;·&nbsp; amber = watching &nbsp;·&nbsp; blue = awaiting result &nbsp;·&nbsp; green = stable<br>
+      <strong style="color:#d1d1d6">Badges:</strong> ✓ done &nbsp;·&nbsp; ⏳ pending &nbsp;·&nbsp; consult name &nbsp;·&nbsp; study type<br>
+      Click any problem to expand. Stable problems collapse by default on rounds.
+    </p>
+  </div>
+
+</div><!-- /demo-grid -->
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- Export text preview -->
+<div id="exportPanel" style="display:none; max-width:980px; margin-top:20px;">
+  <p class="demo-label">Plain-text export (for CSV / paste into note)</p>
+  <div class="export-box" id="exportBox"></div>
+  <button class="btn-small btn-cancel" style="margin-top:8px" onclick="hideExport()">Close</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- Legend / key -->
+<div style="max-width:980px; margin-top:20px; padding: 10px 14px; background:#2c2c2e; border-radius:10px; display:flex; gap:20px; flex-wrap:wrap; align-items:center;">
+  <span style="font-size:10px;color:#636366;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Legend</span>
+  <span style="font-size:11px">✓ <span style="color:#30d158">Done</span></span>
+  <span style="font-size:11px">○ <span style="color:#ffd60a">Pending</span></span>
+  <span style="font-size:11px">◈ <span style="color:#0a84ff">Consult</span></span>
+  <span style="font-size:11px">⬡ <span style="color:#bf5af2">Study / Imaging</span></span>
+  <span style="font-size:11px"><span style="color:#ff453a">■</span> Active</span>
+  <span style="font-size:11px"><span style="color:#ff9f0a">■</span> Watch</span>
+  <span style="font-size:11px"><span style="color:#0a84ff">■</span> Awaiting result</span>
+  <span style="font-size:11px"><span style="color:#30d158">■</span> Stable</span>
+</div>
+
+<script>
+function toggleProblem(id) {
+  const det = document.getElementById('det-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const isOpen = det.classList.contains('open');
+  det.classList.toggle('open', !isOpen);
+  det.style.display = isOpen ? 'none' : 'block';
+  chev.classList.toggle('open', !isOpen);
+}
+
+// Initialize — prob3/4 collapsed, 1/2 expanded
+document.addEventListener('DOMContentLoaded', () => {
+  ['prob3', 'prob4'].forEach(id => {
+    const det = document.getElementById('det-' + id);
+    det.style.display = 'none';
+    det.classList.remove('open');
+  });
+  ['prob1','prob2'].forEach(id => {
+    document.getElementById('det-' + id).style.display = 'block';
+  });
+});
+
+function toggleEditMode() {
+  const em = document.getElementById('editModeDemo');
+  em.style.display = em.style.display === 'none' ? 'block' : 'none';
+}
+
+function showAddProblem() {
+  toggleEditMode();
+  document.querySelector('.edit-input').focus();
+}
+
+const EXPORT_TEXT = `PROBLEMS
+─────────────────────────────────────────
+1. [ACTIVE] POD3 s/p ex-lap / SBR
+   ✓ Foley removed POD1 — voiding ok
+   ✓ NGT placed — low intermittent suction
+   ✓ PT/OT eval ordered
+   ○ NPO — advance diet when passing flatus
+   ○ Wound check tomorrow — staples intact
+
+2. [WATCH] Sepsis — GI source
+   ✓ Blood cx ×2 (4/22, NGTD)
+   ✓ Vanc / pip-tazo day 3
+   ◈ ID consult — if no improvement by AM
+
+3. [PENDING RESULT] Post-op ileus vs. leak
+   ⬡ CT A/P with contrast — ordered, pending
+   ○ BMP in AM — lytes / lactate trend
+
+4. [STABLE] Glycemic control
+   ✓ SSI insulin q6h (BG 110–145)
+   ○ Hold heparin SC — confirm w/ attending
+─────────────────────────────────────────`;
+
+function showExport() {
+  document.getElementById('exportBox').textContent = EXPORT_TEXT;
+  document.getElementById('exportPanel').style.display = 'block';
+  document.getElementById('exportPanel').scrollIntoView({ behavior: 'smooth' });
+}
+function hideExport() {
+  document.getElementById('exportPanel').style.display = 'none';
+}
+</script>
+</body>
+</html>
