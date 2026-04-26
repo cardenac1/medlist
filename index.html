@@ -1097,10 +1097,13 @@
 .prob-name { flex: 1; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; }
 .prob-badges { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .prob-badge { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
-.prob-badge-done    { background: #1a3a20; color: #30d158; }
-.prob-badge-pending { background: #2a2200; color: #ffd60a; }
-.prob-badge-consult { background: #0a1a30; color: #0a84ff; }
-.prob-badge-study   { background: #1a0a30; color: #bf5af2; }
+.prob-badge-done         { background: #1a3a20; color: #30d158; }
+.prob-badge-pending      { background: #2a2200; color: #ffd60a; }
+.prob-badge-consult      { background: #0a1a30; color: #0a84ff; }
+.prob-badge-study        { background: #1a0a30; color: #bf5af2; }
+.prob-badge-intervention { background: #0a1a2a; color: #38bdf8; }
+.prob-status-dot { font-size: 0.5rem; cursor: pointer; flex-shrink: 0; line-height: 1; transition: opacity 0.15s; }
+.prob-status-dot:hover { opacity: 0.7; }
 .prob-chevron { color: #48484a; font-size: 0.6rem; transition: transform 0.2s; flex-shrink: 0; }
 .prob-chevron.open { transform: rotate(90deg); }
 .prob-detail { display: none; padding: 0 10px 8px 26px; }
@@ -1110,8 +1113,9 @@
 .prob-item-icon { flex-shrink: 0; font-size: 0.65rem; margin-top: 1px; }
 .prob-item-text { flex: 1; color: #d1d1d6; }
 .prob-item-text.done    { text-decoration: line-through; color: #48484a; }
-.prob-item-text.consult { color: #0a84ff; }
-.prob-item-text.study   { color: #bf5af2; }
+.prob-item-text.consult      { color: #0a84ff; }
+.prob-item-text.study        { color: #bf5af2; }
+.prob-item-text.intervention { color: #38bdf8; }
 .prob-todo-btn {
     font-size: 0.58rem; font-weight: 700;
     background: #0a1a2a; border: 1px solid #0a84ff44;
@@ -3086,6 +3090,8 @@ select,
                 <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑</button>
                 <button id="forcePushBtn" onclick="forcePushToCloud()" title="Force push" style="display:none;">⇑</button>
                 <button id="authBtn" onclick="openAuthModal()">☁</button>
+                <!-- Sync info popup -->
+                <div id="syncInfoPopup" onclick="this.style.display='none'" style="display:none;position:fixed;top:50px;right:12px;z-index:9999;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:10px;padding:10px 14px;min-width:200px;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.7);font-size:0.72rem;color:#e8eaed;line-height:1.6;cursor:pointer;"></div>
             </div>
         </div>
     </div>
@@ -3592,11 +3598,12 @@ const helpContent = {
                     } else if (current) {
                         var t = line.trim();
                         if (!t) continue;
-                        if (t[0] === '✓')      current.items.push({ type: 'done',    text: t.slice(1).trim() });
-                        else if (t[0] === '○') current.items.push({ type: 'pending', text: t.slice(1).trim() });
-                        else if (t[0] === '◈') current.items.push({ type: 'consult', text: t.slice(1).trim() });
-                        else if (t[0] === '⬡') current.items.push({ type: 'study',   text: t.slice(1).trim() });
-                        else                   current.items.push({ type: 'plain',   text: t });
+                        if (t[0] === '✓')      current.items.push({ type: 'done',         text: t.slice(1).trim() });
+                        else if (t[0] === '○') current.items.push({ type: 'pending',      text: t.slice(1).trim() });
+                        else if (t[0] === '◈') current.items.push({ type: 'consult',      text: t.slice(1).trim() });
+                        else if (t[0] === '⬡') current.items.push({ type: 'study',        text: t.slice(1).trim() });
+                        else if (t[0] === '⊕') current.items.push({ type: 'intervention', text: t.slice(1).trim() });
+                        else                   current.items.push({ type: 'plain',        text: t });
                     }
                 }
                 if (problems.length === 0 && text.trim()) return { problems: [], legacy: text };
@@ -3609,7 +3616,7 @@ const helpContent = {
         function serializeProblemsList(problems) {
             try {
                 if (!problems || !problems.length) return '';
-                var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
+                var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⊕', plain: '' };
                 return problems.map(function(p, i) {
                     var items = (p.items || []).map(function(it) {
                         return pfx[it.type] ? pfx[it.type] + ' ' + it.text : it.text;
@@ -3728,8 +3735,18 @@ const helpContent = {
                 } catch(e) {}
             }
 
-            var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2' };
-            var ICON_CHAR  = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
+            var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2', intervention: '#38bdf8', plain: '#636366' };
+            var ICON_CHAR  = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⊕', plain: '' };
+            var STATUS_ORDER = { active: 0, watch: 1, pending: 2, stable: 3 };
+            var STATUS_COLOR = { active: '#ff453a', watch: '#ff9f0a', pending: '#0a84ff', stable: '#30d158' };
+            var STATUS_CYCLE = ['active', 'watch', 'pending', 'stable'];
+
+            // Sort problems: active first, stable last
+            problems.sort(function(a, b) {
+                var oa = STATUS_ORDER[a.status] !== undefined ? STATUS_ORDER[a.status] : 99;
+                var ob = STATUS_ORDER[b.status] !== undefined ? STATUS_ORDER[b.status] : 99;
+                return oa - ob;
+            });
 
             problems.forEach(function(prob, pi) {
                 if (!prob || typeof prob !== 'object') return;
@@ -3739,21 +3756,26 @@ const helpContent = {
                 probEl.className = 'prob-item';
                 probEl.setAttribute('data-status', prob.status || 'active');
 
-                var doneCount    = items.filter(function(it) { return it.type === 'done'; }).length;
-                var pendCount    = items.filter(function(it) { return it.type === 'pending'; }).length;
-                var consultItems = items.filter(function(it) { return it.type === 'consult'; });
-                var studyItems   = items.filter(function(it) { return it.type === 'study'; });
+                var doneCount         = items.filter(function(it) { return it.type === 'done'; }).length;
+                var pendCount         = items.filter(function(it) { return it.type === 'pending'; }).length;
+                var consultItems      = items.filter(function(it) { return it.type === 'consult'; });
+                var studyItems        = items.filter(function(it) { return it.type === 'study'; });
+                var interventionItems = items.filter(function(it) { return it.type === 'intervention'; });
 
                 var badgesHTML = '';
-                if (doneCount) badgesHTML += '<span class="prob-badge prob-badge-done">' + doneCount + '✓</span>';
                 if (pendCount) badgesHTML += '<span class="prob-badge prob-badge-pending">' + pendCount + '⏳</span>';
+                if (doneCount) badgesHTML += '<span class="prob-badge prob-badge-done">' + doneCount + '✓</span>';
                 consultItems.forEach(function(c) {
                     var label = (c.text || '').split(/\s+/).slice(0,2).join(' ');
-                    badgesHTML += '<span class="prob-badge prob-badge-consult">' + label + '</span>';
+                    badgesHTML += '<span class="prob-badge prob-badge-consult">◈ ' + label + '</span>';
                 });
                 studyItems.forEach(function(s) {
                     var label = (s.text || '').split(/\s+/)[0] || 'study';
-                    badgesHTML += '<span class="prob-badge prob-badge-study">' + label + '</span>';
+                    badgesHTML += '<span class="prob-badge prob-badge-study">⬡ ' + label + '</span>';
+                });
+                interventionItems.forEach(function(v) {
+                    var label = (v.text || '').split(/\s+/)[0] || 'I';
+                    badgesHTML += '<span class="prob-badge prob-badge-intervention">⊕ ' + label + '</span>';
                 });
 
                 var head = document.createElement('div');
@@ -3763,27 +3785,107 @@ const helpContent = {
                 numSpan.className = 'prob-num';
                 numSpan.textContent = pi + 1;
 
+                // Status dot — click to cycle through statuses
+                var statusDot = document.createElement('span');
+                statusDot.className = 'prob-status-dot';
+                statusDot.textContent = '●';
+                statusDot.style.color = STATUS_COLOR[prob.status] || '#636366';
+                statusDot.title = 'Status: ' + (prob.status || 'active') + ' — tap to change';
+                (function(pr, dot) {
+                    dot.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var cur = STATUS_CYCLE.indexOf(pr.status);
+                        pr.status = STATUS_CYCLE[(cur + 1) % STATUS_CYCLE.length];
+                        rebuildAndSave();
+                    });
+                }(prob, statusDot));
+
+                // Problem name — click to edit inline
                 var nameSpan = document.createElement('span');
                 nameSpan.className = 'prob-name';
+                nameSpan.style.flex = '0 0 auto'; // don't grow; preview takes remaining space
                 nameSpan.textContent = prob.name || '';
+                nameSpan.title = 'Click to edit name';
+                (function(pr, ns) {
+                    ns.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var inp = document.createElement('input');
+                        inp.className = 'prob-edit-input';
+                        inp.value = pr.name || '';
+                        inp.style.cssText = 'flex:1;min-width:60px;font-size:0.78rem;margin:0;';
+                        inp.addEventListener('keydown', function(ev) {
+                            if (ev.key === 'Enter') { ev.preventDefault(); pr.name = this.value.trim() || pr.name; rebuildAndSave(); }
+                            if (ev.key === 'Escape') { rebuildAndSave(); }
+                        });
+                        inp.addEventListener('blur', function() { pr.name = this.value.trim() || pr.name; rebuildAndSave(); });
+                        ns.replaceWith(inp);
+                        inp.focus(); inp.select();
+                    });
+                }(prob, nameSpan));
+
+                // Item text preview — shown in collapsed header after the name
+                var previewSpan = document.createElement('span');
+                previewSpan.style.cssText = 'flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:4px;padding-left:5px;';
+                (function() {
+                    // Gather items to preview: pending first, then done, consult, study, intervention
+                    var previewItems = items.filter(function(it) { return it.type === 'pending'; })
+                        .concat(items.filter(function(it) { return it.type === 'consult'; }))
+                        .concat(items.filter(function(it) { return it.type === 'study'; }))
+                        .concat(items.filter(function(it) { return it.type === 'intervention'; }))
+                        .concat(items.filter(function(it) { return it.type === 'done'; }));
+                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1d4778', study: '#3b1a5c', intervention: '#164e6a', plain: '#3d3d3f' };
+                    previewItems.forEach(function(it, i) {
+                        if (i > 0) {
+                            var sep = document.createElement('span');
+                            sep.style.cssText = 'color:#2d2d2f;font-size:0.6rem;flex-shrink:0;';
+                            sep.textContent = '·';
+                            previewSpan.appendChild(sep);
+                        }
+                        var chip = document.createElement('span');
+                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:' + (i === 0 ? '1' : '0') + ';max-width:' + (i === 0 ? '100%' : '80px') + ';' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
+                        chip.textContent = (it.text || '').split(/\s+/).slice(0, 4).join(' ');
+                        chip.title = it.text || '';
+                        previewSpan.appendChild(chip);
+                    });
+                })();
 
                 var badgeSpan = document.createElement('span');
                 badgeSpan.className = 'prob-badges';
                 badgeSpan.innerHTML = badgesHTML;
 
+                // Delete problem button
+                var delProbBtn = document.createElement('span');
+                delProbBtn.style.cssText = 'color:#48484a;font-size:0.75rem;cursor:pointer;flex-shrink:0;padding:0 4px;line-height:1;transition:color 0.15s;';
+                delProbBtn.textContent = '×';
+                delProbBtn.title = 'Delete problem';
+                delProbBtn.onmouseenter = function() { this.style.color = '#ef4444'; };
+                delProbBtn.onmouseleave = function() { this.style.color = '#48484a'; };
+                (function(pr) {
+                    delProbBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (!confirm('Delete problem "' + (pr.name || '') + '"?')) return;
+                        var idx = problems.indexOf(pr);
+                        if (idx !== -1) problems.splice(idx, 1);
+                        rebuildAndSave();
+                    });
+                }(prob));
+
                 var chevron = document.createElement('span');
                 chevron.className = 'prob-chevron';
                 chevron.textContent = '▶';
-                chevron.style.transform = 'rotate(90deg)';
+                chevron.style.transform = 'rotate(0deg)'; // collapsed by default
 
                 head.appendChild(numSpan);
+                head.appendChild(statusDot);
                 head.appendChild(nameSpan);
+                head.appendChild(previewSpan);
                 head.appendChild(badgeSpan);
+                head.appendChild(delProbBtn);
                 head.appendChild(chevron);
 
                 var detail = document.createElement('div');
                 detail.className = 'prob-detail';
-                detail.style.display = 'block';
+                detail.style.display = 'none'; // collapsed by default
 
                 head.addEventListener('click', function() {
                     var isOpen = detail.style.display !== 'none';
@@ -3792,11 +3894,12 @@ const helpContent = {
                 });
 
                 var SECTIONS = [
-                    { key: 'done',    label: 'Done'     },
-                    { key: 'pending', label: 'Pending'  },
-                    { key: 'consult', label: 'Consults' },
-                    { key: 'study',   label: 'Studies'  },
-                    { key: 'plain',   label: null        },
+                    { key: 'done',         label: 'Done'          },
+                    { key: 'pending',      label: 'Pending'       },
+                    { key: 'consult',      label: 'Consults'      },
+                    { key: 'study',        label: 'Studies'       },
+                    { key: 'intervention', label: 'Interventions' },
+                    { key: 'plain',        label: null             },
                 ];
 
                 SECTIONS.forEach(function(sec) {
@@ -3811,38 +3914,73 @@ const helpContent = {
                     secItems.forEach(function(item) {
                         var row = document.createElement('div');
                         row.className = 'prob-item-row';
+                        row.style.position = 'relative';
 
+                        // Icon — click to show type-change popup
                         var icon = document.createElement('span');
                         icon.className = 'prob-item-icon';
                         icon.style.color = ICON_COLOR[item.type] || '#94a3b8';
                         icon.textContent = ICON_CHAR[item.type] || '';
+                        icon.style.cursor = 'pointer';
+                        icon.title = 'Change type';
+                        (function(it, ic, rw) {
+                            ic.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                var existing = rw.querySelector('.prob-type-popup');
+                                if (existing) { existing.remove(); return; }
+                                var popup = document.createElement('div');
+                                popup.className = 'prob-type-popup';
+                                popup.style.cssText = 'position:absolute;left:0;top:100%;z-index:200;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.7);min-width:130px;';
+                                var TYPE_OPTIONS = [
+                                    { value: 'pending',      label: '○ Pending'      },
+                                    { value: 'done',         label: '✓ Done'         },
+                                    { value: 'consult',      label: '◈ Consult'      },
+                                    { value: 'study',        label: '⬡ Study'        },
+                                    { value: 'intervention', label: '⊕ Intervention' },
+                                    { value: 'plain',        label: '— Note'         },
+                                ];
+                                TYPE_OPTIONS.forEach(function(opt) {
+                                    var opt_el = document.createElement('div');
+                                    opt_el.style.cssText = 'padding:5px 12px;font-size:0.72rem;cursor:pointer;color:' + (ICON_COLOR[opt.value] || '#e8eaed') + ';white-space:nowrap;';
+                                    opt_el.textContent = opt.label;
+                                    opt_el.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.08)'; };
+                                    opt_el.onmouseleave = function() { this.style.background = ''; };
+                                    opt_el.addEventListener('click', function(ev) {
+                                        ev.stopPropagation();
+                                        it.type = opt.value;
+                                        rebuildAndSave();
+                                    });
+                                    popup.appendChild(opt_el);
+                                });
+                                rw.appendChild(popup);
+                                var close = function(ev) { if (!popup.contains(ev.target)) { popup.remove(); document.removeEventListener('click', close); } };
+                                setTimeout(function() { document.addEventListener('click', close); }, 0);
+                            });
+                        }(item, icon, row));
 
                         var txt = document.createElement('span');
-                        txt.className = 'prob-item-text' + (item.type === 'done' ? ' done' : item.type === 'consult' ? ' consult' : item.type === 'study' ? ' study' : '');
+                        txt.className = 'prob-item-text' + (item.type === 'done' ? ' done' : item.type === 'consult' ? ' consult' : item.type === 'study' ? ' study' : item.type === 'intervention' ? ' intervention' : '');
                         txt.textContent = item.text || '';
 
-                        if (item.type === 'done') {
-                            txt.style.cursor = 'pointer';
-                            txt.title = 'Mark as pending';
-                            (function(it) {
-                                txt.addEventListener('click', function(e) {
-                                    e.stopPropagation();
-                                    it.type = 'pending';
-                                    rebuildAndSave();
-                                });
-                            }(item));
-                            row.appendChild(icon);
-                            row.appendChild(txt);
-                        } else if (item.type === 'pending') {
-                            icon.style.cursor = 'pointer';
-                            icon.title = 'Mark done';
-                            (function(it) {
-                                icon.addEventListener('click', function(e) {
-                                    e.stopPropagation();
-                                    it.type = 'done';
-                                    rebuildAndSave();
-                                });
-                            }(item));
+                        // Delete item button (shows on hover)
+                        var delBtn = document.createElement('span');
+                        delBtn.style.cssText = 'color:#48484a;font-size:0.65rem;cursor:pointer;flex-shrink:0;margin-left:auto;padding:0 3px;line-height:1;transition:color 0.15s;opacity:0;';
+                        delBtn.textContent = '×';
+                        delBtn.title = 'Delete item';
+                        delBtn.onmouseenter = function() { this.style.color = '#ef4444'; };
+                        delBtn.onmouseleave = function() { this.style.color = '#48484a'; };
+                        row.onmouseenter = function() { delBtn.style.opacity = '1'; };
+                        row.onmouseleave = function() { delBtn.style.opacity = '0'; };
+                        (function(it) {
+                            delBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                var idx = items.indexOf(it);
+                                if (idx !== -1) items.splice(idx, 1);
+                                rebuildAndSave();
+                            });
+                        }(item));
+
+                        if (item.type === 'pending') {
                             var todoBtn = document.createElement('button');
                             todoBtn.type = 'button';
                             todoBtn.className = 'prob-todo-btn';
@@ -3860,9 +3998,11 @@ const helpContent = {
                             row.appendChild(icon);
                             row.appendChild(txt);
                             row.appendChild(todoBtn);
+                            row.appendChild(delBtn);
                         } else {
                             row.appendChild(icon);
                             row.appendChild(txt);
+                            row.appendChild(delBtn);
                         }
                         detail.appendChild(row);
                     });
@@ -3871,7 +4011,7 @@ const helpContent = {
                 // Add item row
                 var typeSelect = document.createElement('select');
                 typeSelect.className = 'prob-edit-select';
-                typeSelect.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option>';
+                typeSelect.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option><option value="intervention">⊕ Intervention</option>';
 
                 var itemInput = document.createElement('input');
                 itemInput.className = 'prob-edit-input';
@@ -4588,10 +4728,31 @@ const helpContent = {
             el.classList.add('todo-item-enter');
             el.style.cursor = 'pointer';
 
-            // Toggle done
+            // Toggle done — also sync to matching problem items
             function toggleDone() {
                 item.done = !item.done;
                 patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                // If marking done, retroactively mark matching pending items in problems as done
+                if (item.done) {
+                    try {
+                        var probParsed = parseProblemsList(patient['ICS'] || '');
+                        var changed = false;
+                        var lo = (item.text || '').trim().toLowerCase();
+                        probParsed.problems.forEach(function(prob) {
+                            (prob.items || []).forEach(function(pit) {
+                                if (pit.type === 'pending' && (pit.text || '').trim().toLowerCase() === lo) {
+                                    pit.type = 'done';
+                                    changed = true;
+                                }
+                            });
+                        });
+                        if (changed) {
+                            patient['ICS'] = serializeProblemsList(probParsed.problems);
+                            var probBodyEl = document.getElementById('probCardBody');
+                            if (probBodyEl) renderProblemsCard(probBodyEl, patient);
+                        }
+                    } catch(e2) {}
+                }
                 saveToLocalStorage();
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
@@ -5417,87 +5578,6 @@ function displayRows(data = patientData) {
             cardBody.appendChild(subEl);
         }
 
-        // Problems preview row — show problem names with status dots + item badges
-        const _icsVal = (patient['ICS'] || '').trim();
-        if (_icsVal) {
-            try {
-                const _probParsed = parseProblemsList(_icsVal);
-                const _probs = _probParsed.problems;
-                if (_probs && _probs.length > 0) {
-                    const _STATUS_CLR = { active: '#ff453a', watch: '#ff9f0a', pending: '#0a84ff', stable: '#30d158' };
-                    const probPreviewRow = document.createElement('div');
-                    probPreviewRow.style.cssText = `display: flex; align-items: center; gap: 0; overflow: hidden; min-width: 0; flex-wrap: nowrap; margin-top: 1px;`;
-
-                    const _probGroups = _probs.map((_prob, _pi) => {
-                        const _sClr = _STATUS_CLR[_prob.status] || '#636366';
-                        const _items = Array.isArray(_prob.items) ? _prob.items : [];
-                        const _pendCount  = _items.filter(it => it.type === 'pending').length;
-                        const _studyCount = _items.filter(it => it.type === 'study').length;
-                        const _cCount     = _items.filter(it => it.type === 'consult').length;
-                        const _doneCount  = _items.filter(it => it.type === 'done').length;
-                        const group = [];
-                        if (_pi > 0) {
-                            const _sep = document.createElement('span');
-                            _sep.style.cssText = `color: #3a3a3c; font-size: 0.7rem; flex-shrink: 0; padding: 0 3px;`;
-                            _sep.textContent = '·';
-                            group.push(_sep);
-                        }
-                        const _dot = document.createElement('span');
-                        _dot.style.cssText = `color: ${_sClr}; font-size: 0.48rem; flex-shrink: 0; margin-right: 2px; line-height: 1;`;
-                        _dot.textContent = '●';
-                        const _pname = document.createElement('span');
-                        _pname.style.cssText = `font-size: 0.75rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 18px; flex-shrink: 1;`;
-                        _pname.textContent = _prob.name || '';
-                        group.push(_dot, _pname);
-                        if (_pendCount > 0) {
-                            const _b = document.createElement('span');
-                            _b.style.cssText = `font-size: 0.58rem; color: #ffd60a; background: rgba(255,214,10,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
-                            _b.textContent = _pendCount + '⏳';
-                            group.push(_b);
-                        }
-                        if (_studyCount > 0) {
-                            const _b = document.createElement('span');
-                            _b.style.cssText = `font-size: 0.58rem; color: #bf5af2; background: rgba(191,90,242,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
-                            _b.textContent = _studyCount + '⬡';
-                            group.push(_b);
-                        }
-                        if (_cCount > 0) {
-                            const _b = document.createElement('span');
-                            _b.style.cssText = `font-size: 0.58rem; color: #0a84ff; background: rgba(10,132,255,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
-                            _b.textContent = _cCount + '◈';
-                            group.push(_b);
-                        }
-                        if (_doneCount > 0 && _pendCount === 0 && _studyCount === 0 && _cCount === 0) {
-                            const _b = document.createElement('span');
-                            _b.style.cssText = `font-size: 0.58rem; color: #30d158; background: rgba(48,209,88,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
-                            _b.textContent = _doneCount + '✓';
-                            group.push(_b);
-                        }
-                        return group;
-                    });
-
-                    const _ovBadge = document.createElement('span');
-                    _ovBadge.style.cssText = `font-size: 0.67rem; color: #636366; white-space: nowrap; flex-shrink: 0; display: none; margin-left: 4px;`;
-                    _probGroups.forEach(g => g.forEach(el => probPreviewRow.appendChild(el)));
-                    probPreviewRow.appendChild(_ovBadge);
-                    cardBody.appendChild(probPreviewRow);
-
-                    requestAnimationFrame(() => {
-                        let _vis = _probGroups.length;
-                        while (probPreviewRow.scrollWidth > probPreviewRow.offsetWidth + 1 && _vis > 1) {
-                            _vis--;
-                            _probGroups[_vis].forEach(el => el.remove());
-                        }
-                        const _hidden = _probs.length - _vis;
-                        if (_hidden > 0) {
-                            _ovBadge.textContent = `+${_hidden}`;
-                            _ovBadge.style.display = '';
-                        }
-                    });
-                }
-            } catch(_e) { /* silent — preview is non-critical */ }
-        }
-
         // Todo row — fill available width with tasks; +N badge for overflow
         if ((patient['To do'] || '').trim()) {
             const _parsed = parseTodoText(patient['To do'] || '');
@@ -5869,6 +5949,9 @@ function clearSearch() {
         return;
     }
 
+    // Save scroll position so Back to List can restore it
+    window._listScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
     currentPatientIndex = index;
     const detailsView = document.getElementById('detailsView');
 
@@ -6120,6 +6203,7 @@ function switchView(mode) {
 
                 var body = document.createElement('div');
                 body.className = 'dashboard-card-body';
+                body.id = 'probCardBody';
 
                 // Collapse toggle on chevron only (header has other buttons)
                 probChev.addEventListener('click', function(e) {
@@ -6825,6 +6909,9 @@ if (header !== 'To do' && header !== 'ROS' && header !== 'PE') {
         function backToList() {
             document.getElementById('detailsView').style.display = 'none';
             displayRows();
+            requestAnimationFrame(function() {
+                window.scrollTo(0, window._listScrollY || 0);
+            });
         }
 
         function deleteCurrentEntry() {
@@ -17610,12 +17697,66 @@ function showIOHourlyPopup(label, entries, color) {
             (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     }
 
-    function showSyncStatus(state) {
-        const el = document.getElementById('syncStatus');
+    function _detectPlatform() {
+        var ua = navigator.userAgent || '';
+        var platform = navigator.platform || '';
+        if (/iPhone/.test(ua)) return 'iPhone';
+        if (/iPad/.test(ua)) return 'iPad';
+        if (/Android/.test(ua) && /Mobile/.test(ua)) return 'Android Phone';
+        if (/Android/.test(ua)) return 'Android Tablet';
+        if (/Mac/.test(platform) && navigator.maxTouchPoints > 1) return 'iPad (Mac mode)';
+        if (/Mac/.test(platform)) return 'Mac';
+        if (/Win/.test(platform)) return 'Windows';
+        if (/Linux/.test(platform)) return 'Linux';
+        return 'Unknown device';
+    }
+
+    function _detectBrowser() {
+        var ua = navigator.userAgent || '';
+        if (/CriOS/.test(ua)) return 'Chrome (iOS)';
+        if (/FxiOS/.test(ua)) return 'Firefox (iOS)';
+        if (/EdgiOS/.test(ua)) return 'Edge (iOS)';
+        if (/OPiOS/.test(ua)) return 'Opera (iOS)';
+        if (/Safari/.test(ua) && /Mobile/.test(ua) && !/Chrome/.test(ua)) return 'Safari (mobile)';
+        if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
+        if (/Edg\//.test(ua)) return 'Edge';
+        if (/OPR\//.test(ua) || /Opera/.test(ua)) return 'Opera';
+        if (/Firefox/.test(ua)) return 'Firefox';
+        if (/Chrome/.test(ua)) return 'Chrome';
+        return 'Browser';
+    }
+
+    var _syncInfoTimer = null;
+    function showSyncInfoPopup(state, direction) {
+        var popup = document.getElementById('syncInfoPopup');
+        if (!popup) return;
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        var dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        var device  = _detectPlatform();
+        var browser = _detectBrowser();
+        var dirLabel = direction === 'down' ? '⬇ Pulled from cloud' : direction === 'force' ? '⇑ Force pushed' : '⬆ Pushed to cloud';
+        var stateColor = state === 'ok' ? '#30d158' : state === 'error' ? '#ef4444' : '#60a5fa';
+        var stateLabel = state === 'ok' ? '✓ Success' : state === 'error' ? '✗ Failed' : '↻ Syncing…';
+        popup.innerHTML =
+            '<div style="font-weight:700;color:' + stateColor + ';margin-bottom:4px;">' + stateLabel + '</div>' +
+            '<div>' + dirLabel + '</div>' +
+            '<div style="color:#8e8e93;margin-top:3px;">' + dateStr + ' · ' + timeStr + '</div>' +
+            '<div style="color:#8e8e93;">' + device + ' · ' + browser + '</div>';
+        popup.style.display = 'block';
+        clearTimeout(_syncInfoTimer);
+        if (state !== 'syncing') {
+            _syncInfoTimer = setTimeout(function() { popup.style.display = 'none'; }, 4000);
+        }
+    }
+
+    function showSyncStatus(state, direction) {
+        var el = document.getElementById('syncStatus');
         if (!el) return;
         if (state === 'syncing') { el.textContent = '↻'; el.style.color = '#60a5fa'; el.classList.add('spinning'); el.style.display = 'inline'; }
         else if (state === 'ok') { el.textContent = '☁✓'; el.style.color = '#10b981'; el.classList.remove('spinning'); el.style.display = 'inline'; }
         else if (state === 'error') { el.textContent = '☁✗'; el.style.color = '#ef4444'; el.classList.remove('spinning'); el.style.display = 'inline'; }
+        showSyncInfoPopup(state, direction);
     }
 
     function updateAuthUI() {
@@ -17642,7 +17783,7 @@ function showIOHourlyPopup(label, entries, color) {
     async function syncToCloud() {
         if (!currentUser) return;
         try {
-            showSyncStatus('syncing');
+            showSyncStatus('syncing', 'up');
             const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
             const rows = localPatients.map(p => {
                 if (!p._pid) p._pid = _genId();
@@ -17661,10 +17802,10 @@ function showIOHourlyPopup(label, entries, color) {
                     await getSB().from(SB_TABLE).delete().in('id', orphanIds);
                 }
             }
-            showSyncStatus('ok');
+            showSyncStatus('ok', 'up');
         } catch (e) {
             console.error('Sync upload error:', e);
-            showSyncStatus('error');
+            showSyncStatus('error', 'up');
         }
     }
 
@@ -17672,7 +17813,7 @@ function showIOHourlyPopup(label, entries, color) {
         if (!currentUser) { alert('Please log in first.'); return; }
         if (!confirm('Force Push will completely replace the cloud database with your current local data.\n\nThis cannot be undone. Continue?')) return;
         try {
-            showSyncStatus('syncing');
+            showSyncStatus('syncing', 'force');
             const btn = document.getElementById('forcePushBtn');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
             // Assign _pid to any patients missing one
@@ -17686,11 +17827,11 @@ function showIOHourlyPopup(label, entries, color) {
                 const { error } = await getSB().from(SB_TABLE).insert(rows);
                 if (error) throw error;
             }
-            showSyncStatus('ok');
+            showSyncStatus('ok', 'force');
             if (btn) { btn.textContent = '✓ Pushed!'; setTimeout(() => { btn.textContent = '⇑ Force Push'; btn.disabled = false; }, 2000); }
         } catch (e) {
             console.error('Force push error:', e);
-            showSyncStatus('error');
+            showSyncStatus('error', 'force');
             const btn = document.getElementById('forcePushBtn');
             if (btn) { btn.textContent = '⇑ Force Push'; btn.disabled = false; }
             alert('Force push failed: ' + (e.message || e));
@@ -17700,7 +17841,7 @@ function showIOHourlyPopup(label, entries, color) {
     async function syncFromCloud() {
         if (!currentUser) return;
         try {
-            showSyncStatus('syncing');
+            showSyncStatus('syncing', 'down');
             const { data, error } = await getSB().from(SB_TABLE).select('data').eq('user_id', currentUser.id);
             if (error) throw error;
             if (data && data.length > 0) {
@@ -17711,10 +17852,10 @@ function showIOHourlyPopup(label, entries, color) {
                 if (typeof populateColumnSelector === 'function') populateColumnSelector();
                 if (typeof populateColumnSelect === 'function') populateColumnSelect();
             }
-            showSyncStatus('ok');
+            showSyncStatus('ok', 'down');
         } catch (e) {
             console.error('Sync download error:', e);
-            showSyncStatus('error');
+            showSyncStatus('error', 'down');
         }
     }
 
@@ -17753,8 +17894,9 @@ function showIOHourlyPopup(label, entries, color) {
         await getSB().auth.signOut();
         currentUser = null;
         updateAuthUI();
-        showSyncStatus('ok');
+        showSyncStatus('ok', 'up');
         document.getElementById('syncStatus').style.display = 'none';
+        var popup = document.getElementById('syncInfoPopup'); if (popup) popup.style.display = 'none';
     }
 
     function openAuthModal() {
