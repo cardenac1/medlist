@@ -3578,128 +3578,182 @@ const helpContent = {
         // ── Problems list: parse / serialize / render ──
 
         function parseProblemsList(text) {
-            if (!text || !text.trim()) return { problems: [], legacy: '' };
-            const lines = text.split('\n');
-            const problems = [];
-            let current = null;
-            for (var li = 0; li < lines.length; li++) {
-                var line = lines[li];
-                var m = line.match(/^##\s+\d+\.\s+\[(\w+)\]\s+(.+)/);
-                if (m) {
-                    current = { name: m[2].trim(), status: m[1].toLowerCase(), items: [] };
-                    problems.push(current);
-                } else if (current) {
-                    var t = line.trim();
-                    if (!t) continue;
-                    if (t[0] === '✓')      current.items.push({ type: 'done',    text: t.slice(1).trim() });
-                    else if (t[0] === '○') current.items.push({ type: 'pending', text: t.slice(1).trim() });
-                    else if (t[0] === '◈') current.items.push({ type: 'consult', text: t.slice(1).trim() });
-                    else if (t[0] === '⬡') current.items.push({ type: 'study',   text: t.slice(1).trim() });
-                    else                        current.items.push({ type: 'plain',   text: t });
+            try {
+                if (!text || !text.trim()) return { problems: [], legacy: '' };
+                var lines = text.split('\n');
+                var problems = [];
+                var current = null;
+                for (var li = 0; li < lines.length; li++) {
+                    var line = lines[li];
+                    var m = line.match(/^##\s+\d+\.\s+\[(\w+)\]\s+(.+)/);
+                    if (m) {
+                        current = { name: m[2].trim(), status: m[1].toLowerCase(), items: [] };
+                        problems.push(current);
+                    } else if (current) {
+                        var t = line.trim();
+                        if (!t) continue;
+                        if (t[0] === '✓')      current.items.push({ type: 'done',    text: t.slice(1).trim() });
+                        else if (t[0] === '○') current.items.push({ type: 'pending', text: t.slice(1).trim() });
+                        else if (t[0] === '◈') current.items.push({ type: 'consult', text: t.slice(1).trim() });
+                        else if (t[0] === '⬡') current.items.push({ type: 'study',   text: t.slice(1).trim() });
+                        else                   current.items.push({ type: 'plain',   text: t });
+                    }
                 }
+                if (problems.length === 0 && text.trim()) return { problems: [], legacy: text };
+                return { problems: problems, legacy: '' };
+            } catch(e) {
+                return { problems: [], legacy: text || '' };
             }
-            if (problems.length === 0 && text.trim()) return { problems: [], legacy: text };
-            return { problems: problems, legacy: '' };
         }
 
         function serializeProblemsList(problems) {
-            var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
-            return problems.map(function(p, i) {
-                var items = p.items.map(function(it) {
-                    return pfx[it.type] ? pfx[it.type] + ' ' + it.text : it.text;
-                });
-                return ['## ' + (i + 1) + '. [' + p.status + '] ' + p.name].concat(items).join('\n');
-            }).join('\n\n');
+            try {
+                if (!problems || !problems.length) return '';
+                var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
+                return problems.map(function(p, i) {
+                    var items = (p.items || []).map(function(it) {
+                        return pfx[it.type] ? pfx[it.type] + ' ' + it.text : it.text;
+                    });
+                    return ['## ' + (i + 1) + '. [' + (p.status || 'active') + '] ' + (p.name || '')].concat(items).join('\n');
+                }).join('\n\n');
+            } catch(e) { return ''; }
         }
 
         function problemsToPlainText(problems) {
-            // Format: PROBLEM [STATUS] | ✓ done item · ○ pending item · ◈ consult · ⬡ study
-            var STATUS = { active: 'ACTIVE', watch: 'WATCH', pending: 'PENDING', stable: 'STABLE' };
-            var PFX    = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
-            var lines  = ['PROBLEMS'];
-            problems.forEach(function(p, i) {
-                var mgmt = p.items.map(function(it) {
-                    return (PFX[it.type] ? PFX[it.type] + ' ' : '') + it.text;
-                }).join(' · ');
-                var label = STATUS[p.status] || p.status.toUpperCase();
-                lines.push((i + 1) + '. ' + p.name + ' [' + label + ']' + (mgmt ? ' | ' + mgmt : ''));
-            });
-            return lines.join('\n');
+            try {
+                var STATUS = { active: 'ACTIVE', watch: 'WATCH', pending: 'PENDING', stable: 'STABLE' };
+                var PFX    = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
+                var lines  = ['PROBLEMS'];
+                (problems || []).forEach(function(p, i) {
+                    var mgmt = (p.items || []).map(function(it) {
+                        return (PFX[it.type] ? PFX[it.type] + ' ' : '') + (it.text || '');
+                    }).join(' · ');
+                    var label = STATUS[p.status] || (p.status || '').toUpperCase();
+                    lines.push((i + 1) + '. ' + (p.name || '') + ' [' + label + ']' + (mgmt ? ' | ' + mgmt : ''));
+                });
+                return lines.join('\n');
+            } catch(e) { return 'PROBLEMS\n(export error)'; }
         }
 
-        function renderProblemsRaw(container, patient, onSwitch) {
-            container.innerHTML = '';
-            container.style.padding = '0.65rem 0.85rem';
+        // Single entry point — reads bodyEl._probRaw, routes to raw or structured.
+        // All errors fall back to a plain textarea so the app never crashes.
+        function renderProblemsCard(bodyEl, patient) {
+            if (!bodyEl || !patient) return;
+            try {
+                bodyEl.innerHTML = '';
+                if (bodyEl._probRaw) {
+                    bodyEl.style.padding = '0.65rem 0.85rem';
+                    _buildProblemsRaw(bodyEl, patient);
+                } else {
+                    bodyEl.style.padding = '0';
+                    _buildProblemsStructured(bodyEl, patient);
+                }
+                // keep header button label in sync
+                if (bodyEl._rawBtn) {
+                    bodyEl._rawBtn.textContent = bodyEl._probRaw ? '⊞ Structured' : '✎ Raw';
+                }
+            } catch(e) {
+                // Hard fallback — always show something editable
+                try {
+                    bodyEl.innerHTML = '';
+                    bodyEl.style.padding = '0.65rem 0.85rem';
+                    var ta = document.createElement('textarea');
+                    ta.id = 'field_ICS';
+                    ta.value = (patient && patient['ICS']) || '';
+                    ta.style.cssText = 'margin:0;width:100%;min-height:80px;';
+                    ta.addEventListener('input', function() {
+                        try { patient['ICS'] = this.value; saveToLocalStorage(); autoResizeTextarea(this); } catch(e2) {}
+                    });
+                    bodyEl.appendChild(ta);
+                    setTimeout(function() { try { autoResizeTextarea(ta); } catch(e2) {} }, 0);
+                } catch(e2) { /* give up */ }
+            }
+        }
+
+        function _buildProblemsRaw(bodyEl, patient) {
             var ta = document.createElement('textarea');
             ta.id = 'field_ICS';
-            ta.value = patient['ICS'] || '';
+            ta.value = (patient['ICS']) || '';
             ta.style.cssText = 'margin:0;width:100%;min-height:80px;';
             ta.addEventListener('input', function() {
-                patient['ICS'] = this.value;
-                saveToLocalStorage();
-                autoResizeTextarea(this);
+                try { patient['ICS'] = this.value; saveToLocalStorage(); autoResizeTextarea(this); } catch(e) {}
             });
-            container.appendChild(ta);
+            bodyEl.appendChild(ta);
+
             var switchBtn = document.createElement('button');
             switchBtn.className = 'prob-cancel-btn';
-            switchBtn.style.cssText = 'margin-top:6px;font-size:0.68rem;';
-            switchBtn.textContent = '⊞ Structured list';
+            switchBtn.style.cssText = 'margin-top:6px;font-size:0.68rem;display:block;';
+            switchBtn.textContent = '⊞ Switch to structured list';
             switchBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                onSwitch();
+                bodyEl._probRaw = false;
+                renderProblemsCard(bodyEl, patient);
             });
-            container.appendChild(switchBtn);
-            setTimeout(function() { autoResizeTextarea(ta); }, 0);
+            bodyEl.appendChild(switchBtn);
+            setTimeout(function() { try { autoResizeTextarea(ta); } catch(e) {} }, 0);
         }
 
-        function renderProblemsStructured(container, patient, onSwitchRaw) {
-            container.innerHTML = '';
-            container.style.padding = '0';
-
+        function _buildProblemsStructured(bodyEl, patient) {
             var parsed   = parseProblemsList(patient['ICS'] || '');
-            var problems = parsed.problems;
+            var problems = parsed.problems; // safe: parseProblemsList never throws
 
             var list = document.createElement('div');
             list.className = 'prob-list';
 
             function rebuildAndSave() {
-                patient['ICS'] = serializeProblemsList(problems);
-                saveToLocalStorage();
-                renderProblemsStructured(container, patient, onSwitchRaw);
-                var tc = document.getElementById('todoContainer');
-                if (tc) renderTodoList(tc, patient);
+                try {
+                    patient['ICS'] = serializeProblemsList(problems);
+                    saveToLocalStorage();
+                } catch(e) {}
+                renderProblemsCard(bodyEl, patient); // re-entry through safe wrapper
+                try {
+                    var tc = document.getElementById('todoContainer');
+                    if (tc) renderTodoList(tc, patient);
+                } catch(e) {}
             }
 
             function pushToTodo(text) {
-                var tp  = parseTodoText(patient['To do'] || '');
-                var dup = tp.tasks.some(function(t) { return t.text.trim().toLowerCase() === text.trim().toLowerCase(); });
-                if (!dup) {
-                    tp.tasks.push({ type: 'task', text: text.trim(), done: false });
-                    patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
-                    saveToLocalStorage();
-                }
-                var tc = document.getElementById('todoContainer');
-                if (tc) renderTodoList(tc, patient);
+                try {
+                    var tp  = parseTodoText(patient['To do'] || '');
+                    var lo  = text.trim().toLowerCase();
+                    var dup = tp.tasks.some(function(t) { return (t.text || '').trim().toLowerCase() === lo; });
+                    if (!dup) {
+                        tp.tasks.push({ type: 'task', text: text.trim(), done: false });
+                        patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
+                        saveToLocalStorage();
+                    }
+                    var tc = document.getElementById('todoContainer');
+                    if (tc) renderTodoList(tc, patient);
+                } catch(e) {}
             }
 
             var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2' };
             var ICON_CHAR  = { done: '✓', pending: '○', consult: '◈', study: '⬡', plain: '' };
 
             problems.forEach(function(prob, pi) {
+                if (!prob || typeof prob !== 'object') return;
+                var items = Array.isArray(prob.items) ? prob.items : [];
+
                 var probEl = document.createElement('div');
                 probEl.className = 'prob-item';
-                probEl.setAttribute('data-status', prob.status);
+                probEl.setAttribute('data-status', prob.status || 'active');
 
-                var doneCount    = prob.items.filter(function(it) { return it.type === 'done'; }).length;
-                var pendCount    = prob.items.filter(function(it) { return it.type === 'pending'; }).length;
-                var consultItems = prob.items.filter(function(it) { return it.type === 'consult'; });
-                var studyItems   = prob.items.filter(function(it) { return it.type === 'study'; });
+                var doneCount    = items.filter(function(it) { return it.type === 'done'; }).length;
+                var pendCount    = items.filter(function(it) { return it.type === 'pending'; }).length;
+                var consultItems = items.filter(function(it) { return it.type === 'consult'; });
+                var studyItems   = items.filter(function(it) { return it.type === 'study'; });
 
                 var badgesHTML = '';
                 if (doneCount) badgesHTML += '<span class="prob-badge prob-badge-done">' + doneCount + '✓</span>';
                 if (pendCount) badgesHTML += '<span class="prob-badge prob-badge-pending">' + pendCount + '⏳</span>';
-                consultItems.forEach(function(c) { badgesHTML += '<span class="prob-badge prob-badge-consult">' + c.text.split(/\s+/).slice(0,2).join(' ') + '</span>'; });
-                studyItems.forEach(function(s)   { badgesHTML += '<span class="prob-badge prob-badge-study">'   + s.text.split(/\s+/)[0] + '</span>'; });
+                consultItems.forEach(function(c) {
+                    var label = (c.text || '').split(/\s+/).slice(0,2).join(' ');
+                    badgesHTML += '<span class="prob-badge prob-badge-consult">' + label + '</span>';
+                });
+                studyItems.forEach(function(s) {
+                    var label = (s.text || '').split(/\s+/)[0] || 'study';
+                    badgesHTML += '<span class="prob-badge prob-badge-study">' + label + '</span>';
+                });
 
                 var head = document.createElement('div');
                 head.className = 'prob-head';
@@ -3710,7 +3764,7 @@ const helpContent = {
 
                 var nameSpan = document.createElement('span');
                 nameSpan.className = 'prob-name';
-                nameSpan.textContent = prob.name;
+                nameSpan.textContent = prob.name || '';
 
                 var badgeSpan = document.createElement('span');
                 badgeSpan.className = 'prob-badges';
@@ -3728,7 +3782,7 @@ const helpContent = {
 
                 var detail = document.createElement('div');
                 detail.className = 'prob-detail';
-                detail.style.display = 'block'; // start expanded
+                detail.style.display = 'block';
 
                 head.addEventListener('click', function() {
                     var isOpen = detail.style.display !== 'none';
@@ -3745,7 +3799,7 @@ const helpContent = {
                 ];
 
                 SECTIONS.forEach(function(sec) {
-                    var secItems = prob.items.filter(function(it) { return it.type === sec.key; });
+                    var secItems = items.filter(function(it) { return it.type === sec.key; });
                     if (!secItems.length) return;
                     if (sec.label) {
                         var st = document.createElement('p');
@@ -3764,35 +3818,43 @@ const helpContent = {
 
                         var txt = document.createElement('span');
                         txt.className = 'prob-item-text' + (item.type === 'done' ? ' done' : item.type === 'consult' ? ' consult' : item.type === 'study' ? ' study' : '');
-                        txt.textContent = item.text;
+                        txt.textContent = item.text || '';
 
                         if (item.type === 'done') {
                             txt.style.cursor = 'pointer';
                             txt.title = 'Mark as pending';
-                            (function(capturedItem) {
-                                txt.addEventListener('click', function(e) { e.stopPropagation(); capturedItem.type = 'pending'; rebuildAndSave(); });
-                            })(item);
+                            (function(it) {
+                                txt.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    it.type = 'pending';
+                                    rebuildAndSave();
+                                });
+                            }(item));
                             row.appendChild(icon);
                             row.appendChild(txt);
                         } else if (item.type === 'pending') {
                             icon.style.cursor = 'pointer';
                             icon.title = 'Mark done';
-                            (function(capturedItem) {
-                                icon.addEventListener('click', function(e) { e.stopPropagation(); capturedItem.type = 'done'; rebuildAndSave(); });
-                            })(item);
+                            (function(it) {
+                                icon.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    it.type = 'done';
+                                    rebuildAndSave();
+                                });
+                            }(item));
                             var todoBtn = document.createElement('button');
                             todoBtn.className = 'prob-todo-btn';
                             todoBtn.textContent = '→ To Do';
                             todoBtn.title = 'Add to To Do list';
-                            (function(capturedItem, capturedBtn) {
-                                capturedBtn.addEventListener('click', function(e) {
+                            (function(it, btn) {
+                                btn.addEventListener('click', function(e) {
                                     e.stopPropagation();
-                                    pushToTodo(capturedItem.text);
-                                    capturedBtn.textContent = '✓ Added';
-                                    capturedBtn.style.color = '#30d158';
-                                    setTimeout(function() { capturedBtn.textContent = '→ To Do'; capturedBtn.style.color = ''; }, 1600);
+                                    pushToTodo(it.text || '');
+                                    btn.textContent = '✓ Added';
+                                    btn.style.color = '#30d158';
+                                    setTimeout(function() { try { btn.textContent = '→ To Do'; btn.style.color = ''; } catch(e2) {} }, 1600);
                                 });
-                            })(item, todoBtn);
+                            }(item, todoBtn));
                             row.appendChild(icon);
                             row.appendChild(txt);
                             row.appendChild(todoBtn);
@@ -3804,7 +3866,7 @@ const helpContent = {
                     });
                 });
 
-                // Add item row inside each problem
+                // Add item row
                 var typeSelect = document.createElement('select');
                 typeSelect.className = 'prob-edit-select';
                 typeSelect.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option>';
@@ -3817,16 +3879,16 @@ const helpContent = {
                 addItemBtn.className = 'prob-confirm-btn';
                 addItemBtn.textContent = 'Add';
 
-                (function(capturedProb, capturedTypeSelect, capturedInput) {
+                (function(pr, sel, inp) {
                     function doAddItem() {
-                        var text = capturedInput.value.trim();
+                        var text = inp.value.trim();
                         if (!text) return;
-                        capturedProb.items.push({ type: capturedTypeSelect.value, text: text });
+                        pr.items.push({ type: sel.value, text: text });
                         rebuildAndSave();
                     }
                     addItemBtn.addEventListener('click', function(e) { e.stopPropagation(); doAddItem(); });
-                    capturedInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doAddItem(); } });
-                })(prob, typeSelect, itemInput);
+                    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doAddItem(); } });
+                }(prob, typeSelect, itemInput));
 
                 var addItemRow = document.createElement('div');
                 addItemRow.className = 'prob-edit-row';
@@ -3850,13 +3912,13 @@ const helpContent = {
             addProbForm.className = 'prob-edit-row';
             addProbForm.style.display = 'none';
 
-            var newStatus = document.createElement('select');
-            newStatus.className = 'prob-edit-select';
-            newStatus.innerHTML = '<option value="active">🔴 Active</option><option value="watch">🟡 Watch</option><option value="pending">🔵 Pending</option><option value="stable">🟢 Stable</option>';
+            var newStatusSel = document.createElement('select');
+            newStatusSel.className = 'prob-edit-select';
+            newStatusSel.innerHTML = '<option value="active">🔴 Active</option><option value="watch">🟡 Watch</option><option value="pending">🔵 Pending</option><option value="stable">🟢 Stable</option>';
 
-            var newName = document.createElement('input');
-            newName.className = 'prob-edit-input';
-            newName.placeholder = 'Problem name…';
+            var newNameInp = document.createElement('input');
+            newNameInp.className = 'prob-edit-input';
+            newNameInp.placeholder = 'Problem name…';
 
             var newAddBtn = document.createElement('button');
             newAddBtn.className = 'prob-confirm-btn';
@@ -3867,13 +3929,13 @@ const helpContent = {
             newCancelBtn.textContent = '✕';
 
             function doAddProblem() {
-                var name = newName.value.trim();
+                var name = newNameInp.value.trim();
                 if (!name) return;
-                problems.push({ name: name, status: newStatus.value, items: [] });
+                problems.push({ name: name, status: newStatusSel.value, items: [] });
                 rebuildAndSave();
             }
             newAddBtn.addEventListener('click', function(e) { e.stopPropagation(); doAddProblem(); });
-            newName.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doAddProblem(); } });
+            newNameInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doAddProblem(); } });
             newCancelBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 addProbForm.style.display = 'none';
@@ -3882,17 +3944,16 @@ const helpContent = {
             addProbRow.addEventListener('click', function() {
                 addProbRow.style.display = 'none';
                 addProbForm.style.display = 'flex';
-                newName.focus();
+                newNameInp.focus();
             });
 
-            addProbForm.appendChild(newStatus);
-            addProbForm.appendChild(newName);
+            addProbForm.appendChild(newStatusSel);
+            addProbForm.appendChild(newNameInp);
             addProbForm.appendChild(newAddBtn);
             addProbForm.appendChild(newCancelBtn);
-
             list.appendChild(addProbRow);
             list.appendChild(addProbForm);
-            container.appendChild(list);
+            bodyEl.appendChild(list);
         }
 
         // Current todo mode: 'interactive' or 'raw'
@@ -5951,11 +6012,10 @@ function switchView(mode) {
                 titleSpan.textContent = 'PROBLEMS';
                 hdr.appendChild(titleSpan);
 
-                // Raw toggle button
+                // Raw toggle — label set after initial render
                 var rawBtn = document.createElement('button');
                 rawBtn.className = 'prob-txt-btn';
-                rawBtn.textContent = '✎ Raw';
-                rawBtn.title = 'Edit as plain text';
+                rawBtn.title = 'Toggle plain text / structured view';
                 hdr.appendChild(rawBtn);
 
                 // TXT copy button
@@ -5972,9 +6032,8 @@ function switchView(mode) {
 
                 var body = document.createElement('div');
                 body.className = 'dashboard-card-body';
-                body.style.padding = '0';
 
-                // collapse toggle (only on chevron click, not whole header since header has buttons)
+                // Collapse toggle on chevron only (header has other buttons)
                 probChev.addEventListener('click', function(e) {
                     e.stopPropagation();
                     var hidden = body.style.display === 'none';
@@ -5982,41 +6041,30 @@ function switchView(mode) {
                     probChev.style.transform = hidden ? 'rotate(0deg)' : 'rotate(-90deg)';
                 });
 
-                var isRaw = false;
-
-                function showStructured() {
-                    isRaw = false;
-                    rawBtn.textContent = '✎ Raw';
-                    renderProblemsStructured(body, patient, showRaw);
-                }
-                function showRaw() {
-                    isRaw = true;
-                    rawBtn.textContent = '⊞ Structured';
-                    renderProblemsRaw(body, patient, showStructured);
-                }
+                // Store state on the element — renderProblemsCard reads these
+                body._probRaw = !!(parseProblemsList(patient['ICS'] || '').legacy);
+                body._rawBtn  = rawBtn; // renderProblemsCard keeps label in sync
 
                 rawBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    if (isRaw) { showStructured(); } else { showRaw(); }
+                    body._probRaw = !body._probRaw;
+                    renderProblemsCard(body, patient);
                 });
 
                 txtBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    var p2 = parseProblemsList(patient['ICS'] || '');
-                    var plain = p2.problems.length ? problemsToPlainText(p2.problems) : (patient['ICS'] || '');
-                    navigator.clipboard.writeText(plain).then(function() {
-                        txtBtn.textContent = '✓ Copied';
-                        setTimeout(function() { txtBtn.textContent = '⬆ TXT'; }, 1500);
-                    }).catch(function() { window.prompt('Copy:', plain); });
+                    try {
+                        var p2    = parseProblemsList(patient['ICS'] || '');
+                        var plain = p2.problems.length ? problemsToPlainText(p2.problems) : (patient['ICS'] || '');
+                        navigator.clipboard.writeText(plain).then(function() {
+                            txtBtn.textContent = '✓ Copied';
+                            setTimeout(function() { txtBtn.textContent = '⬆ TXT'; }, 1500);
+                        }).catch(function() { window.prompt('Copy:', plain); });
+                    } catch(e2) { window.prompt('Copy:', patient['ICS'] || ''); }
                 });
 
-                // Initial render: if legacy free text, start in raw; otherwise structured
-                var initParsed = parseProblemsList(patient['ICS'] || '');
-                if (initParsed.legacy) {
-                    showRaw();
-                } else {
-                    showStructured();
-                }
+                // Initial render — routes through the single safe entry point
+                renderProblemsCard(body, patient);
 
                 card.appendChild(hdr);
                 card.appendChild(body);
