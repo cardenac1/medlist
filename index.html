@@ -5962,25 +5962,8 @@ function switchView(mode) {
                 leftCol.appendChild(card);
             }
 
-            // ── Right: Priority ──
-            {
-                const { card, cardBody } = buildBasicCard('Priority', false);
-                const { color } = getPriorityStatus(patient);
-                const priorityBtn = document.createElement('button');
-                priorityBtn.id = 'detailPriorityBtn';
-                priorityBtn.style.cssText = `margin:0;padding:0.5rem 0.75rem;font-size:0.8rem;width:100%;text-align:left;background:var(--card-bg);border:2px solid ${color};border-radius:0.5rem;color:var(--text-primary);cursor:pointer;display:flex;align-items:center;gap:0.5rem;`;
-                const colorBox = document.createElement('div');
-                colorBox.id = 'detailPriorityColorBox';
-                colorBox.style.cssText = `width:14px;height:14px;border-radius:0.2rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
-                const priorityText = document.createElement('span');
-                priorityText.id = 'detailPriorityText';
-                priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
-                priorityBtn.appendChild(colorBox);
-                priorityBtn.appendChild(priorityText);
-                priorityBtn.onclick = e => { e.preventDefault(); showStatusSelector(patient, currentPatientIndex, priorityBtn); };
-                cardBody.appendChild(priorityBtn);
-                rightCol.appendChild(card);
-            }
+            // ── Right ──
+           
 
             // ── Right: To Do ──
             {
@@ -6000,6 +5983,25 @@ function switchView(mode) {
             break;
         }
 
+			
+			 {
+                const { card, cardBody } = buildBasicCard('Priority', false);
+                const { color } = getPriorityStatus(patient);
+                const priorityBtn = document.createElement('button');
+                priorityBtn.id = 'detailPriorityBtn';
+                priorityBtn.style.cssText = `margin:0;padding:0.5rem 0.75rem;font-size:0.8rem;width:100%;text-align:left;background:var(--card-bg);border:2px solid ${color};border-radius:0.5rem;color:var(--text-primary);cursor:pointer;display:flex;align-items:center;gap:0.5rem;`;
+                const colorBox = document.createElement('div');
+                colorBox.id = 'detailPriorityColorBox';
+                colorBox.style.cssText = `width:14px;height:14px;border-radius:0.2rem;background:${color};border:1px solid rgba(255,255,255,0.3);flex-shrink:0;`;
+                const priorityText = document.createElement('span');
+                priorityText.id = 'detailPriorityText';
+                priorityText.textContent = patient['Priority'] ? getPriorityName(patient['Priority']) : 'Set Priority';
+                priorityBtn.appendChild(colorBox);
+                priorityBtn.appendChild(priorityText);
+                priorityBtn.onclick = e => { e.preventDefault(); showStatusSelector(patient, currentPatientIndex, priorityBtn); };
+                cardBody.appendChild(priorityBtn);
+                rightCol.appendChild(card);
+            }
       
 
 
