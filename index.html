@@ -3803,6 +3803,7 @@ const helpContent = {
                 // Problem name — click to edit inline
                 var nameSpan = document.createElement('span');
                 nameSpan.className = 'prob-name';
+                nameSpan.style.flex = '0 0 auto'; // don't grow; preview takes remaining space
                 nameSpan.textContent = prob.name || '';
                 nameSpan.title = 'Click to edit name';
                 (function(pr, ns) {
@@ -3821,6 +3822,32 @@ const helpContent = {
                         inp.focus(); inp.select();
                     });
                 }(prob, nameSpan));
+
+                // Item text preview — shown in collapsed header after the name
+                var previewSpan = document.createElement('span');
+                previewSpan.style.cssText = 'flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:4px;padding-left:5px;';
+                (function() {
+                    // Gather items to preview: pending first, then done, consult, study, intervention
+                    var previewItems = items.filter(function(it) { return it.type === 'pending'; })
+                        .concat(items.filter(function(it) { return it.type === 'consult'; }))
+                        .concat(items.filter(function(it) { return it.type === 'study'; }))
+                        .concat(items.filter(function(it) { return it.type === 'intervention'; }))
+                        .concat(items.filter(function(it) { return it.type === 'done'; }));
+                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1d4778', study: '#3b1a5c', intervention: '#164e6a', plain: '#3d3d3f' };
+                    previewItems.forEach(function(it, i) {
+                        if (i > 0) {
+                            var sep = document.createElement('span');
+                            sep.style.cssText = 'color:#2d2d2f;font-size:0.6rem;flex-shrink:0;';
+                            sep.textContent = '·';
+                            previewSpan.appendChild(sep);
+                        }
+                        var chip = document.createElement('span');
+                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:' + (i === 0 ? '1' : '0') + ';max-width:' + (i === 0 ? '100%' : '80px') + ';' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
+                        chip.textContent = (it.text || '').split(/\s+/).slice(0, 4).join(' ');
+                        chip.title = it.text || '';
+                        previewSpan.appendChild(chip);
+                    });
+                })();
 
                 var badgeSpan = document.createElement('span');
                 badgeSpan.className = 'prob-badges';
@@ -3851,6 +3878,7 @@ const helpContent = {
                 head.appendChild(numSpan);
                 head.appendChild(statusDot);
                 head.appendChild(nameSpan);
+                head.appendChild(previewSpan);
                 head.appendChild(badgeSpan);
                 head.appendChild(delProbBtn);
                 head.appendChild(chevron);
