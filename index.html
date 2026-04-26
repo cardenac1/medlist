@@ -1110,9 +1110,9 @@
 .prob-item[data-status="watch"]   { border-left-color: #ff9f0a; }
 .prob-item[data-status="stable"]  { border-left-color: #30d158; }
 .prob-item[data-status="pending"] { border-left-color: #0a84ff; }
-.prob-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; user-select: none; }
-.prob-num  { color: #48484a; font-size: 0.68rem; font-weight: 700; min-width: 14px; }
-.prob-name { flex: 1; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; }
+.prob-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; user-select: none; flex-wrap: wrap; }
+.prob-num  { color: #48484a; font-size: 0.68rem; font-weight: 700; min-width: 14px; flex-shrink: 0; }
+.prob-name { flex: 1 1 auto; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; word-break: break-word; overflow-wrap: break-word; min-width: 60px; }
 .prob-badges { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .prob-badge { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 .prob-badge-done         { background: #1a3a20; color: #30d158; }
@@ -1129,7 +1129,7 @@
 .prob-section-title { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #48484a; margin: 5px 0 3px; }
 .prob-item-row { display: flex; align-items: flex-start; gap: 5px; font-size: 0.72rem; line-height: 1.45; margin-bottom: 1px; }
 .prob-item-icon { flex-shrink: 0; font-size: 0.65rem; margin-top: 1px; }
-.prob-item-text { flex: 1; color: #d1d1d6; }
+.prob-item-text { flex: 1; color: #d1d1d6; word-break: break-word; overflow-wrap: break-word; min-width: 0; }
 .prob-item-text.done    { text-decoration: line-through; color: #48484a; }
 .prob-item-text.consult      { color: #0a84ff; }
 .prob-item-text.study        { color: #bf5af2; }
@@ -3888,7 +3888,6 @@ const helpContent = {
                 // Problem name
                 var nameSpan = document.createElement('span');
                 nameSpan.className = 'prob-name';
-                nameSpan.style.flex = '0 0 auto';
                 nameSpan.textContent = prob.name || '';
 
                 // ✎ Edit name button
@@ -3986,8 +3985,8 @@ const helpContent = {
 
                 head.addEventListener('click', function(e) {
                     if (e.target === statusDot || e.target === editNameBtn || e.target === delProbBtn) return;
-                    // Don't collapse while an edit form is active inside this card
-                    if (detail.querySelector('input, textarea, select')) return;
+                    // Don't collapse while an edit form input has focus
+                    if (detail.querySelector('input:focus, textarea:focus, select:focus')) return;
                     var isOpen = detail.style.display !== 'none';
                     detail.style.display = isOpen ? 'none' : 'block';
                     chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
@@ -4110,13 +4109,13 @@ const helpContent = {
 
                         // ✎ Edit button — opens inline text+type editor
                         var editBtn = document.createElement('span');
-                        editBtn.style.cssText = 'color:#48484a;font-size:0.62rem;cursor:pointer;flex-shrink:0;padding:0 3px;line-height:1;transition:color 0.15s;opacity:0;';
+                        editBtn.style.cssText = 'color:#48484a;font-size:0.62rem;cursor:pointer;flex-shrink:0;padding:2px 5px;line-height:1;transition:color 0.15s, opacity 0.15s;opacity:0.45;';
                         editBtn.textContent = '✎';
                         editBtn.title = 'Edit item';
-                        editBtn.onmouseenter = function() { this.style.color = '#60a5fa'; };
-                        editBtn.onmouseleave = function() { this.style.color = '#48484a'; };
+                        editBtn.onmouseenter = function() { this.style.color = '#60a5fa'; this.style.opacity = '1'; };
+                        editBtn.onmouseleave = function() { this.style.color = '#48484a'; this.style.opacity = '0.45'; };
                         row.onmouseenter = function() { editBtn.style.opacity = '1'; delBtn.style.opacity = '1'; };
-                        row.onmouseleave = function() { editBtn.style.opacity = '0'; delBtn.style.opacity = '0'; };
+                        row.onmouseleave = function() { editBtn.style.opacity = '0.45'; delBtn.style.opacity = '0.45'; };
 
                         (function(it, rw, ic, tx) {
                             editBtn.addEventListener('click', function(e) {
@@ -4187,11 +4186,11 @@ const helpContent = {
 
                         // × Delete button
                         var delBtn = document.createElement('span');
-                        delBtn.style.cssText = 'color:#48484a;font-size:0.65rem;cursor:pointer;flex-shrink:0;padding:0 3px;line-height:1;transition:color 0.15s;opacity:0;';
+                        delBtn.style.cssText = 'color:#48484a;font-size:0.65rem;cursor:pointer;flex-shrink:0;padding:2px 4px;line-height:1;transition:color 0.15s, opacity 0.15s;opacity:0.45;';
                         delBtn.textContent = '×';
                         delBtn.title = 'Delete item';
-                        delBtn.onmouseenter = function() { this.style.color = '#ef4444'; };
-                        delBtn.onmouseleave = function() { this.style.color = '#48484a'; };
+                        delBtn.onmouseenter = function() { this.style.color = '#ef4444'; this.style.opacity = '1'; };
+                        delBtn.onmouseleave = function() { this.style.color = '#48484a'; this.style.opacity = '0.45'; };
                         (function(it) {
                             delBtn.addEventListener('click', function(e) {
                                 e.stopPropagation();
@@ -6213,11 +6212,13 @@ function toggleStickyEdit() {
     const panel = document.createElement('div');
     panel.id = 'stickyEditPanel';
     panel.style.cssText = `
-        display: flex; gap: 6px; padding: 6px 10px 8px;
+        display: flex; gap: 6px 8px; padding: 6px 10px 8px;
         background: #000; flex-wrap: wrap; align-items: center;
         border-bottom: 0.5px solid rgba(84,84,88,0.5);
     `;
     [['Name', 'Patient name'], ['RM', 'Room'], ['MRN', 'MRN']].forEach(([field, ph]) => {
+        const pair = document.createElement('div');
+        pair.style.cssText = `display:flex; align-items:center; gap:4px; flex: ${field === 'Name' ? '2 1 140px' : '1 1 80px'}; min-width:0;`;
         const lbl = document.createElement('span');
         lbl.textContent = field;
         lbl.style.cssText = 'font-size:0.72rem; color:#8e8e93; white-space:nowrap; flex-shrink:0;';
@@ -6228,8 +6229,8 @@ function toggleStickyEdit() {
         inp.style.cssText = `
             font-size: 0.82rem; padding: 4px 8px; border-radius: 8px;
             border: 0.5px solid rgba(84,84,88,0.6); background: #1c1c1e;
-            color: #fff; width: ${field === 'Name' ? '130px' : '80px'};
-            margin: 0; flex-shrink: 0;
+            color: #fff; flex: 1 1 0; min-width: 0; width: 100%;
+            margin: 0; word-break: break-word;
         `;
         inp.addEventListener('input', function() {
             patient[field] = this.value;
@@ -6237,8 +6238,9 @@ function toggleStickyEdit() {
             displayRows();
             saveToLocalStorage();
         });
-        panel.appendChild(lbl);
-        panel.appendChild(inp);
+        pair.appendChild(lbl);
+        pair.appendChild(inp);
+        panel.appendChild(pair);
     });
     const doneBtn = document.createElement('button');
     doneBtn.textContent = 'Done';
@@ -6411,6 +6413,14 @@ function switchView(mode) {
                 rawBtn.title = 'Toggle plain text / structured view';
                 hdr.appendChild(rawBtn);
 
+                // Expand All / Collapse All button
+                var expandAllBtn = document.createElement('button');
+                expandAllBtn.type = 'button';
+                expandAllBtn.className = 'prob-txt-btn';
+                expandAllBtn.textContent = '⊞ All';
+                expandAllBtn.title = 'Expand all problems';
+                hdr.appendChild(expandAllBtn);
+
                 // TXT copy button
                 var txtBtn = document.createElement('button');
                 txtBtn.type = 'button';
@@ -6444,6 +6454,30 @@ function switchView(mode) {
                     e.stopPropagation();
                     body._probRaw = !body._probRaw;
                     renderProblemsCard(body, patient);
+                });
+
+                // Expand All / Collapse All toggle
+                expandAllBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var details = body.querySelectorAll('.prob-detail');
+                    var allOpen = Array.prototype.every.call(details, function(d) { return d.style.display !== 'none'; });
+                    if (!body._probExpandedNames) body._probExpandedNames = new Set();
+                    details.forEach(function(d) {
+                        var probItem = d.parentElement;
+                        var chevron  = probItem && probItem.querySelector('.prob-chevron');
+                        var nameEl   = probItem && probItem.querySelector('.prob-name');
+                        if (allOpen) {
+                            d.style.display = 'none';
+                            if (chevron) chevron.style.transform = 'rotate(0deg)';
+                            if (nameEl)  body._probExpandedNames.delete(nameEl.textContent.trim());
+                        } else {
+                            d.style.display = 'block';
+                            if (chevron) chevron.style.transform = 'rotate(90deg)';
+                            if (nameEl)  body._probExpandedNames.add(nameEl.textContent.trim());
+                        }
+                    });
+                    expandAllBtn.textContent = allOpen ? '⊞ All' : '⊟ All';
+                    expandAllBtn.title = allOpen ? 'Expand all problems' : 'Collapse all problems';
                 });
 
                 txtBtn.addEventListener('click', function(e) {
