@@ -3728,6 +3728,17 @@ const helpContent = {
             list.className = 'prob-list';
 
             function rebuildAndSave() {
+                // Preserve which problems are currently expanded (by name)
+                var expanded = new Set();
+                bodyEl.querySelectorAll('.prob-item').forEach(function(el) {
+                    var det = el.querySelector('.prob-detail');
+                    var nm  = el.querySelector('.prob-name');
+                    if (det && nm && det.style.display !== 'none') {
+                        expanded.add(nm.textContent.trim());
+                    }
+                });
+                bodyEl._probExpandedNames = expanded;
+
                 try {
                     patient['ICS'] = serializeProblemsList(problems);
                     saveToLocalStorage();
@@ -3834,15 +3845,17 @@ const helpContent = {
                 (function(pr, dot) {
                     dot.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        var existing = head.querySelector('.prob-status-popup');
+                        // Remove any existing floating popup
+                        var existing = document.querySelector('.prob-status-popup');
                         if (existing) { existing.remove(); return; }
                         var popup = document.createElement('div');
                         popup.className = 'prob-status-popup';
-                        popup.style.cssText = 'position:absolute;left:0;top:100%;z-index:300;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.8);min-width:120px;';
+                        // Use fixed positioning so it escapes any overflow:hidden parent
+                        popup.style.cssText = 'position:fixed;z-index:9100;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 20px rgba(0,0,0,0.9);min-width:130px;';
                         Object.entries(STATUS_LABELS).forEach(function(pair) {
                             var val = pair[0], lbl = pair[1];
                             var opt = document.createElement('div');
-                            opt.style.cssText = 'padding:6px 14px;font-size:0.75rem;cursor:pointer;color:#e8eaed;white-space:nowrap;' + (pr.status === val ? 'background:rgba(255,255,255,0.08);font-weight:600;' : '');
+                            opt.style.cssText = 'padding:7px 16px;font-size:0.78rem;cursor:pointer;color:#e8eaed;white-space:nowrap;' + (pr.status === val ? 'background:rgba(255,255,255,0.08);font-weight:700;' : '');
                             opt.textContent = lbl;
                             opt.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
                             opt.onmouseleave = function() { this.style.background = pr.status === val ? 'rgba(255,255,255,0.08)' : ''; };
@@ -3854,8 +3867,19 @@ const helpContent = {
                             });
                             popup.appendChild(opt);
                         });
-                        head.style.position = 'relative';
-                        head.appendChild(popup);
+                        document.body.appendChild(popup);
+                        // Position below the dot, clamped to viewport
+                        var rect = dot.getBoundingClientRect();
+                        var top  = rect.bottom + 4;
+                        var left = rect.left;
+                        popup.style.top  = top + 'px';
+                        popup.style.left = left + 'px';
+                        requestAnimationFrame(function() {
+                            var pw = popup.offsetWidth, ph = popup.offsetHeight;
+                            var vw = window.innerWidth, vh = window.innerHeight;
+                            if (left + pw > vw - 6) popup.style.left = Math.max(6, vw - pw - 6) + 'px';
+                            if (top  + ph > vh - 6) popup.style.top  = Math.max(6, rect.top - ph - 4) + 'px';
+                        });
                         var close = function(ev) { if (!popup.contains(ev.target) && ev.target !== dot) { popup.remove(); document.removeEventListener('click', close); } };
                         setTimeout(function() { document.addEventListener('click', close); }, 0);
                     });
@@ -3955,22 +3979,31 @@ const helpContent = {
                 // ── Detail (expanded) ──────────────────────────────────
                 var detail = document.createElement('div');
                 detail.className = 'prob-detail';
-                detail.style.display = 'none';
+                // Restore expanded state if this problem was open before rebuild
+                var _wasExpanded = bodyEl._probExpandedNames && bodyEl._probExpandedNames.has(prob.name || '');
+                detail.style.display = _wasExpanded ? 'block' : 'none';
+                chevron.style.transform = _wasExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
 
                 head.addEventListener('click', function(e) {
                     if (e.target === statusDot || e.target === editNameBtn || e.target === delProbBtn) return;
+                    // Don't collapse while an edit form is active inside this card
+                    if (detail.querySelector('input, textarea, select')) return;
                     var isOpen = detail.style.display !== 'none';
                     detail.style.display = isOpen ? 'none' : 'block';
                     chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+                    // Keep expanded-names set in sync so next rebuild preserves state
+                    if (!bodyEl._probExpandedNames) bodyEl._probExpandedNames = new Set();
+                    if (isOpen) bodyEl._probExpandedNames.delete(prob.name || '');
+                    else bodyEl._probExpandedNames.add(prob.name || '');
                 });
 
-                // Type-change popup builder (reusable)
+                // Type-change popup builder — uses fixed positioning to escape overflow clipping
                 function buildTypePopup(it, anchorEl) {
-                    var existing = anchorEl.parentElement && anchorEl.parentElement.querySelector('.prob-type-popup');
+                    var existing = document.querySelector('.prob-type-popup');
                     if (existing) { existing.remove(); return; }
                     var popup = document.createElement('div');
                     popup.className = 'prob-type-popup';
-                    popup.style.cssText = 'position:absolute;left:0;top:100%;z-index:200;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.7);min-width:135px;';
+                    popup.style.cssText = 'position:fixed;z-index:9100;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 20px rgba(0,0,0,0.9);min-width:140px;';
                     var TYPE_OPTIONS = [
                         { value: 'pending',      label: '○ Pending'      },
                         { value: 'done',         label: '✓ Done'         },
@@ -3981,7 +4014,7 @@ const helpContent = {
                     ];
                     TYPE_OPTIONS.forEach(function(opt) {
                         var opt_el = document.createElement('div');
-                        opt_el.style.cssText = 'padding:5px 12px;font-size:0.72rem;cursor:pointer;color:' + (ICON_COLOR[opt.value] || '#e8eaed') + ';white-space:nowrap;' + (it.type === opt.value ? 'font-weight:700;background:rgba(255,255,255,0.06);' : '');
+                        opt_el.style.cssText = 'padding:6px 14px;font-size:0.75rem;cursor:pointer;color:' + (ICON_COLOR[opt.value] || '#e8eaed') + ';white-space:nowrap;' + (it.type === opt.value ? 'font-weight:700;background:rgba(255,255,255,0.06);' : '');
                         opt_el.textContent = opt.label;
                         opt_el.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.08)'; };
                         opt_el.onmouseleave = function() { this.style.background = it.type === opt.value ? 'rgba(255,255,255,0.06)' : ''; };
@@ -3993,15 +4026,19 @@ const helpContent = {
                         });
                         popup.appendChild(opt_el);
                     });
-                    var row = anchorEl.closest('.prob-item-row');
-                    if (row) {
-                        row.style.position = 'relative';
-                        row.appendChild(popup);
-                    } else {
-                        anchorEl.style.position = 'relative';
-                        anchorEl.appendChild(popup);
-                    }
-                    var close = function(ev) { if (!popup.contains(ev.target)) { popup.remove(); document.removeEventListener('click', close); } };
+                    document.body.appendChild(popup);
+                    var rect = anchorEl.getBoundingClientRect();
+                    var top  = rect.bottom + 4;
+                    var left = rect.left;
+                    popup.style.top  = top + 'px';
+                    popup.style.left = left + 'px';
+                    requestAnimationFrame(function() {
+                        var pw = popup.offsetWidth, ph = popup.offsetHeight;
+                        var vw = window.innerWidth, vh = window.innerHeight;
+                        if (left + pw > vw - 6) popup.style.left = Math.max(6, vw - pw - 6) + 'px';
+                        if (top  + ph > vh - 6) popup.style.top  = Math.max(6, rect.top - ph - 4) + 'px';
+                    });
+                    var close = function(ev) { if (!popup.contains(ev.target) && ev.target !== anchorEl) { popup.remove(); document.removeEventListener('click', close); } };
                     setTimeout(function() { document.addEventListener('click', close); }, 0);
                 }
 
