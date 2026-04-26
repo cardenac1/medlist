@@ -1101,7 +1101,7 @@
 .prob-badge-pending      { background: #2a2200; color: #ffd60a; }
 .prob-badge-consult      { background: #0a1a30; color: #0a84ff; }
 .prob-badge-study        { background: #1a0a30; color: #bf5af2; }
-.prob-badge-intervention { background: #0a1a2a; color: #38bdf8; }
+.prob-badge-intervention { background: #1c1c1e; color: #8e8e93; }
 .prob-status-dot { font-size: 0.5rem; cursor: pointer; flex-shrink: 0; line-height: 1; transition: opacity 0.15s; }
 .prob-status-dot:hover { opacity: 0.7; }
 .prob-chevron { color: #48484a; font-size: 0.6rem; transition: transform 0.2s; flex-shrink: 0; }
@@ -1115,7 +1115,7 @@
 .prob-item-text.done    { text-decoration: line-through; color: #48484a; }
 .prob-item-text.consult      { color: #0a84ff; }
 .prob-item-text.study        { color: #bf5af2; }
-.prob-item-text.intervention { color: #38bdf8; }
+.prob-item-text.intervention { color: #8e8e93; }
 .prob-todo-btn {
     font-size: 0.58rem; font-weight: 700;
     background: #0a1a2a; border: 1px solid #0a84ff44;
@@ -3602,7 +3602,7 @@ const helpContent = {
                         else if (t[0] === '○') current.items.push({ type: 'pending',      text: t.slice(1).trim() });
                         else if (t[0] === '◈') current.items.push({ type: 'consult',      text: t.slice(1).trim() });
                         else if (t[0] === '⬡') current.items.push({ type: 'study',        text: t.slice(1).trim() });
-                        else if (t[0] === '⊕') current.items.push({ type: 'intervention', text: t.slice(1).trim() });
+                        else if (t[0] === '⚙') current.items.push({ type: 'intervention', text: t.slice(1).trim() });
                         else                   current.items.push({ type: 'plain',        text: t });
                     }
                 }
@@ -3616,7 +3616,7 @@ const helpContent = {
         function serializeProblemsList(problems) {
             try {
                 if (!problems || !problems.length) return '';
-                var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⊕', plain: '' };
+                var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⚙', plain: '' };
                 return problems.map(function(p, i) {
                     var items = (p.items || []).map(function(it) {
                         return pfx[it.type] ? pfx[it.type] + ' ' + it.text : it.text;
@@ -3735,11 +3735,31 @@ const helpContent = {
                 } catch(e) {}
             }
 
-            var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2', intervention: '#38bdf8', plain: '#636366' };
-            var ICON_CHAR  = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⊕', plain: '' };
+            var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2', intervention: '#94a3b8', plain: '#636366' };
+            var ICON_CHAR  = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⚙', plain: '' };
             var STATUS_ORDER = { active: 0, watch: 1, pending: 2, stable: 3 };
             var STATUS_COLOR = { active: '#ff453a', watch: '#ff9f0a', pending: '#0a84ff', stable: '#30d158' };
-            var STATUS_CYCLE = ['active', 'watch', 'pending', 'stable'];
+            var STATUS_LABELS = { active: '🔴 Active', watch: '🟡 Watch', pending: '🔵 Pending', stable: '🟢 Stable' };
+
+            // Sync a state change in problems back to the TODO checklist
+            function syncProbItemToTodo(text, isDone) {
+                try {
+                    var tp = parseTodoText(patient['To do'] || '');
+                    var lo = (text || '').trim().toLowerCase();
+                    var changed = false;
+                    tp.tasks.forEach(function(t) {
+                        if (t.type === 'task' && (t.text || '').trim().toLowerCase() === lo && t.done !== isDone) {
+                            t.done = isDone;
+                            changed = true;
+                        }
+                    });
+                    if (changed) {
+                        patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
+                        var tc = document.getElementById('todoContainer');
+                        if (tc) renderTodoList(tc, patient);
+                    }
+                } catch(e) {}
+            }
 
             // Sort problems: active first, stable last
             problems.sort(function(a, b) {
@@ -3774,10 +3794,11 @@ const helpContent = {
                     badgesHTML += '<span class="prob-badge prob-badge-study">⬡ ' + label + '</span>';
                 });
                 interventionItems.forEach(function(v) {
-                    var label = (v.text || '').split(/\s+/)[0] || 'I';
-                    badgesHTML += '<span class="prob-badge prob-badge-intervention">⊕ ' + label + '</span>';
+                    var label = (v.text || '').split(/\s+/)[0] || 'Proc';
+                    badgesHTML += '<span class="prob-badge prob-badge-intervention">⚙ ' + label + '</span>';
                 });
 
+                // ── Header ─────────────────────────────────────────────
                 var head = document.createElement('div');
                 head.className = 'prob-head';
 
@@ -3785,55 +3806,83 @@ const helpContent = {
                 numSpan.className = 'prob-num';
                 numSpan.textContent = pi + 1;
 
-                // Status dot — click to cycle through statuses
+                // Status dot — click opens dropdown
                 var statusDot = document.createElement('span');
                 statusDot.className = 'prob-status-dot';
                 statusDot.textContent = '●';
                 statusDot.style.color = STATUS_COLOR[prob.status] || '#636366';
-                statusDot.title = 'Status: ' + (prob.status || 'active') + ' — tap to change';
+                statusDot.title = 'Status: ' + (prob.status || 'active') + ' — click to change';
                 (function(pr, dot) {
                     dot.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        var cur = STATUS_CYCLE.indexOf(pr.status);
-                        pr.status = STATUS_CYCLE[(cur + 1) % STATUS_CYCLE.length];
-                        rebuildAndSave();
+                        var existing = head.querySelector('.prob-status-popup');
+                        if (existing) { existing.remove(); return; }
+                        var popup = document.createElement('div');
+                        popup.className = 'prob-status-popup';
+                        popup.style.cssText = 'position:absolute;left:0;top:100%;z-index:300;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.8);min-width:120px;';
+                        Object.entries(STATUS_LABELS).forEach(function(pair) {
+                            var val = pair[0], lbl = pair[1];
+                            var opt = document.createElement('div');
+                            opt.style.cssText = 'padding:6px 14px;font-size:0.75rem;cursor:pointer;color:#e8eaed;white-space:nowrap;' + (pr.status === val ? 'background:rgba(255,255,255,0.08);font-weight:600;' : '');
+                            opt.textContent = lbl;
+                            opt.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
+                            opt.onmouseleave = function() { this.style.background = pr.status === val ? 'rgba(255,255,255,0.08)' : ''; };
+                            opt.addEventListener('click', function(ev) {
+                                ev.stopPropagation();
+                                pr.status = val;
+                                popup.remove();
+                                rebuildAndSave();
+                            });
+                            popup.appendChild(opt);
+                        });
+                        head.style.position = 'relative';
+                        head.appendChild(popup);
+                        var close = function(ev) { if (!popup.contains(ev.target) && ev.target !== dot) { popup.remove(); document.removeEventListener('click', close); } };
+                        setTimeout(function() { document.addEventListener('click', close); }, 0);
                     });
                 }(prob, statusDot));
 
-                // Problem name — click to edit inline
+                // Problem name
                 var nameSpan = document.createElement('span');
                 nameSpan.className = 'prob-name';
-                nameSpan.style.flex = '0 0 auto'; // don't grow; preview takes remaining space
+                nameSpan.style.flex = '0 0 auto';
                 nameSpan.textContent = prob.name || '';
-                nameSpan.title = 'Click to edit name';
-                (function(pr, ns) {
-                    ns.addEventListener('click', function(e) {
+
+                // ✎ Edit name button
+                var editNameBtn = document.createElement('span');
+                editNameBtn.style.cssText = 'color:#48484a;font-size:0.65rem;cursor:pointer;flex-shrink:0;padding:0 3px;line-height:1;transition:color 0.15s;';
+                editNameBtn.textContent = '✎';
+                editNameBtn.title = 'Edit problem name';
+                editNameBtn.onmouseenter = function() { this.style.color = '#60a5fa'; };
+                editNameBtn.onmouseleave = function() { this.style.color = '#48484a'; };
+                (function(pr, ns, btn) {
+                    btn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         var inp = document.createElement('input');
                         inp.className = 'prob-edit-input';
                         inp.value = pr.name || '';
-                        inp.style.cssText = 'flex:1;min-width:60px;font-size:0.78rem;margin:0;';
+                        inp.style.cssText = 'flex:0 0 auto;min-width:80px;max-width:180px;font-size:0.78rem;margin:0;';
                         inp.addEventListener('keydown', function(ev) {
                             if (ev.key === 'Enter') { ev.preventDefault(); pr.name = this.value.trim() || pr.name; rebuildAndSave(); }
                             if (ev.key === 'Escape') { rebuildAndSave(); }
                         });
                         inp.addEventListener('blur', function() { pr.name = this.value.trim() || pr.name; rebuildAndSave(); });
                         ns.replaceWith(inp);
+                        btn.style.display = 'none';
                         inp.focus(); inp.select();
                     });
-                }(prob, nameSpan));
+                }(prob, nameSpan, editNameBtn));
 
-                // Item text preview — shown in collapsed header after the name
+                // Item text preview — flex:1, shown when collapsed
                 var previewSpan = document.createElement('span');
                 previewSpan.style.cssText = 'flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:4px;padding-left:5px;';
                 (function() {
-                    // Gather items to preview: pending first, then done, consult, study, intervention
                     var previewItems = items.filter(function(it) { return it.type === 'pending'; })
                         .concat(items.filter(function(it) { return it.type === 'consult'; }))
                         .concat(items.filter(function(it) { return it.type === 'study'; }))
-                        .concat(items.filter(function(it) { return it.type === 'intervention'; }))
-                        .concat(items.filter(function(it) { return it.type === 'done'; }));
-                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1d4778', study: '#3b1a5c', intervention: '#164e6a', plain: '#3d3d3f' };
+                        .concat(items.filter(function(it) { return it.type === 'done'; }))
+                        .concat(items.filter(function(it) { return it.type === 'intervention'; }));
+                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1d4778', study: '#3b1a5c', intervention: '#3d3d3f', plain: '#3d3d3f' };
                     previewItems.forEach(function(it, i) {
                         if (i > 0) {
                             var sep = document.createElement('span');
@@ -3873,31 +3922,76 @@ const helpContent = {
                 var chevron = document.createElement('span');
                 chevron.className = 'prob-chevron';
                 chevron.textContent = '▶';
-                chevron.style.transform = 'rotate(0deg)'; // collapsed by default
+                chevron.style.transform = 'rotate(0deg)';
 
                 head.appendChild(numSpan);
                 head.appendChild(statusDot);
                 head.appendChild(nameSpan);
+                head.appendChild(editNameBtn);
                 head.appendChild(previewSpan);
                 head.appendChild(badgeSpan);
                 head.appendChild(delProbBtn);
                 head.appendChild(chevron);
 
+                // ── Detail (expanded) ──────────────────────────────────
                 var detail = document.createElement('div');
                 detail.className = 'prob-detail';
-                detail.style.display = 'none'; // collapsed by default
+                detail.style.display = 'none';
 
-                head.addEventListener('click', function() {
+                head.addEventListener('click', function(e) {
+                    if (e.target === statusDot || e.target === editNameBtn || e.target === delProbBtn) return;
                     var isOpen = detail.style.display !== 'none';
                     detail.style.display = isOpen ? 'none' : 'block';
                     chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
                 });
 
+                // Type-change popup builder (reusable)
+                function buildTypePopup(it, anchorEl) {
+                    var existing = anchorEl.parentElement && anchorEl.parentElement.querySelector('.prob-type-popup');
+                    if (existing) { existing.remove(); return; }
+                    var popup = document.createElement('div');
+                    popup.className = 'prob-type-popup';
+                    popup.style.cssText = 'position:absolute;left:0;top:100%;z-index:200;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.7);min-width:135px;';
+                    var TYPE_OPTIONS = [
+                        { value: 'pending',      label: '○ Pending'      },
+                        { value: 'done',         label: '✓ Done'         },
+                        { value: 'consult',      label: '◈ Consult'      },
+                        { value: 'study',        label: '⬡ Study'        },
+                        { value: 'intervention', label: '⚙ Intervention' },
+                        { value: 'plain',        label: '— Note'         },
+                    ];
+                    TYPE_OPTIONS.forEach(function(opt) {
+                        var opt_el = document.createElement('div');
+                        opt_el.style.cssText = 'padding:5px 12px;font-size:0.72rem;cursor:pointer;color:' + (ICON_COLOR[opt.value] || '#e8eaed') + ';white-space:nowrap;' + (it.type === opt.value ? 'font-weight:700;background:rgba(255,255,255,0.06);' : '');
+                        opt_el.textContent = opt.label;
+                        opt_el.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.08)'; };
+                        opt_el.onmouseleave = function() { this.style.background = it.type === opt.value ? 'rgba(255,255,255,0.06)' : ''; };
+                        opt_el.addEventListener('click', function(ev) {
+                            ev.stopPropagation();
+                            it.type = opt.value;
+                            popup.remove();
+                            rebuildAndSave();
+                        });
+                        popup.appendChild(opt_el);
+                    });
+                    var row = anchorEl.closest('.prob-item-row');
+                    if (row) {
+                        row.style.position = 'relative';
+                        row.appendChild(popup);
+                    } else {
+                        anchorEl.style.position = 'relative';
+                        anchorEl.appendChild(popup);
+                    }
+                    var close = function(ev) { if (!popup.contains(ev.target)) { popup.remove(); document.removeEventListener('click', close); } };
+                    setTimeout(function() { document.addEventListener('click', close); }, 0);
+                }
+
+                // Sections: pending → consults → studies → done → interventions (historical) → notes
                 var SECTIONS = [
-                    { key: 'done',         label: 'Done'          },
                     { key: 'pending',      label: 'Pending'       },
                     { key: 'consult',      label: 'Consults'      },
                     { key: 'study',        label: 'Studies'       },
+                    { key: 'done',         label: 'Done'          },
                     { key: 'intervention', label: 'Interventions' },
                     { key: 'plain',        label: null             },
                 ];
@@ -3916,61 +4010,132 @@ const helpContent = {
                         row.className = 'prob-item-row';
                         row.style.position = 'relative';
 
-                        // Icon — click to show type-change popup
+                        // Checkbox icon (○/✓) — click to toggle done/pending + sync TODO
+                        // Other types — click to show type dropdown
                         var icon = document.createElement('span');
                         icon.className = 'prob-item-icon';
                         icon.style.color = ICON_COLOR[item.type] || '#94a3b8';
                         icon.textContent = ICON_CHAR[item.type] || '';
                         icon.style.cursor = 'pointer';
-                        icon.title = 'Change type';
-                        (function(it, ic, rw) {
-                            ic.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                var existing = rw.querySelector('.prob-type-popup');
-                                if (existing) { existing.remove(); return; }
-                                var popup = document.createElement('div');
-                                popup.className = 'prob-type-popup';
-                                popup.style.cssText = 'position:absolute;left:0;top:100%;z-index:200;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.7);min-width:130px;';
-                                var TYPE_OPTIONS = [
-                                    { value: 'pending',      label: '○ Pending'      },
-                                    { value: 'done',         label: '✓ Done'         },
-                                    { value: 'consult',      label: '◈ Consult'      },
-                                    { value: 'study',        label: '⬡ Study'        },
-                                    { value: 'intervention', label: '⊕ Intervention' },
-                                    { value: 'plain',        label: '— Note'         },
-                                ];
-                                TYPE_OPTIONS.forEach(function(opt) {
-                                    var opt_el = document.createElement('div');
-                                    opt_el.style.cssText = 'padding:5px 12px;font-size:0.72rem;cursor:pointer;color:' + (ICON_COLOR[opt.value] || '#e8eaed') + ';white-space:nowrap;';
-                                    opt_el.textContent = opt.label;
-                                    opt_el.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.08)'; };
-                                    opt_el.onmouseleave = function() { this.style.background = ''; };
-                                    opt_el.addEventListener('click', function(ev) {
-                                        ev.stopPropagation();
-                                        it.type = opt.value;
-                                        rebuildAndSave();
-                                    });
-                                    popup.appendChild(opt_el);
+
+                        if (item.type === 'pending') {
+                            icon.title = 'Mark done';
+                            (function(it, ic) {
+                                ic.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    it.type = 'done';
+                                    syncProbItemToTodo(it.text, true);
+                                    rebuildAndSave();
                                 });
-                                rw.appendChild(popup);
-                                var close = function(ev) { if (!popup.contains(ev.target)) { popup.remove(); document.removeEventListener('click', close); } };
-                                setTimeout(function() { document.addEventListener('click', close); }, 0);
-                            });
-                        }(item, icon, row));
+                            }(item, icon));
+                        } else if (item.type === 'done') {
+                            icon.title = 'Mark pending';
+                            (function(it, ic) {
+                                ic.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    it.type = 'pending';
+                                    syncProbItemToTodo(it.text, false);
+                                    rebuildAndSave();
+                                });
+                            }(item, icon));
+                        } else {
+                            icon.title = 'Change type';
+                            (function(it, ic) {
+                                ic.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    buildTypePopup(it, ic);
+                                });
+                            }(item, icon));
+                        }
 
                         var txt = document.createElement('span');
                         txt.className = 'prob-item-text' + (item.type === 'done' ? ' done' : item.type === 'consult' ? ' consult' : item.type === 'study' ? ' study' : item.type === 'intervention' ? ' intervention' : '');
                         txt.textContent = item.text || '';
 
-                        // Delete item button (shows on hover)
+                        // ✎ Edit button — opens inline text+type editor
+                        var editBtn = document.createElement('span');
+                        editBtn.style.cssText = 'color:#48484a;font-size:0.62rem;cursor:pointer;flex-shrink:0;padding:0 3px;line-height:1;transition:color 0.15s;opacity:0;';
+                        editBtn.textContent = '✎';
+                        editBtn.title = 'Edit item';
+                        editBtn.onmouseenter = function() { this.style.color = '#60a5fa'; };
+                        editBtn.onmouseleave = function() { this.style.color = '#48484a'; };
+                        row.onmouseenter = function() { editBtn.style.opacity = '1'; delBtn.style.opacity = '1'; };
+                        row.onmouseleave = function() { editBtn.style.opacity = '0'; delBtn.style.opacity = '0'; };
+
+                        (function(it, rw, ic, tx) {
+                            editBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                // Replace row content with edit form
+                                var editWrap = document.createElement('div');
+                                editWrap.style.cssText = 'display:flex;gap:4px;align-items:center;flex:1;flex-wrap:wrap;padding:2px 0;';
+
+                                var typeSel = document.createElement('select');
+                                typeSel.className = 'prob-edit-select';
+                                typeSel.style.cssText = 'font-size:0.68rem;padding:2px 4px;flex-shrink:0;';
+                                typeSel.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option><option value="intervention">⚙ Intervention</option><option value="plain">— Note</option>';
+                                typeSel.value = it.type;
+
+                                var textInp = document.createElement('input');
+                                textInp.className = 'prob-edit-input';
+                                textInp.value = it.text || '';
+                                textInp.style.cssText = 'flex:1;min-width:80px;font-size:0.72rem;';
+                                textInp.placeholder = 'Item text…';
+
+                                var saveBtn = document.createElement('button');
+                                saveBtn.type = 'button';
+                                saveBtn.className = 'prob-confirm-btn';
+                                saveBtn.style.cssText = 'font-size:0.65rem;padding:2px 7px;flex-shrink:0;';
+                                saveBtn.textContent = '✓';
+                                saveBtn.title = 'Save';
+
+                                var cancelBtn = document.createElement('button');
+                                cancelBtn.type = 'button';
+                                cancelBtn.className = 'prob-cancel-btn';
+                                cancelBtn.style.cssText = 'font-size:0.65rem;padding:2px 6px;flex-shrink:0;';
+                                cancelBtn.textContent = '✕';
+                                cancelBtn.title = 'Cancel';
+
+                                function doSave() {
+                                    var newText = textInp.value.trim();
+                                    if (!newText) return;
+                                    var oldText = it.text;
+                                    var oldType = it.type;
+                                    it.text = newText;
+                                    it.type = typeSel.value;
+                                    // Sync TODO if text or done-state changed
+                                    if (oldText !== newText || oldType !== it.type) {
+                                        if (it.type === 'done') syncProbItemToTodo(it.text, true);
+                                        else if (it.type === 'pending') syncProbItemToTodo(it.text, false);
+                                    }
+                                    rebuildAndSave();
+                                }
+
+                                saveBtn.addEventListener('click', function(ev) { ev.stopPropagation(); doSave(); });
+                                cancelBtn.addEventListener('click', function(ev) { ev.stopPropagation(); rebuildAndSave(); });
+                                textInp.addEventListener('keydown', function(ev) {
+                                    if (ev.key === 'Enter') { ev.preventDefault(); doSave(); }
+                                    if (ev.key === 'Escape') { ev.stopPropagation(); rebuildAndSave(); }
+                                });
+
+                                editWrap.appendChild(typeSel);
+                                editWrap.appendChild(textInp);
+                                editWrap.appendChild(saveBtn);
+                                editWrap.appendChild(cancelBtn);
+
+                                // Replace row children with edit form
+                                rw.innerHTML = '';
+                                rw.appendChild(editWrap);
+                                setTimeout(function() { textInp.focus(); textInp.select(); }, 0);
+                            });
+                        }(item, row, icon, txt));
+
+                        // × Delete button
                         var delBtn = document.createElement('span');
-                        delBtn.style.cssText = 'color:#48484a;font-size:0.65rem;cursor:pointer;flex-shrink:0;margin-left:auto;padding:0 3px;line-height:1;transition:color 0.15s;opacity:0;';
+                        delBtn.style.cssText = 'color:#48484a;font-size:0.65rem;cursor:pointer;flex-shrink:0;padding:0 3px;line-height:1;transition:color 0.15s;opacity:0;';
                         delBtn.textContent = '×';
                         delBtn.title = 'Delete item';
                         delBtn.onmouseenter = function() { this.style.color = '#ef4444'; };
                         delBtn.onmouseleave = function() { this.style.color = '#48484a'; };
-                        row.onmouseenter = function() { delBtn.style.opacity = '1'; };
-                        row.onmouseleave = function() { delBtn.style.opacity = '0'; };
                         (function(it) {
                             delBtn.addEventListener('click', function(e) {
                                 e.stopPropagation();
@@ -3980,6 +4145,8 @@ const helpContent = {
                             });
                         }(item));
 
+                        row.appendChild(icon);
+                        row.appendChild(txt);
                         if (item.type === 'pending') {
                             var todoBtn = document.createElement('button');
                             todoBtn.type = 'button';
@@ -3995,15 +4162,10 @@ const helpContent = {
                                     setTimeout(function() { try { btn.textContent = '→ To Do'; btn.style.color = ''; } catch(e2) {} }, 1600);
                                 });
                             }(item, todoBtn));
-                            row.appendChild(icon);
-                            row.appendChild(txt);
                             row.appendChild(todoBtn);
-                            row.appendChild(delBtn);
-                        } else {
-                            row.appendChild(icon);
-                            row.appendChild(txt);
-                            row.appendChild(delBtn);
                         }
+                        row.appendChild(editBtn);
+                        row.appendChild(delBtn);
                         detail.appendChild(row);
                     });
                 });
@@ -4011,7 +4173,7 @@ const helpContent = {
                 // Add item row
                 var typeSelect = document.createElement('select');
                 typeSelect.className = 'prob-edit-select';
-                typeSelect.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option><option value="intervention">⊕ Intervention</option>';
+                typeSelect.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option><option value="intervention">⚙ Intervention</option>';
 
                 var itemInput = document.createElement('input');
                 itemInput.className = 'prob-edit-input';
@@ -4728,31 +4890,28 @@ const helpContent = {
             el.classList.add('todo-item-enter');
             el.style.cursor = 'pointer';
 
-            // Toggle done — also sync to matching problem items
+            // Toggle done — bidirectionally sync with matching problem items
             function toggleDone() {
                 item.done = !item.done;
                 patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
-                // If marking done, retroactively mark matching pending items in problems as done
-                if (item.done) {
-                    try {
-                        var probParsed = parseProblemsList(patient['ICS'] || '');
-                        var changed = false;
-                        var lo = (item.text || '').trim().toLowerCase();
-                        probParsed.problems.forEach(function(prob) {
-                            (prob.items || []).forEach(function(pit) {
-                                if (pit.type === 'pending' && (pit.text || '').trim().toLowerCase() === lo) {
-                                    pit.type = 'done';
-                                    changed = true;
-                                }
-                            });
+                try {
+                    var probParsed = parseProblemsList(patient['ICS'] || '');
+                    var changed = false;
+                    var lo = (item.text || '').trim().toLowerCase();
+                    probParsed.problems.forEach(function(prob) {
+                        (prob.items || []).forEach(function(pit) {
+                            var pitLo = (pit.text || '').trim().toLowerCase();
+                            if (pitLo !== lo) return;
+                            if (item.done && pit.type === 'pending') { pit.type = 'done'; changed = true; }
+                            else if (!item.done && pit.type === 'done') { pit.type = 'pending'; changed = true; }
                         });
-                        if (changed) {
-                            patient['ICS'] = serializeProblemsList(probParsed.problems);
-                            var probBodyEl = document.getElementById('probCardBody');
-                            if (probBodyEl) renderProblemsCard(probBodyEl, patient);
-                        }
-                    } catch(e2) {}
-                }
+                    });
+                    if (changed) {
+                        patient['ICS'] = serializeProblemsList(probParsed.problems);
+                        var probBodyEl = document.getElementById('probCardBody');
+                        if (probBodyEl) renderProblemsCard(probBodyEl, patient);
+                    }
+                } catch(e2) {}
                 saveToLocalStorage();
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
