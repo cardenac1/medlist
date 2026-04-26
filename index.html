@@ -8187,10 +8187,14 @@ saveToLocalStorage();
                     row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></td>';
                     row += '<td colspan="' + (maxMainCols - 2) + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
                 } else if (maxMainCols === 2) {
-                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑' + totalIn + '</span>&nbsp;<span style="color:#f87171;font-weight:700;">↓' + totalOut + '</span></td>';
-                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span><br><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
                 } else {
-                    row += '<td colspan="' + maxMainCols + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                    row += '<td colspan="' + maxMainCols + '" style="background:#1a2035;padding:4px 6px;white-space:nowrap;">' +
+                        '<div><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></div>' +
+                        '<div><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></div>' +
+                        '<div><span style="color:' + balColor + ';font-weight:700;">= ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></div>' +
+                        '</td>';
                 }
                 // 24hr total balance — before Pre-7AM separator
                 if (has24hrTotal) {
@@ -8208,10 +8212,14 @@ saveToLocalStorage();
                         row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ ' + histOut + ' mL</span></td>';
                         row += '<td colspan="' + (maxHistCols - 2) + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
                     } else if (maxHistCols === 2) {
-                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑' + histIn + '</span>&nbsp;<span style="color:#f87171;font-weight:700;">↓' + histOut + '</span></td>';
-                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑ IN: ' + histIn + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + histOut + ' mL</span><br><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
                     } else if (maxHistCols === 1) {
-                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;">' +
+                            '<div><span style="color:#818cf8;font-weight:700;">↑ ' + histIn + ' mL</span></div>' +
+                            '<div><span style="color:#f87171;font-weight:700;">↓ ' + histOut + ' mL</span></div>' +
+                            '<div><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></div>' +
+                            '</td>';
                     }
                 }
                 return row + '</tr>';
@@ -8320,9 +8328,6 @@ saveToLocalStorage();
                 }
             }
 
-            // ── I/O BALANCE (before intakes, as requested) ────────────────────────
-            tableHTML += balanceRowHTMLNew(ioData, ioHistory, io24hr);
-
             // ── INTAKES (today cols + pre-7AM history cols + 24hr total) ─────────
             var allIntakeKeys = [], intakeKeySet = {};
             if (ioData)    Object.keys(ioData.intakes    || {}).forEach(function(k){ if (!intakeKeySet[k]){ intakeKeySet[k]=1; allIntakeKeys.push(k); } });
@@ -8372,6 +8377,9 @@ saveToLocalStorage();
                     tableHTML += ioRowHTMLCombined(k, t, h, t24, ' mL');
                 });
             }
+
+            // ── I/O BALANCE (after outputs) ───────────────────────────────────────
+            tableHTML += balanceRowHTMLNew(ioData, ioHistory, io24hr);
 
             // ── COUNTS (today cols + pre-7AM history cols) ────────────────────────
             var allCountKeys = [], countKeySet = {};
@@ -10220,7 +10228,23 @@ else {
         tableHTML += createCategoryRow('DIET', categorizedMeds['diet']);
         tableHTML += createCategoryRow('GI MEDS', categorizedMeds['gi']);
         tableHTML += createCategoryRow('RENAL/FLUIDS', categorizedMeds['renal']);
-        tableHTML += createCategoryRow('HEME/AC', categorizedMeds['heme']);
+
+        // HEME/AC — show warning banner when no anticoagulation orders found
+        const _hemeHTML = createCategoryRow('HEME/AC', categorizedMeds['heme']);
+        if (!_hemeHTML) {
+            tableHTML += `<div style="margin-bottom:0.65rem;padding-left:9px;border-left:2px solid rgba(255,69,58,0.5);">
+              <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:rgba(255,69,58,0.10);border:0.5px solid rgba(255,69,58,0.45);border-radius:10px;">
+                <span style="font-size:15px;flex-shrink:0;line-height:1.3;">⚠️</span>
+                <div>
+                  <div style="color:#ff453a;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">No Anticoagulation / DVT Prophylaxis</div>
+                  <div style="color:#aeaeb2;font-size:10.5px;margin-top:2px;line-height:1.4;">No AC/DVT ppx orders found. Verify if heparin, enoxaparin, apixaban, or other AC is ordered or intentionally held.</div>
+                </div>
+              </div>
+            </div>`;
+        } else {
+            tableHTML += _hemeHTML;
+        }
+
         tableHTML += createCategoryRow('INFECTION/ABX', categorizedMeds['infection']);
         tableHTML += createCategoryRow('ENDOCRINE/INSULIN', categorizedMeds['endocrine']);
         tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
