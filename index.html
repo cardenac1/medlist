@@ -3316,7 +3316,7 @@ select,
                 </div>
             </div>
 
-            <form id="editForm"></form>
+            <form id="editForm" onsubmit="return false;"></form>
 
             <div class="nav-buttons">
                 <button id="prevButton" onclick="navigateDetails(-1)">← Previous</button>
@@ -3681,6 +3681,7 @@ const helpContent = {
             bodyEl.appendChild(ta);
 
             var switchBtn = document.createElement('button');
+            switchBtn.type = 'button';
             switchBtn.className = 'prob-cancel-btn';
             switchBtn.style.cssText = 'margin-top:6px;font-size:0.68rem;display:block;';
             switchBtn.textContent = '⊞ Switch to structured list';
@@ -3843,6 +3844,7 @@ const helpContent = {
                                 });
                             }(item));
                             var todoBtn = document.createElement('button');
+                            todoBtn.type = 'button';
                             todoBtn.className = 'prob-todo-btn';
                             todoBtn.textContent = '→ To Do';
                             todoBtn.title = 'Add to To Do list';
@@ -3876,6 +3878,7 @@ const helpContent = {
                 itemInput.placeholder = 'Add item…';
 
                 var addItemBtn = document.createElement('button');
+                addItemBtn.type = 'button';
                 addItemBtn.className = 'prob-confirm-btn';
                 addItemBtn.textContent = 'Add';
 
@@ -3921,10 +3924,12 @@ const helpContent = {
             newNameInp.placeholder = 'Problem name…';
 
             var newAddBtn = document.createElement('button');
+            newAddBtn.type = 'button';
             newAddBtn.className = 'prob-confirm-btn';
             newAddBtn.textContent = 'Add';
 
             var newCancelBtn = document.createElement('button');
+            newCancelBtn.type = 'button';
             newCancelBtn.className = 'prob-cancel-btn';
             newCancelBtn.textContent = '✕';
 
@@ -5412,6 +5417,87 @@ function displayRows(data = patientData) {
             cardBody.appendChild(subEl);
         }
 
+        // Problems preview row — show problem names with status dots + item badges
+        const _icsVal = (patient['ICS'] || '').trim();
+        if (_icsVal) {
+            try {
+                const _probParsed = parseProblemsList(_icsVal);
+                const _probs = _probParsed.problems;
+                if (_probs && _probs.length > 0) {
+                    const _STATUS_CLR = { active: '#ff453a', watch: '#ff9f0a', pending: '#0a84ff', stable: '#30d158' };
+                    const probPreviewRow = document.createElement('div');
+                    probPreviewRow.style.cssText = `display: flex; align-items: center; gap: 0; overflow: hidden; min-width: 0; flex-wrap: nowrap; margin-top: 1px;`;
+
+                    const _probGroups = _probs.map((_prob, _pi) => {
+                        const _sClr = _STATUS_CLR[_prob.status] || '#636366';
+                        const _items = Array.isArray(_prob.items) ? _prob.items : [];
+                        const _pendCount  = _items.filter(it => it.type === 'pending').length;
+                        const _studyCount = _items.filter(it => it.type === 'study').length;
+                        const _cCount     = _items.filter(it => it.type === 'consult').length;
+                        const _doneCount  = _items.filter(it => it.type === 'done').length;
+                        const group = [];
+                        if (_pi > 0) {
+                            const _sep = document.createElement('span');
+                            _sep.style.cssText = `color: #3a3a3c; font-size: 0.7rem; flex-shrink: 0; padding: 0 3px;`;
+                            _sep.textContent = '·';
+                            group.push(_sep);
+                        }
+                        const _dot = document.createElement('span');
+                        _dot.style.cssText = `color: ${_sClr}; font-size: 0.48rem; flex-shrink: 0; margin-right: 2px; line-height: 1;`;
+                        _dot.textContent = '●';
+                        const _pname = document.createElement('span');
+                        _pname.style.cssText = `font-size: 0.75rem; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 18px; flex-shrink: 1;`;
+                        _pname.textContent = _prob.name || '';
+                        group.push(_dot, _pname);
+                        if (_pendCount > 0) {
+                            const _b = document.createElement('span');
+                            _b.style.cssText = `font-size: 0.58rem; color: #ffd60a; background: rgba(255,214,10,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
+                            _b.textContent = _pendCount + '⏳';
+                            group.push(_b);
+                        }
+                        if (_studyCount > 0) {
+                            const _b = document.createElement('span');
+                            _b.style.cssText = `font-size: 0.58rem; color: #bf5af2; background: rgba(191,90,242,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
+                            _b.textContent = _studyCount + '⬡';
+                            group.push(_b);
+                        }
+                        if (_cCount > 0) {
+                            const _b = document.createElement('span');
+                            _b.style.cssText = `font-size: 0.58rem; color: #0a84ff; background: rgba(10,132,255,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
+                            _b.textContent = _cCount + '◈';
+                            group.push(_b);
+                        }
+                        if (_doneCount > 0 && _pendCount === 0 && _studyCount === 0 && _cCount === 0) {
+                            const _b = document.createElement('span');
+                            _b.style.cssText = `font-size: 0.58rem; color: #30d158; background: rgba(48,209,88,0.10); border-radius: 3px; padding: 0 3px; margin-left: 2px; flex-shrink: 0; white-space: nowrap;`;
+                            _b.textContent = _doneCount + '✓';
+                            group.push(_b);
+                        }
+                        return group;
+                    });
+
+                    const _ovBadge = document.createElement('span');
+                    _ovBadge.style.cssText = `font-size: 0.67rem; color: #636366; white-space: nowrap; flex-shrink: 0; display: none; margin-left: 4px;`;
+                    _probGroups.forEach(g => g.forEach(el => probPreviewRow.appendChild(el)));
+                    probPreviewRow.appendChild(_ovBadge);
+                    cardBody.appendChild(probPreviewRow);
+
+                    requestAnimationFrame(() => {
+                        let _vis = _probGroups.length;
+                        while (probPreviewRow.scrollWidth > probPreviewRow.offsetWidth + 1 && _vis > 1) {
+                            _vis--;
+                            _probGroups[_vis].forEach(el => el.remove());
+                        }
+                        const _hidden = _probs.length - _vis;
+                        if (_hidden > 0) {
+                            _ovBadge.textContent = `+${_hidden}`;
+                            _ovBadge.style.display = '';
+                        }
+                    });
+                }
+            } catch(_e) { /* silent — preview is non-critical */ }
+        }
+
         // Todo row — fill available width with tasks; +N badge for overflow
         if ((patient['To do'] || '').trim()) {
             const _parsed = parseTodoText(patient['To do'] || '');
@@ -6014,12 +6100,14 @@ function switchView(mode) {
 
                 // Raw toggle — label set after initial render
                 var rawBtn = document.createElement('button');
+                rawBtn.type = 'button';
                 rawBtn.className = 'prob-txt-btn';
                 rawBtn.title = 'Toggle plain text / structured view';
                 hdr.appendChild(rawBtn);
 
                 // TXT copy button
                 var txtBtn = document.createElement('button');
+                txtBtn.type = 'button';
                 txtBtn.className = 'prob-txt-btn';
                 txtBtn.textContent = '⬆ TXT';
                 txtBtn.title = 'Copy as plain text';
@@ -8099,10 +8187,14 @@ saveToLocalStorage();
                     row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></td>';
                     row += '<td colspan="' + (maxMainCols - 2) + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
                 } else if (maxMainCols === 2) {
-                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑' + totalIn + '</span>&nbsp;<span style="color:#f87171;font-weight:700;">↓' + totalOut + '</span></td>';
-                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span><br><span style="color:' + balColor + ';font-weight:700;">= BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
                 } else {
-                    row += '<td colspan="' + maxMainCols + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + balColor + ';font-weight:700;">BAL: ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></td>';
+                    row += '<td colspan="' + maxMainCols + '" style="background:#1a2035;padding:4px 6px;white-space:nowrap;">' +
+                        '<div><span style="color:#60a5fa;font-weight:700;">↑ IN: ' + totalIn + ' mL</span></div>' +
+                        '<div><span style="color:#f87171;font-weight:700;">↓ OUT: ' + totalOut + ' mL</span></div>' +
+                        '<div><span style="color:' + balColor + ';font-weight:700;">= ' + (bal >= 0 ? '+' : '') + bal + ' mL</span></div>' +
+                        '</td>';
                 }
                 // 24hr total balance — before Pre-7AM separator
                 if (has24hrTotal) {
@@ -8120,10 +8212,14 @@ saveToLocalStorage();
                         row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ ' + histOut + ' mL</span></td>';
                         row += '<td colspan="' + (maxHistCols - 2) + '" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
                     } else if (maxHistCols === 2) {
-                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑' + histIn + '</span>&nbsp;<span style="color:#f87171;font-weight:700;">↓' + histOut + '</span></td>';
-                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑ IN: ' + histIn + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: ' + histOut + ' mL</span><br><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
                     } else if (maxHistCols === 1) {
-                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:' + histBalColor + ';font-weight:700;">BAL: ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;">' +
+                            '<div><span style="color:#818cf8;font-weight:700;">↑ ' + histIn + ' mL</span></div>' +
+                            '<div><span style="color:#f87171;font-weight:700;">↓ ' + histOut + ' mL</span></div>' +
+                            '<div><span style="color:' + histBalColor + ';font-weight:700;">= ' + (histBal >= 0 ? '+' : '') + histBal + ' mL</span></div>' +
+                            '</td>';
                     }
                 }
                 return row + '</tr>';
@@ -8232,9 +8328,6 @@ saveToLocalStorage();
                 }
             }
 
-            // ── I/O BALANCE (before intakes, as requested) ────────────────────────
-            tableHTML += balanceRowHTMLNew(ioData, ioHistory, io24hr);
-
             // ── INTAKES (today cols + pre-7AM history cols + 24hr total) ─────────
             var allIntakeKeys = [], intakeKeySet = {};
             if (ioData)    Object.keys(ioData.intakes    || {}).forEach(function(k){ if (!intakeKeySet[k]){ intakeKeySet[k]=1; allIntakeKeys.push(k); } });
@@ -8284,6 +8377,9 @@ saveToLocalStorage();
                     tableHTML += ioRowHTMLCombined(k, t, h, t24, ' mL');
                 });
             }
+
+            // ── I/O BALANCE (after outputs) ───────────────────────────────────────
+            tableHTML += balanceRowHTMLNew(ioData, ioHistory, io24hr);
 
             // ── COUNTS (today cols + pre-7AM history cols) ────────────────────────
             var allCountKeys = [], countKeySet = {};
@@ -10132,7 +10228,23 @@ else {
         tableHTML += createCategoryRow('DIET', categorizedMeds['diet']);
         tableHTML += createCategoryRow('GI MEDS', categorizedMeds['gi']);
         tableHTML += createCategoryRow('RENAL/FLUIDS', categorizedMeds['renal']);
-        tableHTML += createCategoryRow('HEME/AC', categorizedMeds['heme']);
+
+        // HEME/AC — show warning banner when no anticoagulation orders found
+        const _hemeHTML = createCategoryRow('HEME/AC', categorizedMeds['heme']);
+        if (!_hemeHTML) {
+            tableHTML += `<div style="margin-bottom:0.65rem;padding-left:9px;border-left:2px solid rgba(255,69,58,0.5);">
+              <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:rgba(255,69,58,0.10);border:0.5px solid rgba(255,69,58,0.45);border-radius:10px;">
+                <span style="font-size:15px;flex-shrink:0;line-height:1.3;">⚠️</span>
+                <div>
+                  <div style="color:#ff453a;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">No Anticoagulation / DVT Prophylaxis</div>
+                  <div style="color:#aeaeb2;font-size:10.5px;margin-top:2px;line-height:1.4;">No AC/DVT ppx orders found. Verify if heparin, enoxaparin, apixaban, or other AC is ordered or intentionally held.</div>
+                </div>
+              </div>
+            </div>`;
+        } else {
+            tableHTML += _hemeHTML;
+        }
+
         tableHTML += createCategoryRow('INFECTION/ABX', categorizedMeds['infection']);
         tableHTML += createCategoryRow('ENDOCRINE/INSULIN', categorizedMeds['endocrine']);
         tableHTML += createCategoryRow('SKIN/OTHER', categorizedMeds['skin']);
