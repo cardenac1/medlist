@@ -14581,7 +14581,7 @@ function exportPDF() {
                 <b>${esc(name)}</b><br>${esc(rm)}<br><span style="color:#666">${esc(mrn)}</span>
             </td>
             <td class="col-prob">${buildPDFProblemsHTML(problems)}</td>
-            <td class="col-ics">${esc(ics).replace(/\n/g,'<br>')}</td>
+            <td class="col-ics">${buildPDFProblemsHTML(ics)}</td>
             <td class="col-vitals">${vitalsHTML}</td>
             <td class="col-todo">${buildPDFTodoHTML(todo)}</td>
         </tr>`;
