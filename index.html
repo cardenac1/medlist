@@ -3908,26 +3908,28 @@ const helpContent = {
                     });
                 }(prob, nameSpan, editNameBtn));
 
-                // Item text preview — flex:1, shown when collapsed
+                // Item text preview — own full-width row below name, left-aligned
                 var previewSpan = document.createElement('span');
-                previewSpan.style.cssText = 'flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:4px;padding-left:5px;';
+                previewSpan.style.cssText = 'flex-basis:100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;padding:1px 4px 2px 26px;';
                 (function() {
                     var previewItems = items.filter(function(it) { return it.type === 'pending'; })
                         .concat(items.filter(function(it) { return it.type === 'consult'; }))
                         .concat(items.filter(function(it) { return it.type === 'study'; }))
-                        .concat(items.filter(function(it) { return it.type === 'done'; }))
-                        .concat(items.filter(function(it) { return it.type === 'intervention'; }));
-                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1d4778', study: '#3b1a5c', intervention: '#6b1a3a', plain: '#3d3d3f' };
+                        .concat(items.filter(function(it) { return it.type === 'intervention'; }))
+                        .concat(items.filter(function(it) { return it.type === 'done'; }));
+                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1e4a7a', study: '#4a1a6a', intervention: '#6b1a3a', plain: '#3d3d3f' };
                     previewItems.forEach(function(it, i) {
                         if (i > 0) {
                             var sep = document.createElement('span');
-                            sep.style.cssText = 'color:#2d2d2f;font-size:0.6rem;flex-shrink:0;';
+                            sep.style.cssText = 'color:#2d2d2f;font-size:0.6rem;flex-shrink:0;line-height:1.4;';
                             sep.textContent = '·';
                             previewSpan.appendChild(sep);
                         }
                         var chip = document.createElement('span');
-                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:' + (i === 0 ? '1' : '0') + ';max-width:' + (i === 0 ? '100%' : '80px') + ';' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
-                        chip.textContent = (it.text || '').split(/\s+/).slice(0, 4).join(' ');
+                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;line-height:1.4;' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
+                        var words = (it.text || '').split(/\s+/);
+                        chip.textContent = words.slice(0, 8).join(' ') + (words.length > 8 ? '…' : '');
+                        chip.title = it.text || '';
                         chip.title = it.text || '';
                         previewSpan.appendChild(chip);
                     });
@@ -3963,10 +3965,10 @@ const helpContent = {
                 head.appendChild(statusDot);
                 head.appendChild(nameSpan);
                 head.appendChild(editNameBtn);
-                head.appendChild(previewSpan);
                 head.appendChild(badgeSpan);
                 head.appendChild(delProbBtn);
                 head.appendChild(chevron);
+                head.appendChild(previewSpan);
 
                 // ── Detail (expanded) ──────────────────────────────────
                 var detail = document.createElement('div');
