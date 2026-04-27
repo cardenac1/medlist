@@ -3756,6 +3756,8 @@ const helpContent = {
 
             var list = document.createElement('div');
             list.className = 'prob-list';
+            list.setAttribute('tabindex', '-1');
+            list.style.outline = 'none';
 
             function rebuildAndSave() {
                 // Preserve which problems are currently expanded (by name)
@@ -3769,11 +3771,13 @@ const helpContent = {
                 });
                 bodyEl._probExpandedNames = expanded;
 
+                var _hadFocusInCard = bodyEl.contains(document.activeElement);
                 try {
                     patient['ICS'] = serializeProblemsList(problems);
                     saveToLocalStorage();
                 } catch(e) {}
                 renderProblemsCard(bodyEl, patient); // re-entry through safe wrapper
+                if (_hadFocusInCard) { try { var _fl = bodyEl.querySelector('.prob-list'); if (_fl) _fl.focus(); } catch(e) {} }
                 try {
                     var tc = document.getElementById('todoContainer');
                     if (tc) renderTodoList(tc, patient);
@@ -4274,8 +4278,24 @@ const helpContent = {
                         rebuildAndSave();
                     }
                     addItemBtn.addEventListener('click', function(e) { e.stopPropagation(); doAddItem(); });
-                    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doAddItem(); } });
+                    inp.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doAddItem(); return; }
+                        if (e.altKey) {
+                            var altMap = { p: 'pending', d: 'done', c: 'consult', s: 'study', i: 'intervention' };
+                            var k = e.key.toLowerCase();
+                            if (altMap[k]) { e.preventDefault(); sel.value = altMap[k]; }
+                        }
+                    });
                 }(prob, typeSelect, itemInput));
+                // p/d/c/s/i in type select → set type and jump to text input; Tab/Enter → jump to input
+                typeSelect.addEventListener('keydown', function(e) {
+                    var kmap = { p: 'pending', d: 'done', c: 'consult', s: 'study', i: 'intervention' };
+                    var k = e.key.toLowerCase();
+                    if (kmap[k] && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault(); typeSelect.value = kmap[k]; itemInput.focus();
+                    }
+                    if ((e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey))) { e.preventDefault(); itemInput.focus(); }
+                });
 
                 var addItemRow = document.createElement('div');
                 addItemRow.className = 'prob-edit-row';
@@ -4302,6 +4322,16 @@ const helpContent = {
             var newStatusSel = document.createElement('select');
             newStatusSel.className = 'prob-edit-select';
             newStatusSel.innerHTML = '<option value="active">🔴 Active</option><option value="watch">🟡 Watch</option><option value="pending">🔵 Pending</option><option value="stable">🟢 Stable</option>';
+            // a/w/p/s → set status and jump to name input; Tab/Enter → jump to name input
+            newStatusSel.addEventListener('keydown', function(e) {
+                var smap = { a: 'active', w: 'watch', p: 'pending', s: 'stable' };
+                var k = e.key.toLowerCase();
+                if (smap[k] && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                    e.preventDefault(); newStatusSel.value = smap[k]; newNameInp.focus();
+                }
+                if ((e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey))) { e.preventDefault(); newNameInp.focus(); }
+                if (e.key === 'Escape') { addProbForm.style.display = 'none'; addProbRow.style.display = 'flex'; }
+            });
 
             var newNameInp = document.createElement('input');
             newNameInp.className = 'prob-edit-input';
@@ -4324,7 +4354,10 @@ const helpContent = {
                 rebuildAndSave();
             }
             newAddBtn.addEventListener('click', function(e) { e.stopPropagation(); doAddProblem(); });
-            newNameInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doAddProblem(); } });
+            newNameInp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); doAddProblem(); return; }
+                if (e.key === 'Escape') { addProbForm.style.display = 'none'; addProbRow.style.display = 'flex'; }
+            });
             newCancelBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 addProbForm.style.display = 'none';
@@ -4340,8 +4373,34 @@ const helpContent = {
             addProbForm.appendChild(newNameInp);
             addProbForm.appendChild(newAddBtn);
             addProbForm.appendChild(newCancelBtn);
+
+            // 'n' key when list (or non-input child) has focus → open add-problem form
+            list.addEventListener('keydown', function(e) {
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                var active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
+                if (e.key === 'n' || e.key === 'N') {
+                    e.preventDefault();
+                    if (addProbRow.style.display !== 'none') addProbRow.click();
+                }
+            });
+
+            // Keyboard hints bar
+            var hintsBar = document.createElement('div');
+            hintsBar.style.cssText = 'font-size:0.58rem;color:#48484a;padding:3px 8px 3px;border-top:1px solid #2c2c2e;margin-top:4px;line-height:1.8;user-select:none;';
+            function _kbdTag(t) {
+                return '<kbd style="background:#2c2c2e;border:1px solid #555;border-radius:3px;padding:0 3px;font-family:monospace;font-size:0.56rem;">' + t + '</kbd>';
+            }
+            hintsBar.innerHTML =
+                _kbdTag('n') + ' new &nbsp;·&nbsp; ' +
+                _kbdTag('p') + '/' + _kbdTag('d') + '/' + _kbdTag('c') + '/' + _kbdTag('s') + '/' + _kbdTag('i') + ' type (in selector) &nbsp;·&nbsp; ' +
+                _kbdTag('⌥') + '+letter change type while typing &nbsp;·&nbsp; ' +
+                _kbdTag('a') + '/' + _kbdTag('w') + '/' + _kbdTag('p') + '/' + _kbdTag('s') + ' status &nbsp;·&nbsp; ' +
+                _kbdTag('↵') + ' add &nbsp;·&nbsp; ' + _kbdTag('esc') + ' cancel';
+
             list.appendChild(addProbRow);
             list.appendChild(addProbForm);
+            list.appendChild(hintsBar);
             bodyEl.appendChild(list);
         }
 
