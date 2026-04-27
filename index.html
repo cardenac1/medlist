@@ -1119,7 +1119,7 @@
 .prob-badge-pending      { background: #2a2200; color: #ffd60a; }
 .prob-badge-consult      { background: #0a1a30; color: #0a84ff; }
 .prob-badge-study        { background: #1a0a30; color: #bf5af2; }
-.prob-badge-intervention { background: #1c1c1e; color: #8e8e93; }
+.prob-badge-intervention { background: #3a0a20; color: #ff6b9d; }
 .prob-status-dot { font-size: 0.5rem; cursor: pointer; flex-shrink: 0; line-height: 1; transition: opacity 0.15s; }
 .prob-status-dot:hover { opacity: 0.7; }
 .prob-chevron { color: #48484a; font-size: 0.6rem; transition: transform 0.2s; flex-shrink: 0; }
@@ -1133,7 +1133,7 @@
 .prob-item-text.done    { text-decoration: line-through; color: #48484a; }
 .prob-item-text.consult      { color: #0a84ff; }
 .prob-item-text.study        { color: #bf5af2; }
-.prob-item-text.intervention { color: #8e8e93; }
+.prob-item-text.intervention { color: #ff6b9d; }
 .prob-todo-btn {
     font-size: 0.58rem; font-weight: 700;
     background: #0a1a2a; border: 1px solid #0a84ff44;
@@ -1153,6 +1153,8 @@
 .prob-edit-input {
     flex: 1; background: #2c2c2e; border: 1px solid #48484a; border-radius: 5px;
     color: #f2f2f7; font-size: 0.72rem; padding: 3px 7px; outline: none; font-family: inherit;
+    resize: none; overflow: hidden; min-height: 1.8em; line-height: 1.45;
+    word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap;
 }
 .prob-edit-input:focus { border-color: #0a84ff; }
 .prob-edit-select {
@@ -3765,7 +3767,7 @@ const helpContent = {
                 } catch(e) {}
             }
 
-            var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2', intervention: '#94a3b8', plain: '#636366' };
+            var ICON_COLOR = { done: '#30d158', pending: '#ffd60a', consult: '#0a84ff', study: '#bf5af2', intervention: '#ff6b9d', plain: '#636366' };
             var ICON_CHAR  = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⚙', plain: '' };
             var STATUS_ORDER = { active: 0, watch: 1, pending: 2, stable: 3 };
             var STATUS_COLOR = { active: '#ff453a', watch: '#ff9f0a', pending: '#0a84ff', stable: '#30d158' };
@@ -3815,18 +3817,9 @@ const helpContent = {
                 var badgesHTML = '';
                 if (pendCount) badgesHTML += '<span class="prob-badge prob-badge-pending">' + pendCount + '⏳</span>';
                 if (doneCount) badgesHTML += '<span class="prob-badge prob-badge-done">' + doneCount + '✓</span>';
-                consultItems.forEach(function(c) {
-                    var label = (c.text || '').split(/\s+/).slice(0,2).join(' ');
-                    badgesHTML += '<span class="prob-badge prob-badge-consult">◈ ' + label + '</span>';
-                });
-                studyItems.forEach(function(s) {
-                    var label = (s.text || '').split(/\s+/)[0] || 'study';
-                    badgesHTML += '<span class="prob-badge prob-badge-study">⬡ ' + label + '</span>';
-                });
-                interventionItems.forEach(function(v) {
-                    var label = (v.text || '').split(/\s+/)[0] || 'Proc';
-                    badgesHTML += '<span class="prob-badge prob-badge-intervention">⚙ ' + label + '</span>';
-                });
+                if (consultItems.length) badgesHTML += '<span class="prob-badge prob-badge-consult">' + consultItems.length + '◈</span>';
+                if (studyItems.length) badgesHTML += '<span class="prob-badge prob-badge-study">' + studyItems.length + '⬡</span>';
+                if (interventionItems.length) badgesHTML += '<span class="prob-badge prob-badge-intervention">' + interventionItems.length + '⚙</span>';
 
                 // ── Header ─────────────────────────────────────────────
                 var head = document.createElement('div');
@@ -3915,26 +3908,28 @@ const helpContent = {
                     });
                 }(prob, nameSpan, editNameBtn));
 
-                // Item text preview — flex:1, shown when collapsed
+                // Item text preview — own full-width row below name, left-aligned
                 var previewSpan = document.createElement('span');
-                previewSpan.style.cssText = 'flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:4px;padding-left:5px;';
+                previewSpan.style.cssText = 'flex-basis:100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;padding:1px 4px 2px 26px;';
                 (function() {
                     var previewItems = items.filter(function(it) { return it.type === 'pending'; })
                         .concat(items.filter(function(it) { return it.type === 'consult'; }))
                         .concat(items.filter(function(it) { return it.type === 'study'; }))
-                        .concat(items.filter(function(it) { return it.type === 'done'; }))
-                        .concat(items.filter(function(it) { return it.type === 'intervention'; }));
-                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1d4778', study: '#3b1a5c', intervention: '#3d3d3f', plain: '#3d3d3f' };
+                        .concat(items.filter(function(it) { return it.type === 'intervention'; }))
+                        .concat(items.filter(function(it) { return it.type === 'done'; }));
+                    var PREV_CLR = { pending: '#6b7280', done: '#3d3d3f', consult: '#1e4a7a', study: '#4a1a6a', intervention: '#6b1a3a', plain: '#3d3d3f' };
                     previewItems.forEach(function(it, i) {
                         if (i > 0) {
                             var sep = document.createElement('span');
-                            sep.style.cssText = 'color:#2d2d2f;font-size:0.6rem;flex-shrink:0;';
+                            sep.style.cssText = 'color:#2d2d2f;font-size:0.6rem;flex-shrink:0;line-height:1.4;';
                             sep.textContent = '·';
                             previewSpan.appendChild(sep);
                         }
                         var chip = document.createElement('span');
-                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:' + (i === 0 ? '1' : '0') + ';max-width:' + (i === 0 ? '100%' : '80px') + ';' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
-                        chip.textContent = (it.text || '').split(/\s+/).slice(0, 4).join(' ');
+                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;line-height:1.4;' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
+                        var words = (it.text || '').split(/\s+/);
+                        chip.textContent = words.slice(0, 8).join(' ') + (words.length > 8 ? '…' : '');
+                        chip.title = it.text || '';
                         chip.title = it.text || '';
                         previewSpan.appendChild(chip);
                     });
@@ -3970,10 +3965,10 @@ const helpContent = {
                 head.appendChild(statusDot);
                 head.appendChild(nameSpan);
                 head.appendChild(editNameBtn);
-                head.appendChild(previewSpan);
                 head.appendChild(badgeSpan);
                 head.appendChild(delProbBtn);
                 head.appendChild(chevron);
+                head.appendChild(previewSpan);
 
                 // ── Detail (expanded) ──────────────────────────────────
                 var detail = document.createElement('div');
@@ -4122,7 +4117,7 @@ const helpContent = {
                                 e.stopPropagation();
                                 // Replace row content with edit form
                                 var editWrap = document.createElement('div');
-                                editWrap.style.cssText = 'display:flex;gap:4px;align-items:center;flex:1;flex-wrap:wrap;padding:2px 0;';
+                                editWrap.style.cssText = 'display:flex;gap:4px;align-items:flex-start;flex:1;flex-wrap:wrap;padding:2px 0;';
 
                                 var typeSel = document.createElement('select');
                                 typeSel.className = 'prob-edit-select';
@@ -4130,11 +4125,14 @@ const helpContent = {
                                 typeSel.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option><option value="intervention">⚙ Intervention</option><option value="plain">— Note</option>';
                                 typeSel.value = it.type;
 
-                                var textInp = document.createElement('input');
+                                var textInp = document.createElement('textarea');
                                 textInp.className = 'prob-edit-input';
                                 textInp.value = it.text || '';
+                                textInp.rows = 1;
                                 textInp.style.cssText = 'flex:1;min-width:80px;font-size:0.72rem;';
                                 textInp.placeholder = 'Item text…';
+                                textInp.addEventListener('input', function() { autoResizeTextarea(this); });
+                                setTimeout(function() { autoResizeTextarea(textInp); }, 0);
 
                                 var saveBtn = document.createElement('button');
                                 saveBtn.type = 'button';
@@ -4168,7 +4166,7 @@ const helpContent = {
                                 saveBtn.addEventListener('click', function(ev) { ev.stopPropagation(); doSave(); });
                                 cancelBtn.addEventListener('click', function(ev) { ev.stopPropagation(); rebuildAndSave(); });
                                 textInp.addEventListener('keydown', function(ev) {
-                                    if (ev.key === 'Enter') { ev.preventDefault(); doSave(); }
+                                    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); doSave(); }
                                     if (ev.key === 'Escape') { ev.stopPropagation(); rebuildAndSave(); }
                                 });
 
@@ -4230,9 +4228,11 @@ const helpContent = {
                 typeSelect.className = 'prob-edit-select';
                 typeSelect.innerHTML = '<option value="pending">○ Pending</option><option value="done">✓ Done</option><option value="consult">◈ Consult</option><option value="study">⬡ Study</option><option value="intervention">⚙ Intervention</option>';
 
-                var itemInput = document.createElement('input');
+                var itemInput = document.createElement('textarea');
                 itemInput.className = 'prob-edit-input';
                 itemInput.placeholder = 'Add item…';
+                itemInput.rows = 1;
+                itemInput.addEventListener('input', function() { autoResizeTextarea(this); });
 
                 var addItemBtn = document.createElement('button');
                 addItemBtn.type = 'button';
@@ -4247,7 +4247,7 @@ const helpContent = {
                         rebuildAndSave();
                     }
                     addItemBtn.addEventListener('click', function(e) { e.stopPropagation(); doAddItem(); });
-                    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doAddItem(); } });
+                    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doAddItem(); } });
                 }(prob, typeSelect, itemInput));
 
                 var addItemRow = document.createElement('div');
