@@ -14581,7 +14581,7 @@ function exportPDF() {
                 <b>${esc(name)}</b><br>${esc(rm)}<br><span style="color:#666">${esc(mrn)}</span>
             </td>
             <td class="col-prob">${buildPDFProblemsHTML(problems)}</td>
-            <td class="col-ics">${esc(ics).replace(/\n/g,'<br>')}</td>
+            <td class="col-ics">${buildPDFProblemsHTML(ics)}</td>
             <td class="col-vitals">${vitalsHTML}</td>
             <td class="col-todo">${buildPDFTodoHTML(todo)}</td>
         </tr>`;
@@ -14788,6 +14788,22 @@ function buildPDFVitalsHTML(patient) {
         html += '<div class="ts" style="margin-top:2px;">BMP' + (bmpTS ? ' (' + esc(bmpTS) + ')' : '') + '</div>';
         html += '<div class="fishbone">' + naF  + sp(b1w - naP.length)  + '|' + clF  + sp(b2w - clP.length)  + '|' + bunF + sp(b3w - bunP.length) + '/</div>';
         html += '<div class="fishbone">' + kF   + sp(b1w - kP.length)   + '|' + co2F + sp(b2w - co2P.length) + '|' + crF  + sp(b3w - crP.length)  + '\\</div>';
+    }
+
+    // ── Active Medications (scheduled + continuous, no PRN) ──
+    const importedData = (patient.ImportedData || '').trim();
+    if (importedData) {
+        var _mm = importedData.match(/Medications[^\n]*\bActive\b[^\n]*\n([\s\S]*?)(?=\n{2,}[A-Z ]{3,}:|DIET ORDER:|CONSULTATION:|PROCEDURE:|IMAGING:|LABS:|<[A-Z]|$)/i);
+        if (!_mm) _mm = importedData.match(/(?:Active|Current)\s+Medications[^\n]*\n([\s\S]*?)(?=\n{2,}[A-Z ]{3,}:|DIET ORDER:|<[A-Z]|$)/i);
+        if (!_mm) _mm = importedData.match(/\bMedications\b[^\n]*\n([\s\S]*?)(?=\n{2,}(?:DIET ORDER:|DIET:|LABS:|IMAGING:|CONSULTATION:|$))/i);
+        var _medsLines = _mm
+            ? _mm[1].split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length > 1;})
+            : [];
+        var _activeMeds = _medsLines.filter(function(l){ return !/\bPRN\b/i.test(l); });
+        if (_activeMeds.length) {
+            html += '<div class="ts" style="margin-top:2px;">Meds</div>';
+            html += '<div class="fishbone" style="white-space:normal;word-break:break-word;">' + esc(_activeMeds.join('; ')) + '</div>';
+        }
     }
 
     // Fallback: first non-blank VIOLIN lines if no lab data
