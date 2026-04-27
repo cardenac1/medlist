@@ -1059,6 +1059,7 @@
     border: 0.5px solid rgba(84,84,88,0.5);
     border-radius: 12px;
     overflow: hidden;
+    min-width: 0;
     transition: border-color 150ms ease;
 }
 .dashboard-card:hover {
@@ -1100,7 +1101,7 @@
     min-height: 100%;
     align-items: start;
 }
-.basic-left, .basic-right { display: flex; flex-direction: column; gap: 0.6rem; }
+.basic-left, .basic-right { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
 @media (max-width: 640px) { .basic-layout { grid-template-columns: 1fr; } }
 
 /* ── Problems list styles ── */
@@ -2389,12 +2390,39 @@ select,
   }
   .dashboard-card {
     border-radius: 0.75rem;
+    min-width: 0;
+    max-width: 100%;
   }
   .dashboard-card-header {
     padding: 0.5rem 0.65rem;
+    flex-wrap: wrap;
+    gap: 0.25rem;
   }
   .dashboard-card-body {
     padding: 0.5rem 0.65rem;
+  }
+  /* Keep compact prob-card buttons from getting the 44px mobile touch-target size */
+  .prob-txt-btn {
+    min-height: unset !important;
+    height: auto !important;
+    padding: 2px 7px !important;
+    font-size: 0.62rem !important;
+    display: inline-flex !important;
+  }
+  .prob-confirm-btn,
+  .prob-cancel-btn {
+    min-height: unset !important;
+    height: auto !important;
+    padding: 3px 8px !important;
+    font-size: 0.68rem !important;
+    display: inline-flex !important;
+  }
+  .prob-todo-btn {
+    min-height: unset !important;
+    height: auto !important;
+    padding: 1px 5px !important;
+    font-size: 0.58rem !important;
+    display: inline-flex !important;
   }
 
 /* MOBILE VIEW SELECTOR */
