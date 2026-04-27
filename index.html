@@ -14442,6 +14442,55 @@ function exportPDF() {
         return html || '<span style="color:#aaa">&mdash;</span>';
     }
 
+    function buildPDFProblemsHTML(raw) {
+        if (!raw || !raw.trim()) return '<span style="color:#aaa">&mdash;</span>';
+        var lines = raw.split('\n');
+        var problems = [];
+        var current = null;
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            var m = line.match(/^##\s+\d+\.\s+\[(\w+)\]\s+(.+)/);
+            if (m) {
+                current = { name: m[2].trim(), status: m[1].toLowerCase(), items: [] };
+                problems.push(current);
+            } else if (current) {
+                var t = line.trim();
+                if (!t) continue;
+                var itype = 'plain', itext = t;
+                if      (t[0] === '✓') { itype = 'done';         itext = t.slice(1).trim(); }
+                else if (t[0] === '○') { itype = 'pending';      itext = t.slice(1).trim(); }
+                else if (t[0] === '◈') { itype = 'consult';      itext = t.slice(1).trim(); }
+                else if (t[0] === '⬡') { itype = 'study';        itext = t.slice(1).trim(); }
+                else if (t[0] === '⚙') { itype = 'intervention'; itext = t.slice(1).trim(); }
+                current.items.push({ type: itype, text: itext });
+            }
+        }
+        if (problems.length === 0) return esc(raw).replace(/\n/g, '<br>');
+        var html = '';
+        problems.forEach(function(p, i) {
+            var statusLabel = '[' + (p.status || '').toUpperCase() + ']';
+            html += '<div style="margin-bottom:1px"><strong>' + esc((i + 1) + '. ' + (p.name || '')) + '</strong>'
+                  + ' <span style="color:#555;font-size:4.5pt">' + esc(statusLabel) + '</span></div>';
+            (p.items || []).forEach(function(it) {
+                var txt = esc(it.text);
+                if (it.type === 'done') {
+                    html += '<div style="padding-left:5px"><s style="color:#888">✓ ' + txt + '</s></div>';
+                } else if (it.type === 'pending') {
+                    html += '<div style="padding-left:5px">- ' + txt + '</div>';
+                } else if (it.type === 'consult') {
+                    html += '<div style="padding-left:5px">◈ ' + txt + '</div>';
+                } else if (it.type === 'study') {
+                    html += '<div style="padding-left:5px">⬡ ' + txt + '</div>';
+                } else if (it.type === 'intervention') {
+                    html += '<div style="padding-left:5px">⚙ ' + txt + '</div>';
+                } else {
+                    html += '<div style="padding-left:5px">' + txt + '</div>';
+                }
+            });
+        });
+        return html;
+    }
+
     let rows = '';
     patientData.forEach(function(patient) {
         const name       = patient.Name     || '';
@@ -14472,7 +14521,7 @@ function exportPDF() {
             <td class="col-id">
                 <b>${esc(name)}</b><br>${esc(rm)}<br><span style="color:#666">${esc(mrn)}</span>
             </td>
-            <td class="col-prob">${esc(problems).replace(/\n/g,'<br>')}</td>
+            <td class="col-prob">${buildPDFProblemsHTML(problems)}</td>
             <td class="col-ics">${esc(ics).replace(/\n/g,'<br>')}</td>
             <td class="col-vitals">${vitalsHTML}</td>
             <td class="col-todo">${buildPDFTodoHTML(todo)}</td>
@@ -14486,11 +14535,10 @@ function exportPDF() {
 <title>Patient List - ${dateStr}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Courier New', Courier, monospace; font-size: 5.5pt; line-height: 1.15; color: #000; }
+body { font-family: 'Courier New', Courier, monospace; font-size: 5.5pt; line-height: 1.15; color: #000; background:#fff; }
 table { width:100%; border-collapse:collapse; table-layout:fixed; }
-th, td { border:1px solid #555; padding:1px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; }
-th { background:#222; color:#fff; font-size:5pt; text-align:center; padding:2px;
-     -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:0.03em; }
+th, td { border:none; border-bottom:1px solid #999; padding:1px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; background:none; }
+th { border-bottom:2px solid #000; font-size:5pt; text-align:center; padding:2px; font-weight:bold; letter-spacing:0.03em; }
 .col-id     { width:13%; }
 .col-prob   { width:22%; }
 .col-ics    { width:17%; }
@@ -14501,9 +14549,8 @@ b { font-size:6pt; }
 .ts  { font-size:4.5pt; color:#666; font-style:italic; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr { page-break-inside: avoid; break-inside: avoid; }
-tr:nth-child(even) td { background:#f7f7f7; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .page-title { text-align:center; font-weight:bold; font-size:7pt; margin-bottom:3px; font-family:Arial,sans-serif; }
-@page { margin:0.25in; size:portrait; }
+@page { margin:0.2in 0.15in; size:portrait; }
 </style>
 </head>
 <body>
