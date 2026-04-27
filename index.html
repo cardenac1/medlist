@@ -5794,10 +5794,7 @@ function displayRows(data = patientData) {
             subEl.style.cssText = `display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0;`;
             if (room) {
                 const rmEl = document.createElement('span');
-                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0;
-                  background: linear-gradient(90deg, #00c6ff, #0072ff, #00e676);
-                  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                  background-clip: text;`;
+                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0; color: #34d399;`;
                 rmEl.textContent = room;
                 subEl.appendChild(rmEl);
             }
@@ -5809,10 +5806,7 @@ function displayRows(data = patientData) {
             }
             if (mrn) {
                 const mrnEl = document.createElement('span');
-                mrnEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                  background: linear-gradient(90deg, #ff416c, #ff9a00);
-                  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                  background-clip: text;`;
+                mrnEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; flex-shrink: 0; white-space: nowrap; color: #f59e0b;`;
                 mrnEl.textContent = `MRN ${mrn}`;
                 subEl.appendChild(mrnEl);
             }
@@ -6245,19 +6239,19 @@ function toggleStickyEdit() {
     `;
     [['Name', 'Patient name'], ['RM', 'Room'], ['MRN', 'MRN']].forEach(([field, ph]) => {
         const pair = document.createElement('div');
-        pair.style.cssText = `display:flex; align-items:center; gap:4px; flex: ${field === 'Name' ? '2 1 140px' : '1 1 80px'}; min-width:0;`;
+        pair.style.cssText = `display:flex; align-items:center; gap:6px; flex: 1 1 100%; min-width:0;`;
         const lbl = document.createElement('span');
         lbl.textContent = field;
-        lbl.style.cssText = 'font-size:0.72rem; color:#8e8e93; white-space:nowrap; flex-shrink:0;';
+        lbl.style.cssText = 'font-size:0.72rem; color:#8e8e93; white-space:nowrap; flex-shrink:0; min-width:2.5rem;';
         const inp = document.createElement('input');
         inp.type = 'text';
         inp.value = patient[field] || '';
         inp.placeholder = ph;
         inp.style.cssText = `
-            font-size: 0.82rem; padding: 4px 8px; border-radius: 8px;
+            font-size: 0.88rem; padding: 6px 10px; border-radius: 8px;
             border: 0.5px solid rgba(84,84,88,0.6); background: #1c1c1e;
             color: #fff; flex: 1 1 0; min-width: 0; width: 100%;
-            margin: 0; word-break: break-word;
+            margin: 0; box-sizing: border-box;
         `;
         inp.addEventListener('input', function() {
             patient[field] = this.value;
