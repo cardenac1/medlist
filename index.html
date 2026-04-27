@@ -532,6 +532,7 @@
             font-weight: 600;
             letter-spacing: 0.03em;
             display: none;
+            cursor: pointer;
         }
         .sync-status.spinning { animation: spinIcon 1s linear infinite; display: inline-block; }
         @keyframes spinIcon { to { transform: rotate(360deg); } }
@@ -3119,7 +3120,7 @@ select,
                 <div class="ios-icon-btn census-btn" title="Patient census" style="font-size:0.85rem; font-weight:700; pointer-events:none; color:#ffffff;">
                     <span id="censusCount">0</span>
                 </div>
-                <span id="syncStatus" class="sync-status" title="Sync status"></span>
+                <span id="syncStatus" class="sync-status" title="Tap for sync info" onclick="showLastSyncInfo()"></span>
             </div>
             <div class="header-right">
                 <!-- Import: + icon triggers hidden file input -->
@@ -18032,9 +18033,58 @@ function showIOHourlyPopup(label, entries, color) {
         var el = document.getElementById('syncStatus');
         if (!el) return;
         if (state === 'syncing') { el.textContent = '↻'; el.style.color = '#60a5fa'; el.classList.add('spinning'); el.style.display = 'inline'; }
-        else if (state === 'ok') { el.textContent = '☁✓'; el.style.color = '#10b981'; el.classList.remove('spinning'); el.style.display = 'inline'; }
+        else if (state === 'ok') {
+            el.textContent = '☁✓'; el.style.color = '#10b981'; el.classList.remove('spinning'); el.style.display = 'inline';
+            try {
+                localStorage.setItem('medlist_lastSync', JSON.stringify({
+                    time: new Date().toISOString(),
+                    device: _detectPlatform(),
+                    browser: _detectBrowser(),
+                    direction: direction
+                }));
+            } catch(e) {}
+        }
         else if (state === 'error') { el.textContent = '☁✗'; el.style.color = '#ef4444'; el.classList.remove('spinning'); el.style.display = 'inline'; }
         showSyncInfoPopup(state, direction);
+    }
+
+    function showLastSyncInfo() {
+        var popup = document.getElementById('syncInfoPopup');
+        if (!popup) return;
+        var lines = [];
+
+        // Last cloud sync info
+        try {
+            var ls = JSON.parse(localStorage.getItem('medlist_lastSync') || 'null');
+            if (ls) {
+                var d = new Date(ls.time);
+                var dirLabel = ls.direction === 'down' ? '⬇ pulled from cloud' : ls.direction === 'force' ? '⇑ force pushed' : '⬆ pushed to cloud';
+                lines.push('<div style="font-weight:700;color:#10b981;margin-bottom:4px;">☁ Last sync</div>');
+                lines.push('<div>' + dirLabel + '</div>');
+                lines.push('<div style="color:#e8eaed;">' + d.toLocaleDateString([], {month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>');
+                lines.push('<div style="color:#8e8e93;">' + ls.device + ' · ' + ls.browser + '</div>');
+            } else {
+                lines.push('<div style="color:#8e8e93;">No sync recorded yet</div>');
+            }
+        } catch(e) {
+            lines.push('<div style="color:#8e8e93;">No sync recorded yet</div>');
+        }
+
+        // Local last-save info
+        try {
+            var local = JSON.parse(localStorage.getItem('ultimatePatientList') || 'null');
+            if (local && local.timestamp) {
+                var ld = new Date(local.timestamp);
+                lines.push('<div style="border-top:1px solid #3a3a3c;margin-top:6px;padding-top:6px;font-weight:700;color:#60a5fa;">💾 Local last saved</div>');
+                lines.push('<div style="color:#e8eaed;">' + ld.toLocaleDateString([], {month:'short',day:'numeric'}) + ' · ' + ld.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>');
+                lines.push('<div style="color:#8e8e93;">on this device (' + _detectPlatform() + ')</div>');
+            }
+        } catch(e) {}
+
+        popup.innerHTML = lines.join('');
+        popup.style.display = 'block';
+        clearTimeout(_syncInfoTimer);
+        _syncInfoTimer = setTimeout(function() { popup.style.display = 'none'; }, 6000);
     }
 
     function updateAuthUI() {
