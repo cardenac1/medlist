@@ -1112,7 +1112,7 @@
 .prob-item[data-status="pending"] { border-left-color: #0a84ff; }
 .prob-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; user-select: none; flex-wrap: wrap; }
 .prob-num  { color: #48484a; font-size: 0.68rem; font-weight: 700; min-width: 14px; flex-shrink: 0; }
-.prob-name { flex: 1 1 auto; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; word-break: break-word; overflow-wrap: break-word; min-width: 60px; }
+.prob-name { flex: 0 1 auto; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; min-width: 40px; }
 .prob-badges { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .prob-badge { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 .prob-badge-done         { background: #1a3a20; color: #30d158; }
@@ -3908,9 +3908,9 @@ const helpContent = {
                     });
                 }(prob, nameSpan, editNameBtn));
 
-                // Item text preview — own full-width row below name, left-aligned
+                // Item text preview — inline, fills space between name and badges
                 var previewSpan = document.createElement('span');
-                previewSpan.style.cssText = 'flex-basis:100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;padding:1px 4px 2px 26px;';
+                previewSpan.style.cssText = 'flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:3px;padding-left:6px;';
                 (function() {
                     var previewItems = items.filter(function(it) { return it.type === 'pending'; })
                         .concat(items.filter(function(it) { return it.type === 'consult'; }))
@@ -3926,9 +3926,8 @@ const helpContent = {
                             previewSpan.appendChild(sep);
                         }
                         var chip = document.createElement('span');
-                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;line-height:1.4;' + (it.type === 'done' ? 'text-decoration:line-through;' : '');
-                        var words = (it.text || '').split(/\s+/);
-                        chip.textContent = words.slice(0, 8).join(' ') + (words.length > 8 ? '…' : '');
+                        chip.style.cssText = 'font-size:0.65rem;color:' + (PREV_CLR[it.type] || '#3d3d3f') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:' + (i === 0 ? '1' : '0') + ';' + (i > 0 ? 'max-width:120px;' : '') + (it.type === 'done' ? 'text-decoration:line-through;' : '');
+                        chip.textContent = it.text || '';
                         chip.title = it.text || '';
                         chip.title = it.text || '';
                         previewSpan.appendChild(chip);
@@ -3965,10 +3964,10 @@ const helpContent = {
                 head.appendChild(statusDot);
                 head.appendChild(nameSpan);
                 head.appendChild(editNameBtn);
+                head.appendChild(previewSpan);
                 head.appendChild(badgeSpan);
                 head.appendChild(delProbBtn);
                 head.appendChild(chevron);
-                head.appendChild(previewSpan);
 
                 // ── Detail (expanded) ──────────────────────────────────
                 var detail = document.createElement('div');
