@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>MedList</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════════ -->
+<header class="app-header">
+  <div class="hdr-left">
+    <div class="count-block">
+      <span id="patientCount" class="pt-count">0</span>
+      <span class="pt-lbl">pts</span>
+    </div>
+    <span class="brand">MedList</span>
+  </div>
+  <div class="hdr-center">
+    <div class="search-wrap">
+      <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" type="text" class="s-input" placeholder="Search…" autocomplete="off" spellcheck="false">
+      <button id="sClear" class="s-clear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="hbtn" id="sortBtn" onclick="toggleSort()" title="Sort by priority">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="16" y2="12"/><line x1="3" y1="18" x2="11" y2="18"/></svg>
+      <span class="bl">Sort</span>
+    </button>
+    <button class="hbtn hbtn-accent" onclick="openAddModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="bl">Add</span>
+    </button>
+    <button class="hbtn" onclick="openCernerModal()" title="Paste Cerner List">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="bl">Cerner</span>
+    </button>
+    <button class="hbtn" onclick="refreshPatients()" title="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+    <button class="hbtn" onclick="openSheet()" title="Open Google Sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="status-bar">
+  <span id="statusMsg">Loading…</span>
+  <span id="filteredMsg" class="fmsg"></span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PATIENT LIST
+══════════════════════════════════════════════════════════ -->
+<main class="main">
+  <div id="loadingState" class="loading-state">
+    <div class="spinner"></div><span>Connecting to Google Sheets…</span>
+  </div>
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div style="font-size:2.8rem">🏥</div>
+    <div class="empty-title">No patients yet</div>
+    <div class="empty-sub">Click <strong>Add</strong> or paste a <strong>Cerner</strong> list to begin.</div>
+  </div>
+  <div id="patientList" class="pt-grid" style="display:none"></div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════
+     CERNER PASTE MODAL  (add / update patient list)
+══════════════════════════════════════════════════════════ -->
+<div id="cernerModal" class="overlay" style="display:none" onclick="oClose(event,'cernerModal')">
+  <div class="mbox mlg">
+    <div class="mhdr">
+      <h2 class="mtitle">Paste Cerner Patient List</h2>
+      <button class="mx" onclick="closeModal('cernerModal')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="info-box">
+        Paste one or more lines from Cerner (mobile <em>or</em> desktop format). Each line = one patient.<br>
+        <code>GARCIA, LASTIMA  Age65 yearsGenderFDOB:Jan 22, 1960MRN:433607 WMC 5NE 531 B</code>
+      </div>
+      <textarea id="cernerTA" class="fctrl mono" rows="10" placeholder="Paste Cerner patient list here…"></textarea>
+      <div class="row-gap" style="margin-top:8px">
+        <button class="btn btn-primary" onclick="parseCernerUI()">Parse &amp; Preview</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('cernerTA').value='';document.getElementById('cernerPreview').style.display='none';document.getElementById('cernerActions').style.display='none'">Clear</button>
+      </div>
+      <div id="cernerPreview" style="display:none;margin-top:12px"></div>
+      <div id="cernerActions" class="row-gap" style="display:none;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-success" onclick="importCerner('append')">➕ Append to List</button>
+        <button class="btn btn-warning" onclick="importCerner('replace')">🔄 Replace Entire List</button>
+        <button class="btn btn-secondary" onclick="importCerner('sync')">🔃 Sync / Update Existing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ADD / EDIT PATIENT MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="addModal" class="overlay" style="display:none" onclick="oClose(event,'addModal')">
+  <div class="mbox mlg">
+    <div class="mhdr">
+      <h2 id="addTitle" class="mtitle">Add Patient</h2>
+      <button class="mx" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="form-grid2">
+        <div class="fgrp">
+          <label class="flbl">Type</label>
+          <select id="fType" class="fctrl"><option value="Patient">Patient</option><option value="Consult">Consult</option></select>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Priority</label>
+          <select id="fPriority" class="fctrl">
+            <option value="">— none —</option>
+            <option value="1">1 — Urgent</option><option value="2">2 — High</option>
+            <option value="3">3 — Med-High</option><option value="4">4 — Medium</option>
+            <option value="5">5 — Med-Low</option><option value="6">6 — Low-Med</option>
+            <option value="7">7 — Low</option><option value="8">8 — Very Low</option>
+            <option value="9">9 — Minimal</option><option value="10">10 — Lowest</option>
+            <option value="C">C — Complete</option>
+          </select>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Name <span class="req">*</span></label>
+          <input id="fName" type="text" class="fctrl" placeholder="LAST, First" autocomplete="off">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Room (RM)</label>
+          <input id="fRM" type="text" class="fctrl" placeholder="e.g. 5NE 531B" autocomplete="off">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">MRN</label>
+          <input id="fMRN" type="text" class="fctrl" placeholder="Medical Record #" autocomplete="off">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Attending</label>
+          <input id="fAtt" type="text" class="fctrl" placeholder="Attending physician" autocomplete="off">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Age / Gender</label>
+          <input id="fAG" type="text" class="fctrl" placeholder="e.g. 65M" autocomplete="off">
+        </div>
+      </div>
+      <div class="fgrp"><label class="flbl">Problems / Diagnosis</label>
+        <textarea id="fProblems" class="fctrl" rows="3" placeholder="Chief complaint, diagnoses, PMH…"></textarea></div>
+      <div class="fgrp"><label class="flbl">ICS — Imaging · Consults · Studies</label>
+        <textarea id="fICS" class="fctrl" rows="2" placeholder="Pending imaging, consults, studies…"></textarea></div>
+      <div class="fgrp"><label class="flbl">VIOLIN — Vitals · I&amp;O · Labs · Orders · Notes</label>
+        <textarea id="fVIOLIN" class="fctrl mono" rows="5" placeholder="Clinical summary / fishbone…"></textarea></div>
+      <div class="fgrp"><label class="flbl">Orders / Medications</label>
+        <textarea id="fORDERS" class="fctrl" rows="3" placeholder="Active meds and key orders…"></textarea></div>
+      <div class="fgrp">
+        <label class="flbl">To-Do List</label>
+        <p class="hint"><code>[ ]</code> pending &nbsp;·&nbsp; <code>[x]</code> done &nbsp;·&nbsp; plain text = note</p>
+        <textarea id="fTodo" class="fctrl mono" rows="6" placeholder="[ ] Morning labs&#10;[ ] Post-op note&#10;[x] NPO order placed&#10;Call family re: discharge"></textarea>
+      </div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="savePatient()"><span id="saveLbl">Add Patient</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PATIENT DETAIL MODAL
+     Two modes: "detail" (clinical fields + todo) and "vitals" (lab/vitals tables)
+══════════════════════════════════════════════════════════ -->
+<div id="detailModal" class="overlay" style="display:none" onclick="oClose(event,'detailModal')">
+  <div class="mbox mxl">
+
+    <!-- Header -->
+    <div class="mhdr detail-hdr">
+      <div class="dhdr-left">
+        <div id="dName" class="d-name"></div>
+        <div id="dBadges" class="badge-row"></div>
+      </div>
+      <div class="dhdr-right">
+        <span id="dPill" class="p-pill"></span>
+        <button class="btn btn-secondary btn-sm" onclick="editCurrentPatient()">✏ Edit</button>
+        <button class="mx" onclick="closeModal('detailModal')">✕</button>
+      </div>
+    </div>
+
+    <!-- Mode toggle -->
+    <div class="mode-bar">
+      <button class="mode-btn active" id="modeDetailBtn" onclick="switchMode('detail')">📋 Detail View</button>
+      <button class="mode-btn" id="modeVitalsBtn" onclick="switchMode('vitals')">📊 Vitals View</button>
+    </div>
+
+    <!-- ── DETAIL VIEW ────────────────────────────────────── -->
+    <div id="detailPane" class="detail-layout">
+      <div class="d-main">
+
+        <!-- VIOLIN with Import button -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-ttl violin-c">VIOLIN</span>
+            <span class="sec-sub">Vitals · I&amp;O · Labs · Orders · Notes</span>
+            <button class="import-btn" onclick="openImportModal()" title="Import EHR data (vitals/labs/I&O)">
+              ⬆ Import EHR
+            </button>
+            <button class="mini-btn" onclick="openFieldEdit('VIOLIN')">Edit</button>
+          </div>
+          <div id="dVIOLIN" class="sec-body mono-txt"></div>
+        </div>
+
+        <!-- Problems -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-ttl probs-c">Problems</span>
+            <button class="mini-btn" onclick="openFieldEdit('Problems')">Edit</button>
+          </div>
+          <div id="dProblems" class="sec-body"></div>
+        </div>
+
+        <!-- ICS -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-ttl ics-c">ICS</span>
+            <span class="sec-sub">Imaging · Consults · Studies</span>
+            <button class="mini-btn" onclick="openFieldEdit('ICS')">Edit</button>
+          </div>
+          <div id="dICS" class="sec-body"></div>
+        </div>
+
+        <!-- Orders -->
+        <div class="sec-card">
+          <div class="sec-hdr">
+            <span class="sec-ttl orders-c">Orders</span>
+            <button class="mini-btn" onclick="openFieldEdit('ORDERS')">Edit</button>
+          </div>
+          <div id="dORDERS" class="sec-body mono-txt"></div>
+        </div>
+
+      </div><!-- /d-main -->
+
+      <!-- Todo sidebar -->
+      <div class="d-sidebar">
+        <div class="sec-card todo-card">
+          <div class="sec-hdr">
+            <span class="sec-ttl todo-c">To-Do</span>
+            <div class="todo-prog-wrap">
+              <span id="todoPct" class="todo-pct"></span>
+              <div class="todo-bar-bg"><div id="todoBar" class="todo-bar"></div></div>
+            </div>
+            <button class="mini-btn" onclick="startAddTodo()">+ Add</button>
+          </div>
+          <div id="todoList" class="todo-list"></div>
+          <div id="todoInputRow" class="todo-input-row" style="display:none">
+            <input id="newTodoText" type="text" class="fctrl" placeholder="New task…"
+              onkeydown="if(event.key==='Enter')commitTodo();if(event.key==='Escape')cancelTodo();">
+            <button class="btn btn-primary btn-sm" onclick="commitTodo()">Add</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelTodo()">✕</button>
+          </div>
+        </div>
+      </div>
+    </div><!-- /detailPane -->
+
+    <!-- ── VITALS VIEW ────────────────────────────────────── -->
+    <div id="vitalsPane" class="vitals-pane" style="display:none">
+      <div id="vitalsContent" class="vitals-content">
+        <div class="no-data-msg" id="noDataMsg">
+          No EHR data imported yet.<br>
+          Switch to <strong>Detail View</strong> and click <strong>⬆ Import EHR</strong> to paste Cerner data.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mbox -->
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     IMPORT EHR DATA MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="importModal" class="overlay" style="display:none" onclick="oClose(event,'importModal')">
+  <div class="mbox mlg">
+    <div class="mhdr">
+      <h2 class="mtitle">Import EHR Data</h2>
+      <button class="mx" onclick="closeModal('importModal')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="info-box">
+        Paste raw Cerner EHR output for <strong id="importPatientName">this patient</strong> — include vitals, labs, and I&amp;O sections. The app will parse and generate a VIOLIN summary.
+      </div>
+      <textarea id="importTA" class="fctrl mono" rows="12" placeholder="Paste raw EHR data here (vitals, labs, I&O)…"></textarea>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="processImport()">⚡ Process &amp; Generate VIOLIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     INLINE FIELD EDIT MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="fieldModal" class="overlay" style="display:none" onclick="oClose(event,'fieldModal')">
+  <div class="mbox mmd">
+    <div class="mhdr">
+      <h2 id="fieldTitle" class="mtitle">Edit Field</h2>
+      <button class="mx" onclick="closeModal('fieldModal')">✕</button>
+    </div>
+    <div class="mbody">
+      <textarea id="fieldTA" class="fctrl mono" rows="14"></textarea>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeModal('fieldModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFieldEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- toasts -->
+<div id="toasts" class="toast-wrap"></div>
+
+<?!= include('JavaScript'); ?>
+</body>
+</html>
