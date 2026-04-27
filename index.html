@@ -3817,18 +3817,9 @@ const helpContent = {
                 var badgesHTML = '';
                 if (pendCount) badgesHTML += '<span class="prob-badge prob-badge-pending">' + pendCount + '⏳</span>';
                 if (doneCount) badgesHTML += '<span class="prob-badge prob-badge-done">' + doneCount + '✓</span>';
-                consultItems.forEach(function(c) {
-                    var label = (c.text || '').split(/\s+/).slice(0,2).join(' ');
-                    badgesHTML += '<span class="prob-badge prob-badge-consult">◈ ' + label + '</span>';
-                });
-                studyItems.forEach(function(s) {
-                    var label = (s.text || '').split(/\s+/)[0] || 'study';
-                    badgesHTML += '<span class="prob-badge prob-badge-study">⬡ ' + label + '</span>';
-                });
-                interventionItems.forEach(function(v) {
-                    var label = (v.text || '').split(/\s+/)[0] || 'Proc';
-                    badgesHTML += '<span class="prob-badge prob-badge-intervention">⚙ ' + label + '</span>';
-                });
+                if (consultItems.length) badgesHTML += '<span class="prob-badge prob-badge-consult">' + consultItems.length + '◈</span>';
+                if (studyItems.length) badgesHTML += '<span class="prob-badge prob-badge-study">' + studyItems.length + '⬡</span>';
+                if (interventionItems.length) badgesHTML += '<span class="prob-badge prob-badge-intervention">' + interventionItems.length + '⚙</span>';
 
                 // ── Header ─────────────────────────────────────────────
                 var head = document.createElement('div');
