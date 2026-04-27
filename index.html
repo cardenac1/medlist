@@ -5794,7 +5794,7 @@ function displayRows(data = patientData) {
             subEl.style.cssText = `display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0;`;
             if (room) {
                 const rmEl = document.createElement('span');
-                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0; color: #1F51FF;`;
+                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0; color: #FAF9F6;`;
                 rmEl.textContent = room;
                 subEl.appendChild(rmEl);
             }
@@ -5806,7 +5806,7 @@ function displayRows(data = patientData) {
             }
             if (mrn) {
                 const mrnEl = document.createElement('span');
-                mrnEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; flex-shrink: 0; white-space: nowrap; color: #FF3131;`;
+                mrnEl.style.cssText = `font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; flex-shrink: 0; white-space: nowrap; color: #FAF9F6;`;
                 mrnEl.textContent = `MRN ${mrn}`;
                 subEl.appendChild(mrnEl);
             }
