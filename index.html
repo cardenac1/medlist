@@ -6594,6 +6594,15 @@ function switchView(mode) {
                 titleSpan.textContent = 'TO DO';
                 hdr.appendChild(titleSpan);
 
+                if (helpContent['To do']) {
+                    var tdHBtn = document.createElement('button');
+                    tdHBtn.className = 'help-button';
+                    tdHBtn.textContent = '?';
+                    tdHBtn.style.cssText = 'padding:0.15rem 0.4rem;font-size:0.7rem;backdrop-filter:none;box-shadow:none;';
+                    tdHBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); showHelpModal('To do'); };
+                    hdr.appendChild(tdHBtn);
+                }
+
                 injectTodoModeButtons(hdr);
 
                 var tdChev = document.createElement('span');
@@ -14594,21 +14603,21 @@ function exportPDF() {
 <title>Patient List - ${dateStr}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Courier New', Courier, monospace; font-size: 5.5pt; line-height: 1.15; color: #000; background:#fff; }
+body { font-family: 'Courier New', Courier, monospace; font-size: 6.5pt; line-height: 1.15; color: #000; background:#fff; }
 table { width:100%; border-collapse:collapse; table-layout:fixed; }
 th, td { border:none; border-bottom:1px solid #999; padding:1px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; background:none; }
-th { border-bottom:2px solid #000; font-size:5pt; text-align:center; padding:2px; font-weight:bold; letter-spacing:0.03em; }
+th { border-bottom:2px solid #000; font-size:6pt; text-align:center; padding:2px; font-weight:bold; letter-spacing:0.03em; }
 .col-id     { width:13%; }
 .col-prob   { width:22%; }
 .col-ics    { width:17%; }
 .col-vitals { width:27%; }
 .col-todo   { width:21%; }
-b { font-size:6pt; }
-.fishbone { font-family:'Courier New', Courier, monospace; font-size:5pt; white-space:pre-wrap; line-height:1.2; }
-.ts  { font-size:4.5pt; color:#666; font-style:italic; }
+b { font-size:7pt; }
+.fishbone { font-family:'Courier New', Courier, monospace; font-size:6pt; white-space:pre-wrap; line-height:1.2; }
+.ts  { font-size:5.5pt; color:#666; font-style:italic; }
 .ab  { color:#cc0000; font-weight:bold; }
 tr { page-break-inside: avoid; break-inside: avoid; }
-.page-title { text-align:center; font-weight:bold; font-size:7pt; margin-bottom:3px; font-family:Arial,sans-serif; }
+.page-title { text-align:center; font-weight:bold; font-size:8pt; margin-bottom:3px; font-family:Arial,sans-serif; }
 @page { margin:0.2in 0.15in; size:portrait; }
 </style>
 </head>
