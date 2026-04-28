@@ -1018,7 +1018,7 @@
 .prob-item[data-status="pending"] { border-left-color: #0a84ff; }
 .prob-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; user-select: none; flex-wrap: wrap; }
 .prob-num  { color: #48484a; font-size: 0.68rem; font-weight: 700; min-width: 14px; flex-shrink: 0; }
-.prob-name { flex: 1 1 auto; font-size: 0.73rem; font-weight: 600; color: #f1f5f9; white-space: normal; word-break: break-word; overflow-wrap: break-word; min-width: 40px; }
+.prob-name { flex: 1 1 auto; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; white-space: normal; word-break: break-word; overflow-wrap: break-word; min-width: 40px; }
 .prob-badges { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .prob-badge { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 .prob-badge-done         { background: #1a3a20; color: #30d158; }
@@ -1033,7 +1033,7 @@
 .prob-detail { display: none; padding: 0 10px 8px 26px; }
 .prob-detail.open { display: block; }
 .prob-section-title { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #48484a; margin: 5px 0 3px; }
-.prob-item-row { display: flex; align-items: flex-start; gap: 5px; font-size: 0.67rem; line-height: 1.45; margin-bottom: 1px; }
+.prob-item-row { display: flex; align-items: flex-start; gap: 5px; font-size: 0.72rem; line-height: 1.45; margin-bottom: 1px; }
 .prob-item-icon { flex-shrink: 0; font-size: 0.65rem; margin-top: 1px; }
 .prob-item-text { flex: 1; color: #d1d1d6; word-break: break-word; overflow-wrap: break-word; min-width: 0; }
 .prob-item-text.done    { color: #48484a; }
@@ -1365,7 +1365,7 @@ textarea, input[type="text"] {
     padding: 0.6rem 0.8rem;
     color: #f1f5f9;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-    font-size: 0.79rem;
+    font-size: 0.85rem;
     width: 100%;
     transition: border-color 150ms ease;
     margin: 0.4rem 0 0.9rem;
@@ -3686,6 +3686,14 @@ const helpContent = {
                 } catch(e) {}
                 renderProblemsCard(bodyEl, patient); // re-entry through safe wrapper
                 if (_hadFocusInCard) { try { var _fl = bodyEl.querySelector('.prob-list'); if (_fl) _fl.focus(); } catch(e) {} }
+                // Auto-add all pending problem items to the todo list
+                try {
+                    problems.forEach(function(prob) {
+                        (prob.items || []).forEach(function(it) {
+                            if (it.type === 'pending' && (it.text || '').trim()) pushToTodo(it.text);
+                        });
+                    });
+                } catch(e) {}
                 try {
                     var tc = document.getElementById('todoContainer');
                     if (tc) renderTodoList(tc, patient);
@@ -4327,6 +4335,25 @@ const helpContent = {
             list.appendChild(addProbForm);
             list.appendChild(hintsBar);
             bodyEl.appendChild(list);
+
+            // Auto-add all pending items to the todo list on initial render
+            try {
+                var _changed = false;
+                problems.forEach(function(prob) {
+                    (prob.items || []).forEach(function(it) {
+                        if (it.type === 'pending' && (it.text || '').trim()) {
+                            var tp = parseTodoText(patient['To do'] || '');
+                            var lo = it.text.trim().toLowerCase();
+                            if (!tp.tasks.some(function(t) { return (t.text || '').trim().toLowerCase() === lo; })) {
+                                tp.tasks.push({ type: 'task', text: it.text.trim(), done: false });
+                                patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
+                                _changed = true;
+                            }
+                        }
+                    });
+                });
+                if (_changed) saveToLocalStorage();
+            } catch(e) {}
         }
 
         // Current todo mode: 'interactive' or 'raw'
@@ -5843,7 +5870,7 @@ function displayRows(data = patientData) {
         // Patient name
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 800; font-size: 0.98rem; color: #ffffff; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+            nameEl.style.cssText = `font-weight: 800; font-size: 1.06rem; color: #ffffff; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
             nameEl.textContent = patientName;
             cardBody.appendChild(nameEl);
         }
@@ -5854,7 +5881,7 @@ function displayRows(data = patientData) {
             subEl.style.cssText = `display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0;`;
             if (room) {
                 const rmEl = document.createElement('span');
-                rmEl.style.cssText = `font-size: 0.74rem; font-weight: 400; letter-spacing: 0.02em; flex-shrink: 0; color: #FAF9F6;`;
+                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 400; letter-spacing: 0.02em; flex-shrink: 0; color: #FAF9F6;`;
                 rmEl.textContent = room;
                 subEl.appendChild(rmEl);
             }
