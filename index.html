@@ -620,8 +620,6 @@
         .auth-btn-signup { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.15) !important; }
         .auth-btn-cancel { background: transparent; color: #888; border: 1px solid rgba(255,255,255,0.1) !important; }
         #authError { font-size: 0.82rem; min-height: 1rem; margin-top: 0.4rem; color: #ef4444; }
-        .sync-conflict-download { background: #3b82f6; color: #fff; }
-        .sync-conflict-upload { background: #10b981; color: #fff; }
         /* ---- end Supabase ---- */
 
         .modal {
@@ -18100,31 +18098,6 @@ function showIOHourlyPopup(label, entries, color) {
     </script>
 
     <!-- Supabase Auth Modal -->
-    <div id="syncConflictModal" class="modal" style="display:none;align-items:center;justify-content:center;">
-        <div class="auth-modal-box" style="max-width:420px;">
-            <h2>☁ Sync Conflict</h2>
-            <p id="syncConflictMsg" style="color:#ccc;font-size:0.9rem;margin-bottom:1rem;line-height:1.5;"></p>
-            <div style="display:flex;gap:0.75rem;margin-bottom:1rem;">
-                <div style="flex:1;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:0.75rem;padding:0.75rem;text-align:center;">
-                    <div style="font-size:1.4rem;margin-bottom:0.25rem;">⬇</div>
-                    <div style="font-weight:700;color:#60a5fa;margin-bottom:0.25rem;">Cloud Version</div>
-                    <div id="syncCloudCount" style="font-size:0.82rem;color:#8e8e93;"></div>
-                    <div style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;">Replace local with cloud</div>
-                </div>
-                <div style="flex:1;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:0.75rem;padding:0.75rem;text-align:center;">
-                    <div style="font-size:1.4rem;margin-bottom:0.25rem;">⬆</div>
-                    <div style="font-weight:700;color:#10b981;margin-bottom:0.25rem;">Local Version</div>
-                    <div id="syncLocalCount" style="font-size:0.82rem;color:#8e8e93;"></div>
-                    <div style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;">Replace cloud with local</div>
-                </div>
-            </div>
-            <div class="auth-btn-row">
-                <button class="sync-conflict-download" onclick="resolveSyncConflict('download')">⬇ Use Cloud</button>
-                <button class="sync-conflict-upload" onclick="resolveSyncConflict('upload')">⬆ Keep Local</button>
-            </div>
-        </div>
-    </div>
-
     <div id="authModal" class="modal" style="display:none;align-items:center;justify-content:center;" onclick="if(event.target===this)closeAuthModal()">
         <div class="auth-modal-box">
             <h2>☁ Cloud Sync</h2>
@@ -18149,7 +18122,6 @@ function showIOHourlyPopup(label, entries, color) {
     let _sbClient = null;
     let currentUser = null;
     let _syncTimer = null;
-    let _pendingCloudData = null;
 
     function getSB() {
         if (!_sbClient) _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -18308,75 +18280,19 @@ function showIOHourlyPopup(label, entries, color) {
             showSyncStatus('syncing', 'down');
             const { data, error } = await getSB().from(SB_TABLE).select('data').eq('user_id', currentUser.id);
             if (error) throw error;
-            const cloudPatients = (data && data.length > 0) ? data.map(r => r.data) : [];
-            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
-
-            // Cloud empty: nothing to download
-            if (cloudPatients.length === 0) {
-                showSyncStatus('ok', 'down');
-                return;
-            }
-
-            // Local empty: just pull cloud data down silently
-            if (localPatients.length === 0) {
-                patientData = cloudPatients;
+            if (data && data.length > 0) {
+                patientData = data.map(r => r.data);
                 if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
                 if (typeof displayRows === 'function') displayRows();
                 if (typeof updateCensus === 'function') updateCensus();
                 if (typeof populateColumnSelector === 'function') populateColumnSelector();
                 if (typeof populateColumnSelect === 'function') populateColumnSelect();
-                showSyncStatus('ok', 'down');
-                return;
             }
-
-            // Both sides have data — compare them
-            const sortByPid = arr => [...arr].sort((a, b) => (a._pid || '').localeCompare(b._pid || ''));
-            const localSorted = JSON.stringify(sortByPid(localPatients));
-            const cloudSorted = JSON.stringify(sortByPid(cloudPatients));
-
-            if (localSorted === cloudSorted) {
-                // Data is identical — no action needed
-                showSyncStatus('ok', 'down');
-                return;
-            }
-
-            // Conflict: ask the user which version to keep
-            _pendingCloudData = cloudPatients;
-            showSyncConflictModal(localPatients.length, cloudPatients.length);
             showSyncStatus('ok', 'down');
         } catch (e) {
             console.error('Sync download error:', e);
             showSyncStatus('error', 'down');
         }
-    }
-
-    function showSyncConflictModal(localCount, cloudCount) {
-        const modal = document.getElementById('syncConflictModal');
-        if (!modal) return;
-        document.getElementById('syncConflictMsg').textContent =
-            'Your local data and cloud data are different. Which version would you like to keep?';
-        document.getElementById('syncLocalCount').textContent =
-            localCount + ' patient' + (localCount !== 1 ? 's' : '') + ' on this device';
-        document.getElementById('syncCloudCount').textContent =
-            cloudCount + ' patient' + (cloudCount !== 1 ? 's' : '') + ' in cloud';
-        modal.style.display = 'flex';
-    }
-
-    function resolveSyncConflict(choice) {
-        const modal = document.getElementById('syncConflictModal');
-        if (modal) modal.style.display = 'none';
-        if (choice === 'download' && _pendingCloudData) {
-            patientData = _pendingCloudData;
-            if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
-            if (typeof displayRows === 'function') displayRows();
-            if (typeof updateCensus === 'function') updateCensus();
-            if (typeof populateColumnSelector === 'function') populateColumnSelector();
-            if (typeof populateColumnSelect === 'function') populateColumnSelect();
-            showSyncStatus('ok', 'down');
-        } else if (choice === 'upload') {
-            syncToCloud();
-        }
-        _pendingCloudData = null;
     }
 
     function scheduleSync() {
