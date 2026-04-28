@@ -526,101 +526,6 @@
         }
 
         /* Modal */
-        /* ---- Supabase Auth / Sync UI ---- */
-        .sync-status {
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 0.03em;
-            display: none;
-        }
-        .sync-status.spinning { animation: spinIcon 1s linear infinite; display: inline-block; }
-        @keyframes spinIcon { to { transform: rotate(360deg); } }
-        #authBtn {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            color: #60a5fa;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.14s;
-            padding: 0;
-            flex-shrink: 0;
-        }
-        #authBtn:hover { background: rgba(255,255,255,0.16); }
-        #manualSyncBtn {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            color: #6ee7b7;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.14s;
-            padding: 0;
-            flex-shrink: 0;
-        }
-        #manualSyncBtn:hover { background: rgba(255,255,255,0.16); }
-        #forcePushBtn {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            color: #f59e0b;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 0.9rem;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            flex-shrink: 0;
-        }
-        .auth-modal-box {
-            background: #0d0d0d;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 1.25rem;
-            padding: 2rem;
-            width: 90%;
-            max-width: 360px;
-            margin: auto;
-            animation: modalSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        .auth-modal-box h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #fff; }
-        .auth-modal-box input {
-            width: 100%;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 0.5rem;
-            color: #fff;
-            padding: 0.6rem 0.8rem;
-            font-size: 0.95rem;
-            margin-bottom: 0.75rem;
-            box-sizing: border-box;
-        }
-        .auth-modal-box input:focus { outline: none; border-color: #3b82f6; }
-        .auth-btn-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-        .auth-btn-row button {
-            flex: 1;
-            padding: 0.6rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            font-size: 0.9rem;
-        }
-        .auth-btn-login { background: #3b82f6; color: #fff; }
-        .auth-btn-signup { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.15) !important; }
-        .auth-btn-cancel { background: transparent; color: #888; border: 1px solid rgba(255,255,255,0.1) !important; }
-        #authError { font-size: 0.82rem; min-height: 1rem; margin-top: 0.4rem; color: #ef4444; }
-        /* ---- end Supabase ---- */
 
         .modal {
             display: none;
@@ -1113,7 +1018,7 @@
 .prob-item[data-status="pending"] { border-left-color: #0a84ff; }
 .prob-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; user-select: none; flex-wrap: wrap; }
 .prob-num  { color: #48484a; font-size: 0.68rem; font-weight: 700; min-width: 14px; flex-shrink: 0; }
-.prob-name { flex: 1 1 auto; font-size: 0.78rem; font-weight: 600; color: #f1f5f9; white-space: normal; word-break: break-word; overflow-wrap: break-word; min-width: 40px; }
+.prob-name { flex: 1 1 auto; font-size: 0.73rem; font-weight: 600; color: #f1f5f9; white-space: normal; word-break: break-word; overflow-wrap: break-word; min-width: 40px; }
 .prob-badges { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .prob-badge { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 .prob-badge-done         { background: #1a3a20; color: #30d158; }
@@ -1128,7 +1033,7 @@
 .prob-detail { display: none; padding: 0 10px 8px 26px; }
 .prob-detail.open { display: block; }
 .prob-section-title { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #48484a; margin: 5px 0 3px; }
-.prob-item-row { display: flex; align-items: flex-start; gap: 5px; font-size: 0.72rem; line-height: 1.45; margin-bottom: 1px; }
+.prob-item-row { display: flex; align-items: flex-start; gap: 5px; font-size: 0.67rem; line-height: 1.45; margin-bottom: 1px; }
 .prob-item-icon { flex-shrink: 0; font-size: 0.65rem; margin-top: 1px; }
 .prob-item-text { flex: 1; color: #d1d1d6; word-break: break-word; overflow-wrap: break-word; min-width: 0; }
 .prob-item-text.done    { color: #48484a; }
@@ -1136,7 +1041,7 @@
 .prob-item-text.study        { color: #bf5af2; }
 .prob-item-text.intervention { color: #ff6b9d; }
 .prob-link-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:4px; flex-shrink:0; align-self:center; vertical-align:middle; }
-.todo-link-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:5px; flex-shrink:0; vertical-align:middle; }
+.todo-link-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:5px; flex-shrink:0; align-self:center; }
 .prob-todo-btn {
     font-size: 0.58rem; font-weight: 700;
     background: #0a1a2a; border: 1px solid #0a84ff44;
@@ -1460,7 +1365,7 @@ textarea, input[type="text"] {
     padding: 0.6rem 0.8rem;
     color: #f1f5f9;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.79rem;
     width: 100%;
     transition: border-color 150ms ease;
     margin: 0.4rem 0 0.9rem;
@@ -3121,7 +3026,6 @@ select,
                 <div class="ios-icon-btn census-btn" title="Patient census" style="font-size:0.85rem; font-weight:700; pointer-events:none; color:#ffffff;">
                     <span id="censusCount">0</span>
                 </div>
-                <span id="syncStatus" class="sync-status" title="Sync status"></span>
             </div>
             <div class="header-right">
                 <!-- Import: + icon triggers hidden file input -->
@@ -3137,12 +3041,6 @@ select,
                 <button class="ios-icon-btn" id="searchToggleBtn" onclick="toggleSearch()" title="Search patients">⌕</button>
                 <!-- Export -->
                 <button class="ios-icon-btn" id="exportButtonMain" onclick="exportData()" title="Export data">⬆</button>
-                <!-- Sync / Auth (existing, kept small) -->
-                <button id="manualSyncBtn" onclick="syncToCloud()" title="Push to cloud">↑</button>
-                <button id="forcePushBtn" onclick="forcePushToCloud()" title="Force push" style="display:none;">⇑</button>
-                <button id="authBtn" onclick="openAuthModal()">☁</button>
-                <!-- Sync info popup -->
-                <div id="syncInfoPopup" onclick="this.style.display='none'" style="display:none;position:fixed;top:50px;right:12px;z-index:9999;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:10px;padding:10px 14px;min-width:200px;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.7);font-size:0.72rem;color:#e8eaed;line-height:1.6;cursor:pointer;"></div>
             </div>
         </div>
     </div>
@@ -3471,7 +3369,6 @@ select,
 
     <!-- Include Papa Parse and Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         // ============ GLOBAL VARIABLES ============
@@ -4197,11 +4094,20 @@ const helpContent = {
                                     var oldType = it.type;
                                     it.text = newText;
                                     it.type = typeSel.value;
-                                    // Sync TODO if text or done-state changed
-                                    if (oldText !== newText || oldType !== it.type) {
-                                        if (it.type === 'done') syncProbItemToTodo(it.text, true);
-                                        else if (it.type === 'pending') syncProbItemToTodo(it.text, false);
+                                    // If text changed, rename matching todo task
+                                    if (oldText !== newText) {
+                                        try {
+                                            var tp = parseTodoText(patient['To do'] || '');
+                                            var oldLo = oldText.trim().toLowerCase();
+                                            tp.tasks.forEach(function(t) {
+                                                if ((t.text || '').trim().toLowerCase() === oldLo) t.text = newText;
+                                            });
+                                            patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
+                                        } catch(e2) {}
                                     }
+                                    // Sync done state
+                                    if (it.type === 'done') syncProbItemToTodo(it.text, true);
+                                    else if (it.type === 'pending') syncProbItemToTodo(it.text, false);
                                     rebuildAndSave();
                                 }
 
@@ -4236,6 +4142,7 @@ const helpContent = {
                                 e.stopPropagation();
                                 var idx = items.indexOf(it);
                                 if (idx !== -1) items.splice(idx, 1);
+                                removeTodoTaskByText(patient, it.text);
                                 rebuildAndSave();
                             });
                         }(item));
@@ -5007,35 +4914,85 @@ const helpContent = {
         // Detect touch device
         const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
+        // Rename a task text in the problem items list (for bidirectional sync)
+        function renameProbItemText(patient, oldText, newText) {
+            try {
+                var pp = parseProblemsList(patient['ICS'] || '');
+                var changed = false;
+                var oldLo = oldText.trim().toLowerCase();
+                pp.problems.forEach(function(prob) {
+                    (prob.items || []).forEach(function(pit) {
+                        if ((pit.text || '').trim().toLowerCase() === oldLo) {
+                            pit.text = newText;
+                            changed = true;
+                        }
+                    });
+                });
+                if (changed) {
+                    patient['ICS'] = serializeProblemsList(pp.problems);
+                    var probBodyEl = document.getElementById('probCardBody');
+                    if (probBodyEl) renderProblemsCard(probBodyEl, patient);
+                }
+            } catch(e) {}
+        }
+
+        // Remove matching task from the todo list by text (for bidirectional delete)
+        function removeTodoTaskByText(patient, text) {
+            try {
+                var tp = parseTodoText(patient['To do'] || '');
+                var lo = (text || '').trim().toLowerCase();
+                var before = tp.tasks.length;
+                tp.tasks = tp.tasks.filter(function(t) { return (t.text || '').trim().toLowerCase() !== lo; });
+                if (tp.tasks.length !== before) {
+                    patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
+                }
+            } catch(e) {}
+        }
+
+        // Remove matching problem items by text (for bidirectional delete)
+        function removeProbItemByText(patient, text) {
+            try {
+                var pp = parseProblemsList(patient['ICS'] || '');
+                var lo = (text || '').trim().toLowerCase();
+                var changed = false;
+                pp.problems.forEach(function(prob) {
+                    var before = (prob.items || []).length;
+                    prob.items = (prob.items || []).filter(function(it) { return (it.text || '').trim().toLowerCase() !== lo; });
+                    if (prob.items.length !== before) changed = true;
+                });
+                if (changed) {
+                    patient['ICS'] = serializeProblemsList(pp.problems);
+                    var probBodyEl = document.getElementById('probCardBody');
+                    if (probBodyEl) renderProblemsCard(probBodyEl, patient);
+                }
+            } catch(e) {}
+        }
+
         // Inline edit helper — enters edit mode for a task item
         function startTodoEdit(item, parsed, container, patient, textEl) {
             const input = document.createElement('textarea');
             input.className = 'todo-text-input';
             input.value = item.text;
             input.rows = 1;
-            // Auto-resize to fit content
+            const oldText = item.text;
             function autoResize() {
                 input.style.height = 'auto';
                 input.style.height = input.scrollHeight + 'px';
             }
-            input.addEventListener('input', autoResize);
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    item.text = this.value.trim() || item.text;
-                    patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
-                    saveToLocalStorage();
-                    renderTodoList(container, patient);
-                } else if (e.key === 'Escape') {
-                    renderTodoList(container, patient);
-                }
-            });
-            input.addEventListener('blur', function() {
-                item.text = this.value.trim() || item.text;
+            function commitEdit() {
+                const newText = input.value.trim() || item.text;
+                if (newText !== oldText) renameProbItemText(patient, oldText, newText);
+                item.text = newText;
                 patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
                 saveToLocalStorage();
                 renderTodoList(container, patient);
+            }
+            input.addEventListener('input', autoResize);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(); }
+                else if (e.key === 'Escape') { renderTodoList(container, patient); }
             });
+            input.addEventListener('blur', commitEdit);
             textEl.replaceWith(input);
             input.focus();
             input.select();
@@ -5133,9 +5090,11 @@ const helpContent = {
                 const idx = parsed.tasks.indexOf(item);
                 if (idx !== -1) {
                     el.classList.add('todo-item-remove');
+                    const deletedText = item.text;
                     setTimeout(() => {
                         parsed.tasks.splice(idx, 1);
                         patient['To do'] = serializeTodoItems(parsed.tasks, parsed.suggestions);
+                        removeProbItemByText(patient, deletedText);
                         saveToLocalStorage();
                         renderTodoList(container, patient);
                         updateTodoBadge(patient);
@@ -5280,7 +5239,6 @@ const helpContent = {
 					checklistStates: tempChecklistStates  // ADD THIS LINE
                 };
                 localStorage.setItem('ultimatePatientList', JSON.stringify(dataToSave));
-                if (typeof scheduleSync === 'function') scheduleSync();
 
             } catch (e) {
                 console.error('Error saving to localStorage:', e);
@@ -5885,7 +5843,7 @@ function displayRows(data = patientData) {
         // Patient name
         if (patientName) {
             const nameEl = document.createElement('span');
-            nameEl.style.cssText = `font-weight: 800; font-size: 1.06rem; color: #ffffff; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+            nameEl.style.cssText = `font-weight: 800; font-size: 0.98rem; color: #ffffff; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
             nameEl.textContent = patientName;
             cardBody.appendChild(nameEl);
         }
@@ -5896,7 +5854,7 @@ function displayRows(data = patientData) {
             subEl.style.cssText = `display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0;`;
             if (room) {
                 const rmEl = document.createElement('span');
-                rmEl.style.cssText = `font-size: 0.8rem; font-weight: 400; letter-spacing: 0.02em; flex-shrink: 0; color: #FAF9F6;`;
+                rmEl.style.cssText = `font-size: 0.74rem; font-weight: 400; letter-spacing: 0.02em; flex-shrink: 0; color: #FAF9F6;`;
                 rmEl.textContent = room;
                 subEl.appendChild(rmEl);
             }
@@ -18097,268 +18055,5 @@ function showIOHourlyPopup(label, entries, color) {
 
     </script>
 
-    <!-- Supabase Auth Modal -->
-    <div id="authModal" class="modal" style="display:none;align-items:center;justify-content:center;" onclick="if(event.target===this)closeAuthModal()">
-        <div class="auth-modal-box">
-            <h2>☁ Cloud Sync</h2>
-            <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
-            <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password"
-                onkeydown="if(event.key==='Enter')login()" />
-            <div id="authError"></div>
-            <div class="auth-btn-row">
-                <button class="auth-btn-login" onclick="login()">Log In</button>
-                <button class="auth-btn-signup" onclick="signup()">Sign Up</button>
-                <button class="auth-btn-cancel" onclick="closeAuthModal()">✕</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    // ============ SUPABASE INTEGRATION ============
-    const SUPABASE_URL = 'https://ccuvvwpyxpbgvjoatgvj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdXZ2d3B5eHBiZ3Zqb2F0Z3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTEwNDAsImV4cCI6MjA5MjI2NzA0MH0.7RmqTBI5M3Gvd35389m7mI9P-OuApBAjGLwDBb3tQ3w';
-    const SB_TABLE = 'medlist';
-
-    let _sbClient = null;
-    let currentUser = null;
-    let _syncTimer = null;
-
-    function getSB() {
-        if (!_sbClient) _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        return _sbClient;
-    }
-
-    function _genId() {
-        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
-    }
-
-    function _detectPlatform() {
-        var ua = navigator.userAgent || '';
-        var platform = navigator.platform || '';
-        if (/iPhone/.test(ua)) return 'iPhone';
-        if (/iPad/.test(ua)) return 'iPad';
-        if (/Android/.test(ua) && /Mobile/.test(ua)) return 'Android Phone';
-        if (/Android/.test(ua)) return 'Android Tablet';
-        if (/Mac/.test(platform) && navigator.maxTouchPoints > 1) return 'iPad (Mac mode)';
-        if (/Mac/.test(platform)) return 'Mac';
-        if (/Win/.test(platform)) return 'Windows';
-        if (/Linux/.test(platform)) return 'Linux';
-        return 'Unknown device';
-    }
-
-    function _detectBrowser() {
-        var ua = navigator.userAgent || '';
-        if (/CriOS/.test(ua)) return 'Chrome (iOS)';
-        if (/FxiOS/.test(ua)) return 'Firefox (iOS)';
-        if (/EdgiOS/.test(ua)) return 'Edge (iOS)';
-        if (/OPiOS/.test(ua)) return 'Opera (iOS)';
-        if (/Safari/.test(ua) && /Mobile/.test(ua) && !/Chrome/.test(ua)) return 'Safari (mobile)';
-        if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
-        if (/Edg\//.test(ua)) return 'Edge';
-        if (/OPR\//.test(ua) || /Opera/.test(ua)) return 'Opera';
-        if (/Firefox/.test(ua)) return 'Firefox';
-        if (/Chrome/.test(ua)) return 'Chrome';
-        return 'Browser';
-    }
-
-    var _syncInfoTimer = null;
-    function showSyncInfoPopup(state, direction) {
-        var popup = document.getElementById('syncInfoPopup');
-        if (!popup) return;
-        var now = new Date();
-        var timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        var dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        var device  = _detectPlatform();
-        var browser = _detectBrowser();
-        var dirLabel = direction === 'down' ? '⬇ Pulled from cloud' : direction === 'force' ? '⇑ Force pushed' : '⬆ Pushed to cloud';
-        var stateColor = state === 'ok' ? '#30d158' : state === 'error' ? '#ef4444' : '#60a5fa';
-        var stateLabel = state === 'ok' ? '✓ Success' : state === 'error' ? '✗ Failed' : '↻ Syncing…';
-        popup.innerHTML =
-            '<div style="font-weight:700;color:' + stateColor + ';margin-bottom:4px;">' + stateLabel + '</div>' +
-            '<div>' + dirLabel + '</div>' +
-            '<div style="color:#8e8e93;margin-top:3px;">' + dateStr + ' · ' + timeStr + '</div>' +
-            '<div style="color:#8e8e93;">' + device + ' · ' + browser + '</div>';
-        popup.style.display = 'block';
-        clearTimeout(_syncInfoTimer);
-        if (state !== 'syncing') {
-            _syncInfoTimer = setTimeout(function() { popup.style.display = 'none'; }, 4000);
-        }
-    }
-
-    function showSyncStatus(state, direction) {
-        var el = document.getElementById('syncStatus');
-        if (!el) return;
-        if (state === 'syncing') { el.textContent = '↻'; el.style.color = '#60a5fa'; el.classList.add('spinning'); el.style.display = 'inline'; }
-        else if (state === 'ok') { el.textContent = '☁✓'; el.style.color = '#10b981'; el.classList.remove('spinning'); el.style.display = 'inline'; }
-        else if (state === 'error') { el.textContent = '☁✗'; el.style.color = '#ef4444'; el.classList.remove('spinning'); el.style.display = 'inline'; }
-        showSyncInfoPopup(state, direction);
-    }
-
-    function updateAuthUI() {
-        const btn = document.getElementById('authBtn');
-        const syncBtn = document.getElementById('manualSyncBtn');
-        const forcePushBtn = document.getElementById('forcePushBtn');
-        const statusEl = document.getElementById('syncStatus');
-        if (!btn) return;
-        if (currentUser) {
-            btn.textContent = '👤';
-            btn.title = currentUser.email + ' — click to log out';
-            if (syncBtn) syncBtn.style.display = '';
-            if (forcePushBtn) forcePushBtn.style.display = '';
-            if (statusEl) statusEl.style.display = '';
-        } else {
-            btn.textContent = '☁ Login';
-            btn.title = 'Login to enable cloud sync';
-            if (syncBtn) syncBtn.style.display = 'none';
-            if (forcePushBtn) forcePushBtn.style.display = 'none';
-            if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
-        }
-    }
-
-    async function syncToCloud() {
-        if (!currentUser) return;
-        try {
-            showSyncStatus('syncing', 'up');
-            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
-            const rows = localPatients.map(p => {
-                if (!p._pid) p._pid = _genId();
-                return { id: p._pid, data: p, user_id: currentUser.id };
-            });
-            if (rows.length > 0) {
-                const { error } = await getSB().from(SB_TABLE).upsert(rows, { onConflict: 'id' });
-                if (error) throw error;
-            }
-            // Delete cloud records whose _pid no longer exists locally (orphan cleanup)
-            const localIds = new Set(localPatients.map(p => p._pid).filter(Boolean));
-            const { data: cloudRows } = await getSB().from(SB_TABLE).select('id').eq('user_id', currentUser.id);
-            if (cloudRows) {
-                const orphanIds = cloudRows.map(r => r.id).filter(id => !localIds.has(id));
-                if (orphanIds.length > 0) {
-                    await getSB().from(SB_TABLE).delete().in('id', orphanIds);
-                }
-            }
-            showSyncStatus('ok', 'up');
-        } catch (e) {
-            console.error('Sync upload error:', e);
-            showSyncStatus('error', 'up');
-        }
-    }
-
-    async function forcePushToCloud() {
-        if (!currentUser) { alert('Please log in first.'); return; }
-        if (!confirm('Force Push will completely replace the cloud database with your current local data.\n\nThis cannot be undone. Continue?')) return;
-        try {
-            showSyncStatus('syncing', 'force');
-            const btn = document.getElementById('forcePushBtn');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
-            // Assign _pid to any patients missing one
-            const localPatients = (typeof patientData !== 'undefined' ? patientData : []);
-            localPatients.forEach(p => { if (!p._pid) p._pid = _genId(); });
-            // Wipe all cloud records for this user then re-insert
-            const { error: delErr } = await getSB().from(SB_TABLE).delete().eq('user_id', currentUser.id);
-            if (delErr) throw delErr;
-            const rows = localPatients.map(p => ({ id: p._pid, data: p, user_id: currentUser.id }));
-            if (rows.length > 0) {
-                const { error } = await getSB().from(SB_TABLE).insert(rows);
-                if (error) throw error;
-            }
-            showSyncStatus('ok', 'force');
-            if (btn) { btn.textContent = '✓ Pushed!'; setTimeout(() => { btn.textContent = '⇑ Force Push'; btn.disabled = false; }, 2000); }
-        } catch (e) {
-            console.error('Force push error:', e);
-            showSyncStatus('error', 'force');
-            const btn = document.getElementById('forcePushBtn');
-            if (btn) { btn.textContent = '⇑ Force Push'; btn.disabled = false; }
-            alert('Force push failed: ' + (e.message || e));
-        }
-    }
-
-    async function syncFromCloud() {
-        if (!currentUser) return;
-        try {
-            showSyncStatus('syncing', 'down');
-            const { data, error } = await getSB().from(SB_TABLE).select('data').eq('user_id', currentUser.id);
-            if (error) throw error;
-            if (data && data.length > 0) {
-                patientData = data.map(r => r.data);
-                if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
-                if (typeof displayRows === 'function') displayRows();
-                if (typeof updateCensus === 'function') updateCensus();
-                if (typeof populateColumnSelector === 'function') populateColumnSelector();
-                if (typeof populateColumnSelect === 'function') populateColumnSelect();
-            }
-            showSyncStatus('ok', 'down');
-        } catch (e) {
-            console.error('Sync download error:', e);
-            showSyncStatus('error', 'down');
-        }
-    }
-
-    function scheduleSync() {
-        if (!currentUser) return;
-        clearTimeout(_syncTimer);
-        _syncTimer = setTimeout(syncToCloud, 2500);
-    }
-
-    async function login() {
-        const email = document.getElementById('authEmail').value.trim();
-        const pw = document.getElementById('authPassword').value;
-        const errEl = document.getElementById('authError');
-        errEl.style.color = '#ef4444';
-        if (!email || !pw) { errEl.textContent = 'Enter email and password.'; return; }
-        errEl.textContent = '';
-        const { error } = await getSB().auth.signInWithPassword({ email, password: pw });
-        if (error) { errEl.textContent = error.message; return; }
-        closeAuthModal();
-    }
-
-    async function signup() {
-        const email = document.getElementById('authEmail').value.trim();
-        const pw = document.getElementById('authPassword').value;
-        const errEl = document.getElementById('authError');
-        errEl.style.color = '#ef4444';
-        if (!email || !pw) { errEl.textContent = 'Enter email and password.'; return; }
-        errEl.textContent = '';
-        const { error } = await getSB().auth.signUp({ email, password: pw });
-        if (error) { errEl.textContent = error.message; return; }
-        errEl.style.color = '#10b981';
-        errEl.textContent = 'Check your email to confirm your account!';
-    }
-
-    async function logout() {
-        await getSB().auth.signOut();
-        currentUser = null;
-        updateAuthUI();
-        showSyncStatus('ok', 'up');
-        document.getElementById('syncStatus').style.display = 'none';
-        var popup = document.getElementById('syncInfoPopup'); if (popup) popup.style.display = 'none';
-    }
-
-    function openAuthModal() {
-        if (currentUser) { logout(); return; }
-        document.getElementById('authModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('authEmail').focus(), 50);
-    }
-
-    function closeAuthModal() {
-        document.getElementById('authModal').style.display = 'none';
-    }
-
-    // Boot
-    (async function initSupabase() {
-        const sb = getSB();
-        sb.auth.onAuthStateChange((event, session) => {
-            const prev = currentUser;
-            currentUser = session?.user || null;
-            updateAuthUI();
-            if (currentUser && !prev) syncFromCloud();
-        });
-        const { data: { session } } = await sb.auth.getSession();
-        currentUser = session?.user || null;
-        updateAuthUI();
-        if (currentUser) syncFromCloud();
-    })();
-    </script>
 </body>
 </html>
