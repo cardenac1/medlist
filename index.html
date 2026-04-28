@@ -1131,10 +1131,12 @@
 .prob-item-row { display: flex; align-items: flex-start; gap: 5px; font-size: 0.72rem; line-height: 1.45; margin-bottom: 1px; }
 .prob-item-icon { flex-shrink: 0; font-size: 0.65rem; margin-top: 1px; }
 .prob-item-text { flex: 1; color: #d1d1d6; word-break: break-word; overflow-wrap: break-word; min-width: 0; }
-.prob-item-text.done    { text-decoration: line-through; color: #48484a; }
+.prob-item-text.done    { color: #48484a; }
 .prob-item-text.consult      { color: #0a84ff; }
 .prob-item-text.study        { color: #bf5af2; }
 .prob-item-text.intervention { color: #ff6b9d; }
+.prob-link-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:4px; flex-shrink:0; align-self:center; vertical-align:middle; }
+.todo-link-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:5px; flex-shrink:0; vertical-align:middle; }
 .prob-todo-btn {
     font-size: 0.58rem; font-weight: 700;
     background: #0a1a2a; border: 1px solid #0a84ff44;
@@ -3754,6 +3756,15 @@ const helpContent = {
             var parsed   = parseProblemsList(patient['ICS'] || '');
             var problems = parsed.problems; // safe: parseProblemsList never throws
 
+            // Pre-compute set of todo task texts for link-dot detection
+            var todoTaskTexts = new Set();
+            try {
+                var _todoParsed = parseTodoText(patient['To do'] || '');
+                _todoParsed.tasks.forEach(function(t) {
+                    if (t.type === 'task') todoTaskTexts.add((t.text || '').trim().toLowerCase());
+                });
+            } catch(e) {}
+
             var list = document.createElement('div');
             list.className = 'prob-list';
             list.setAttribute('tabindex', '-1');
@@ -4231,6 +4242,13 @@ const helpContent = {
 
                         row.appendChild(icon);
                         row.appendChild(txt);
+                        if (todoTaskTexts.has((item.text || '').trim().toLowerCase())) {
+                            var linkDot = document.createElement('span');
+                            linkDot.className = 'prob-link-dot';
+                            linkDot.title = 'Linked to To Do';
+                            linkDot.style.background = STATUS_COLOR[prob.status] || '#ff453a';
+                            row.appendChild(linkDot);
+                        }
                         if (item.type === 'pending') {
                             var todoBtn = document.createElement('button');
                             todoBtn.type = 'button';
@@ -5031,6 +5049,24 @@ const helpContent = {
             el.classList.add('todo-item-enter');
             el.style.cursor = 'pointer';
 
+            // Pre-compute linked problem status for link-dot
+            var _linkedProbStatus = null;
+            try {
+                var _probData = parseProblemsList(patient['ICS'] || '');
+                var _itemLo = (item.text || '').trim().toLowerCase();
+                outer: for (var _pi = 0; _pi < _probData.problems.length; _pi++) {
+                    var _prob = _probData.problems[_pi];
+                    var _probItems = _prob.items || [];
+                    for (var _ii = 0; _ii < _probItems.length; _ii++) {
+                        if ((_probItems[_ii].text || '').trim().toLowerCase() === _itemLo) {
+                            _linkedProbStatus = _prob.status || 'active';
+                            break outer;
+                        }
+                    }
+                }
+            } catch(e) {}
+            var _STATUS_COLOR = { active: '#ff453a', watch: '#ff9f0a', pending: '#0a84ff', stable: '#30d158' };
+
             // Toggle done — bidirectionally sync with matching problem items
             function toggleDone() {
                 item.done = !item.done;
@@ -5109,6 +5145,13 @@ const helpContent = {
 
             el.appendChild(checkbox);
             el.appendChild(textEl);
+            if (_linkedProbStatus !== null) {
+                const linkDot = document.createElement('span');
+                linkDot.className = 'todo-link-dot';
+                linkDot.title = 'Linked to ' + (_linkedProbStatus.charAt(0).toUpperCase() + _linkedProbStatus.slice(1)) + ' problem';
+                linkDot.style.background = _STATUS_COLOR[_linkedProbStatus] || '#ff453a';
+                el.appendChild(linkDot);
+            }
             el.appendChild(editBtn);
             el.appendChild(deleteBtn);
             return el;
