@@ -6827,7 +6827,7 @@ case 'chartcheck': {
             inlineTableBody.id = 'inlineLabTableBody';
             inlineTableBody.style.cssText = 'padding:0.5rem;overflow-x:auto;';
             if (labData && Object.keys(labData).length > 0) {
-                inlineTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+                inlineTableBody.innerHTML = buildSeparatedTablesHTML(labData, lastImportedData);
                 appendChartSuggestions(inlineTableBody);
             } else {
                 inlineTableBody.innerHTML = '<p style="color:#94a3b8;padding:0.5rem;">No lab data available. Use the Import button above to load data.</p>';
@@ -8371,7 +8371,7 @@ setTimeout(() => {
 // Refresh inline vitals/labs table if visible on chartcheck tab
 const inlineLabTableBody = document.getElementById('inlineLabTableBody');
 if (inlineLabTableBody) {
-    inlineLabTableBody.innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+    inlineLabTableBody.innerHTML = buildSeparatedTablesHTML(labData, lastImportedData);
     appendChartSuggestions(inlineLabTableBody);
 }
 
@@ -8433,7 +8433,493 @@ saveToLocalStorage();
 
 
 
-        // Returns the unified table HTML string; usable both inline and in modal.
+        // ── VITALS/IO HOURLY DETAIL TABLE (expand view) ──────────────────────────
+        function buildVitalsIODetailHTML(labData, lastImportedData) {
+            if (!lastImportedData) return '<p style="color:#94a3b8;padding:1rem;">No vitals/IO data available.</p>';
+            var _now = new Date();
+            var cutoff7am = new Date(_now);
+            if (_now.getHours() < 7) cutoff7am.setDate(cutoff7am.getDate() - 1);
+            cutoff7am.setHours(7, 0, 0, 0);
+            var historyStart = new Date(cutoff7am);
+            historyStart.setHours(historyStart.getHours() - 72);
+            var elapsedHours = Math.round((_now - cutoff7am) / 36000) / 100;
+            var vitalDefs = [
+                { key: 'temp', label: 'Temp', unit: '°C',   lo: 35,  hi: 38  },
+                { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60,  hi: 100 },
+                { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90,  hi: 180 },
+                { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60,  hi: 120 },
+                { key: 'o2',   label: 'O2',   unit: '%',    lo: 94,  hi: 100 }
+            ];
+            var vitals = {};
+            vitalDefs.forEach(function(d) { vitals[d.key] = { today: [], history: [] }; });
+            if (lastImportedData) {
+                function _dvPush(key, value, dateStr, timeStr) {
+                    var p = dateStr.split('/');
+                    var yr = (p[2] && p[2].length === 2) ? ('20' + p[2]) : (p[2] || '2025');
+                    var dt; try { dt = new Date(yr + '-' + p[0] + '-' + p[1] + 'T' + timeStr); } catch(e) { return; }
+                    if (!dt || isNaN(dt.getTime())) return;
+                    var dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+                    var tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
+                    var entry = { value: value, label: (dm ? dm[1] : dateStr) + (tm ? ' ' + tm[1] : '') };
+                    if (dt >= cutoff7am && dt <= _now) vitals[key].today.push(entry);
+                    else if (dt >= historyStart && dt < cutoff7am) vitals[key].history.push(entry);
+                }
+                var _vm;
+                var _tRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _tRe.exec(lastImportedData))) _dvPush('temp', parseFloat(_vm[1]), _vm[2], _vm[3]);
+                var _hRe = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _hRe.exec(lastImportedData))) _dvPush('hr', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _sRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _sRe.exec(lastImportedData))) _dvPush('sbp', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _dRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _dRe.exec(lastImportedData))) _dvPush('dbp', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _oRe = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm = _oRe.exec(lastImportedData))) _dvPush('o2', parseInt(_vm[1]), _vm[2], _vm[3]);
+            }
+            var ioData = null, ioHistory = null, io24hr = null;
+            if (lastImportedData) {
+                try { ioData    = extractIntakeOutputData(lastImportedData); } catch(e) {}
+                try { ioHistory = extractIntakeOutputData(lastImportedData, historyStart, cutoff7am); } catch(e) {}
+                var _s24 = new Date(cutoff7am); _s24.setDate(_s24.getDate() - 1);
+                try { io24hr = extractIntakeOutputData(lastImportedData, _s24, cutoff7am); } catch(e) { io24hr = null; }
+            }
+            function _dioMaxCols(io) {
+                if (!io) return 0;
+                var arrs = Object.values(io.intakes || {})
+                    .concat([(io.outputs && io.outputs.urine) || []])
+                    .concat(Object.values((io.outputs && io.outputs.drains) || {}))
+                    .concat(Object.values((io.outputs && io.outputs.other)  || {}))
+                    .concat(Object.values(io.counts || {}));
+                return Math.max.apply(null, [0].concat(arrs.map(function(a){ return a ? a.length : 0; })));
+            }
+            var _dMaxTV  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return vitals[d.key].today.length; })));
+            var _dMaxHV  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return vitals[d.key].history.length; })));
+            var _dMaxTIO = _dioMaxCols(ioData);
+            var _dMaxHIO = _dioMaxCols(ioHistory);
+            var maxMainCols = Math.max(_dMaxTV, _dMaxTIO, 1);
+            var maxHistCols = Math.max(_dMaxHV, _dMaxHIO);
+            var hasSeparator = maxHistCols > 0;
+            var has24hrTotal = io24hr ? (
+                Object.values(io24hr.intakes || {}).some(function(a){ return a && a.length > 0; }) ||
+                (io24hr.outputs && (io24hr.outputs.urine || []).length > 0) ||
+                Object.values((io24hr.outputs && io24hr.outputs.drains) || {}).some(function(a){ return a && a.length > 0; }) ||
+                Object.values((io24hr.outputs && io24hr.outputs.other)  || {}).some(function(a){ return a && a.length > 0; })
+            ) : false;
+            var maxValues = maxMainCols + (hasSeparator ? 1 + maxHistCols : 0) + (has24hrTotal ? 1 : 0);
+            function _dDataCell(val, dt, abnormal, unit) {
+                unit = unit || '';
+                var clr = abnormal ? 'background:rgba(239,68,68,0.2);color:#ff6b6b;font-weight:700;' : 'color:#6ee7b7;';
+                var dtLine = dt ? '<div style="font-size:0.75em;color:#999;white-space:nowrap;text-align:center;">' + dt + '</div>' : '';
+                return '<td style="padding:3px 6px;font-size:0.92rem;text-align:center;' + clr + '"><div>' + val + unit + '</div>' + dtLine + '</td>';
+            }
+            function _dEmptyCell() { return '<td></td>'; }
+            function _dSecHdr(label, color) {
+                return '<tr><td colspan="' + (maxValues + 1) + '" style="background:' + color + ';color:#fff;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;">' + label + '</td></tr>';
+            }
+            function _dIoDateShort(dtStr) {
+                if (!dtStr) return '';
+                var mm = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
+                return mm ? mm[1] + ' ' + mm[2] : dtStr.substring(0, 11);
+            }
+            function _dIoSumVol(entries) { return (entries || []).reduce(function(s,e){ return s+(e.volume||0); }, 0); }
+            function _dSepCell() { return '<td style="background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;width:4px;padding:0;"></td>'; }
+            function _dHistCell(val, dt, unit) {
+                unit = unit || '';
+                return '<td style="padding:3px 6px;font-size:0.92rem;text-align:center;color:#a78bfa;background:rgba(139,92,246,0.08);">' +
+                    '<div>' + val + unit + '</div>' +
+                    (dt ? '<div style="font-size:0.75em;color:#6b7280;white-space:nowrap;text-align:center;">' + dt + '</div>' : '') + '</td>';
+            }
+            function _dTotalCell(content) {
+                return '<td style="padding:3px 6px;font-size:0.92rem;text-align:center;color:#fbbf24;font-weight:700;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;">' + content + '</td>';
+            }
+            function _dEmptyTotalCell() { return '<td style="background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:0;"></td>'; }
+            var todayTimeLabel = (Math.round(elapsedHours * 10) / 10) + ' hrs';
+            function _dIoRow(name, todayE, histE, tot24E, unit) {
+                unit = unit || '';
+                todayE = todayE || []; histE = histE || []; tot24E = tot24E || [];
+                if (!todayE.length && !histE.length) return '';
+                var sT = todayE.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
+                var sH = histE.slice().sort(function(a,b){ return (b.dateTime||0)-(a.dateTime||0); });
+                var totT = _dIoSumVol(sT), tot24 = _dIoSumVol(tot24E);
+                var dispName = name.length > 50 ? name.substring(0,48)+'…' : name;
+                var todayStr = (totT > 0 && todayTimeLabel)
+                    ? '<span style="font-size:0.8em;color:#94a3b8;display:block;white-space:normal;line-height:1.3;">Today: ' + totT + (unit.trim()||'') + ' / ' + todayTimeLabel + '</span>' : '';
+                var row = '<tr><td style="white-space:normal;line-height:1.25;word-break:break-word;max-width:120px;" title="' +
+                    name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + dispName + todayStr + '</td>';
+                for (var i = 0; i < maxMainCols; i++) {
+                    if (i < sT.length) {
+                        var e = sT[i]; var val = e.volume !== undefined ? e.volume : (e.count !== undefined ? e.count : '—');
+                        row += _dDataCell(val, _dIoDateShort(e.dateTimeStr||''), false, unit);
+                    } else { row += _dEmptyCell(); }
+                }
+                if (has24hrTotal) { row += tot24 > 0 ? _dTotalCell(tot24 + (unit.trim()||'')) : _dEmptyTotalCell(); }
+                if (hasSeparator) {
+                    row += _dSepCell();
+                    for (var j = 0; j < maxHistCols; j++) {
+                        if (j < sH.length) {
+                            var eh = sH[j]; var valh = eh.volume !== undefined ? eh.volume : (eh.count !== undefined ? eh.count : '—');
+                            row += _dHistCell(valh, _dIoDateShort(eh.dateTimeStr||''), unit);
+                        } else { row += _dEmptyCell(); }
+                    }
+                }
+                return row + '</tr>';
+            }
+            function _dBalRow(io, ioHist, io24hrArg) {
+                var tIn=0,tOut=0,hIn=0,hOut=0,i24=0,o24=0;
+                if (io) { Object.values(io.intakes||{}).forEach(function(a){tIn+=_dIoSumVol(a);}); tOut+=_dIoSumVol(io.outputs&&io.outputs.urine); Object.values((io.outputs&&io.outputs.drains)||{}).forEach(function(a){tOut+=_dIoSumVol(a);}); Object.values((io.outputs&&io.outputs.other)||{}).forEach(function(a){tOut+=_dIoSumVol(a);}); }
+                if (ioHist) { Object.values(ioHist.intakes||{}).forEach(function(a){hIn+=_dIoSumVol(a);}); hOut+=_dIoSumVol(ioHist.outputs&&ioHist.outputs.urine); Object.values((ioHist.outputs&&ioHist.outputs.drains)||{}).forEach(function(a){hOut+=_dIoSumVol(a);}); Object.values((ioHist.outputs&&ioHist.outputs.other)||{}).forEach(function(a){hOut+=_dIoSumVol(a);}); }
+                if (io24hrArg) { Object.values(io24hrArg.intakes||{}).forEach(function(a){i24+=_dIoSumVol(a);}); o24+=_dIoSumVol(io24hrArg.outputs&&io24hrArg.outputs.urine); Object.values((io24hrArg.outputs&&io24hrArg.outputs.drains)||{}).forEach(function(a){o24+=_dIoSumVol(a);}); Object.values((io24hrArg.outputs&&io24hrArg.outputs.other)||{}).forEach(function(a){o24+=_dIoSumVol(a);}); }
+                if (tIn===0&&tOut===0&&hIn===0&&hOut===0) return '';
+                var bal=tIn-tOut, bC=bal>=0?'#10b981':'#f59e0b', hBal=hIn-hOut, hBC=hBal>=0?'#10b981':'#f59e0b', b24=i24-o24, b24C=b24>=0?'#10b981':'#f59e0b';
+                var row = '<tr><td style="font-weight:700;font-size:0.92rem;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>';
+                if (maxMainCols >= 3) {
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: '+tIn+' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: '+tOut+' mL</span></td>';
+                    row += '<td colspan="'+(maxMainCols-2)+'" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:'+bC+';font-weight:700;">= BAL: '+(bal>=0?'+':'')+bal+' mL</span></td>';
+                } else if (maxMainCols === 2) {
+                    row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#60a5fa;font-weight:700;">↑ IN: '+tIn+' mL</span></td>';
+                    row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: '+tOut+' mL</span><br><span style="color:'+bC+';font-weight:700;">= BAL: '+(bal>=0?'+':'')+bal+' mL</span></td>';
+                } else {
+                    row += '<td colspan="'+maxMainCols+'" style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><div><span style="color:#60a5fa;font-weight:700;">↑ IN: '+tIn+' mL</span></div><div><span style="color:#f87171;font-weight:700;">↓ OUT: '+tOut+' mL</span></div><div><span style="color:'+bC+';font-weight:700;">= '+(bal>=0?'+':'')+bal+' mL</span></div></td>';
+                }
+                if (has24hrTotal) {
+                    if (i24>0||o24>0) { row += '<td style="padding:3px 6px;background:#2d1f00;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;white-space:nowrap;"><span style="color:'+b24C+';font-weight:700;font-size:0.92rem;">'+(b24>=0?'+':'')+b24+' mL</span><div style="font-size:0.75em;color:#94a3b8;">↑'+i24+' ↓'+o24+'</div></td>'; }
+                    else { row += _dEmptyTotalCell(); }
+                }
+                if (hasSeparator) {
+                    row += _dSepCell();
+                    if (maxHistCols >= 3) {
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑ '+hIn+' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ '+hOut+' mL</span></td>';
+                        row += '<td colspan="'+(maxHistCols-2)+'" style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:'+hBC+';font-weight:700;">= '+(hBal>=0?'+':'')+hBal+' mL</span></td>';
+                    } else if (maxHistCols === 2) {
+                        row += '<td style="background:#1a2035;padding:4px 8px;white-space:nowrap;"><span style="color:#818cf8;font-weight:700;">↑ IN: '+hIn+' mL</span></td>';
+                        row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><span style="color:#f87171;font-weight:700;">↓ OUT: '+hOut+' mL</span><br><span style="color:'+hBC+';font-weight:700;">= '+(hBal>=0?'+':'')+hBal+' mL</span></td>';
+                    } else if (maxHistCols === 1) {
+                        row += '<td style="background:#1a2035;padding:4px 6px;white-space:nowrap;"><div><span style="color:#818cf8;font-weight:700;">↑ '+hIn+' mL</span></div><div><span style="color:#f87171;font-weight:700;">↓ '+hOut+' mL</span></div><div><span style="color:'+hBC+';font-weight:700;">= '+(hBal>=0?'+':'')+hBal+' mL</span></div></td>';
+                    }
+                }
+                return row + '</tr>';
+            }
+            var tHTML = '<style>' +
+                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
+                '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
+                '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 5px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
+                '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
+                '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
+                '</style><div class="uni-tbl"><table><tr><th>Parameter</th>';
+            for (var _dc = 0; _dc < maxMainCols; _dc++) tHTML += '<th>#' + (_dc+1) + '</th>';
+            if (has24hrTotal) tHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.75rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;">Prev 24h</th>';
+            if (hasSeparator) {
+                tHTML += '<th style="background:#2d1f00;color:#fbbf24;border-left:2px solid #f59e0b;font-size:0.75rem;white-space:nowrap;padding:3px 5px;">◄ Pre-7AM ►</th>';
+                for (var _dh = 0; _dh < maxHistCols; _dh++) tHTML += '<th style="background:#1a1a2e;color:#a78bfa;">#' + (_dh+1) + '</th>';
+            }
+            tHTML += '</tr>';
+            var _dHasO2 = !!(labData && (labData.o2therapyCode || labData.o2therapyRaw));
+            var _dHasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; }) || _dHasO2;
+            if (_dHasVit) {
+                tHTML += _dSecHdr('Vitals — Since 7 AM' + (hasSeparator ? ' | Pre-7AM ►' : ''), '#0f4c81');
+                vitalDefs.forEach(function(vd) {
+                    var tA = vitals[vd.key].today, hA = vitals[vd.key].history;
+                    if (!tA.length && !hA.length) return;
+                    var row = '<tr><td>' + vd.label + '</td>';
+                    for (var i = 0; i < maxMainCols; i++) { row += i < tA.length ? _dDataCell(tA[i].value, tA[i].label, tA[i].value < vd.lo || tA[i].value > vd.hi, vd.unit) : _dEmptyCell(); }
+                    if (has24hrTotal) row += _dEmptyTotalCell();
+                    if (hasSeparator) { row += _dSepCell(); for (var j = 0; j < maxHistCols; j++) { row += j < hA.length ? _dHistCell(hA[j].value, hA[j].label, vd.unit) : _dEmptyCell(); } }
+                    tHTML += row + '</tr>';
+                });
+                if (_dHasO2) {
+                    var o2C=labData.o2therapyCode||'', o2R=labData.o2therapyRaw||'', o2F=(labData.o2flowRaw||'').replace(/\s*L\/min/i,'L'), o2D;
+                    if (o2C==='RA') o2D='Room Air';
+                    else if (o2C==='Vent') { var vP=['Vent']; if(labData.ventModeRaw)vP.push(labData.ventModeRaw.trim()); if(labData.ventFrequencyRaw)vP.push('RR:'+labData.ventFrequencyRaw); if(labData.ventTidalRaw)vP.push('TV:'+labData.ventTidalRaw+'mL'); if(labData.ventPeepRaw)vP.push('PEEP:'+labData.ventPeepRaw); if(labData.ventFiO2Raw)vP.push('FiO₂:'+labData.ventFiO2Raw+'%'); o2D=vP.join(' | '); }
+                    else if (o2C==='NC') o2D=(o2F?o2F+' ':'')+' NC';
+                    else if (o2C==='HFNC') o2D='HFNC'+(o2F?' '+o2F:'');
+                    else if (o2C==='NRB') o2D='NRB'+(o2F?' '+o2F:'');
+                    else if (o2C==='BiPAP/CPAP') o2D='BiPAP/CPAP'+(o2F?' '+o2F:'');
+                    else o2D=(o2R||o2C||'O2')+(o2F?' '+o2F:'');
+                    var o2Sup = o2C && o2C !== 'RA';
+                    var o2Clr = o2Sup ? 'background:rgba(251,146,60,0.15);color:#fb923c;font-weight:700;' : 'color:#6ee7b7;';
+                    var o2Row = '<tr><td style="color:#7dd3fc;font-weight:600;">O2 Therapy</td><td colspan="'+maxMainCols+'" style="padding:4px 8px;font-size:0.92rem;'+o2Clr+'">'+o2D+'</td>';
+                    if (has24hrTotal) o2Row += _dEmptyTotalCell();
+                    if (hasSeparator) { o2Row += _dSepCell(); for (var _oj=0;_oj<maxHistCols;_oj++) o2Row += _dEmptyCell(); }
+                    tHTML += o2Row + '</tr>';
+                }
+            }
+            var _dIK=[],_dIKS={};
+            if (ioData)    Object.keys(ioData.intakes   ||{}).forEach(function(k){if(!_dIKS[k]){_dIKS[k]=1;_dIK.push(k);}});
+            if (ioHistory) Object.keys(ioHistory.intakes||{}).forEach(function(k){if(!_dIKS[k]){_dIKS[k]=1;_dIK.push(k);}});
+            var _dHasI = _dIK.some(function(k){ return ((ioData&&ioData.intakes&&ioData.intakes[k]&&ioData.intakes[k].length>0)||(ioHistory&&ioHistory.intakes&&ioHistory.intakes[k]&&ioHistory.intakes[k].length>0)); });
+            if (_dHasI) {
+                tHTML += _dSecHdr('Intake — Since 7 AM' + (hasSeparator?' | Pre-7AM ►':''), '#155724');
+                _dIK.forEach(function(k){ tHTML += _dIoRow(k, (ioData&&ioData.intakes&&ioData.intakes[k])||[], (ioHistory&&ioHistory.intakes&&ioHistory.intakes[k])||[], (io24hr&&io24hr.intakes&&io24hr.intakes[k])||[], ' mL'); });
+            }
+            var _dUT=(ioData&&ioData.outputs&&ioData.outputs.urine)||[], _dUH=(ioHistory&&ioHistory.outputs&&ioHistory.outputs.urine)||[], _dU24=(io24hr&&io24hr.outputs&&io24hr.outputs.urine)||[];
+            var _dDK=[],_dDKS={};
+            if (ioData&&ioData.outputs&&ioData.outputs.drains)    Object.keys(ioData.outputs.drains).forEach(function(k){if(!_dDKS[k]){_dDKS[k]=1;_dDK.push(k);}});
+            if (ioHistory&&ioHistory.outputs&&ioHistory.outputs.drains) Object.keys(ioHistory.outputs.drains).forEach(function(k){if(!_dDKS[k]){_dDKS[k]=1;_dDK.push(k);}});
+            var _dOK=[],_dOKS={};
+            if (ioData&&ioData.outputs&&ioData.outputs.other)    Object.keys(ioData.outputs.other).forEach(function(k){if(!_dOKS[k]){_dOKS[k]=1;_dOK.push(k);}});
+            if (ioHistory&&ioHistory.outputs&&ioHistory.outputs.other) Object.keys(ioHistory.outputs.other).forEach(function(k){if(!_dOKS[k]){_dOKS[k]=1;_dOK.push(k);}});
+            var _dHasOut = _dUT.length>0||_dUH.length>0||_dDK.length>0||_dOK.length>0;
+            if (_dHasOut) {
+                tHTML += _dSecHdr('Output — Since 7 AM' + (hasSeparator?' | Pre-7AM ►':''), '#6b1a0f');
+                if (_dUT.length>0||_dUH.length>0) tHTML += _dIoRow('Urine', _dUT, _dUH, _dU24, ' mL');
+                _dDK.forEach(function(k){ tHTML += _dIoRow(k.replace(/^Other:\s*/i,''), (ioData&&ioData.outputs&&ioData.outputs.drains&&ioData.outputs.drains[k])||[], (ioHistory&&ioHistory.outputs&&ioHistory.outputs.drains&&ioHistory.outputs.drains[k])||[], (io24hr&&io24hr.outputs&&io24hr.outputs.drains&&io24hr.outputs.drains[k])||[], ' mL'); });
+                _dOK.forEach(function(k){ tHTML += _dIoRow(k, (ioData&&ioData.outputs&&ioData.outputs.other&&ioData.outputs.other[k])||[], (ioHistory&&ioHistory.outputs&&ioHistory.outputs.other&&ioHistory.outputs.other[k])||[], (io24hr&&io24hr.outputs&&io24hr.outputs.other&&io24hr.outputs.other[k])||[], ' mL'); });
+            }
+            tHTML += _dBalRow(ioData, ioHistory, io24hr);
+            var _dCK=[],_dCKS={};
+            if (ioData)    Object.keys(ioData.counts   ||{}).forEach(function(k){if(!_dCKS[k]){_dCKS[k]=1;_dCK.push(k);}});
+            if (ioHistory) Object.keys(ioHistory.counts||{}).forEach(function(k){if(!_dCKS[k]){_dCKS[k]=1;_dCK.push(k);}});
+            var _dHasC = _dCK.some(function(k){ return ((ioData&&ioData.counts&&ioData.counts[k]&&ioData.counts[k].length>0)||(ioHistory&&ioHistory.counts&&ioHistory.counts[k]&&ioHistory.counts[k].length>0)); });
+            if (_dHasC) {
+                tHTML += _dSecHdr('Counts' + (hasSeparator?' — Since 7 AM | Pre-7AM ►':''), '#4a3500');
+                _dCK.forEach(function(k){ tHTML += _dIoRow(k, (ioData&&ioData.counts&&ioData.counts[k])||[], (ioHistory&&ioHistory.counts&&ioHistory.counts[k])||[], [], ''); });
+            }
+            tHTML += '</table></div>';
+            return tHTML;
+        }
+
+        // ── VITALS/IO 3-DAY SUMMARY TABLE ────────────────────────────────────────
+        function buildVitalsIOTableHTML(labData, lastImportedData) {
+            var _now = new Date();
+            var cutoff7am = new Date(_now);
+            if (_now.getHours() < 7) cutoff7am.setDate(cutoff7am.getDate() - 1);
+            cutoff7am.setHours(7, 0, 0, 0);
+            var day1Start = new Date(cutoff7am); day1Start.setDate(day1Start.getDate() - 1);
+            var day2Start = new Date(cutoff7am); day2Start.setDate(day2Start.getDate() - 2);
+            var dayWindows = [
+                { start: cutoff7am, end: _now },
+                { start: day1Start, end: cutoff7am },
+                { start: day2Start, end: day1Start }
+            ];
+            function _sfmtDate(d) { return (d.getMonth()+1) + '/' + d.getDate(); }
+            var dayDates = [_sfmtDate(cutoff7am), _sfmtDate(day1Start), _sfmtDate(day2Start)];
+            var vitalDefs = [
+                { key: 'temp', label: 'Temp', unit: '°C',   lo: 35,  hi: 38  },
+                { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60,  hi: 100 },
+                { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90,  hi: 180 },
+                { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60,  hi: 120 },
+                { key: 'o2',   label: 'O2',   unit: '%',    lo: 94,  hi: 100 }
+            ];
+            var vitalsPerDay = [{},{},{}];
+            vitalDefs.forEach(function(d){ vitalsPerDay[0][d.key]=[]; vitalsPerDay[1][d.key]=[]; vitalsPerDay[2][d.key]=[]; });
+            if (lastImportedData) {
+                function _sVPush(key, value, dateStr, timeStr) {
+                    var p = dateStr.split('/');
+                    var yr = (p[2]&&p[2].length===2)?('20'+p[2]):(p[2]||'2025');
+                    var dt; try { dt = new Date(yr+'-'+p[0]+'-'+p[1]+'T'+timeStr); } catch(e){ return; }
+                    if (!dt||isNaN(dt.getTime())) return;
+                    var dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
+                    var tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
+                    var label = (dm?dm[1]:dateStr)+(tm?' '+tm[1]:'');
+                    var entry = { value: value, label: label, dt: dt };
+                    for (var i=0; i<dayWindows.length; i++) {
+                        if (dt >= dayWindows[i].start && dt <= dayWindows[i].end) { if(vitalsPerDay[i][key]) vitalsPerDay[i][key].push(entry); return; }
+                    }
+                }
+                var _vm;
+                var _tRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm=_tRe.exec(lastImportedData))) _sVPush('temp', parseFloat(_vm[1]), _vm[2], _vm[3]);
+                var _hRe = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm=_hRe.exec(lastImportedData))) _sVPush('hr', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _sRe2 = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm=_sRe2.exec(lastImportedData))) _sVPush('sbp', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _dRe2 = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm=_dRe2.exec(lastImportedData))) _sVPush('dbp', parseInt(_vm[1]), _vm[2], _vm[3]);
+                var _oRe2 = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
+                while ((_vm=_oRe2.exec(lastImportedData))) _sVPush('o2', parseInt(_vm[1]), _vm[2], _vm[3]);
+            }
+            function _sGetMM(arr) {
+                if (!arr||!arr.length) return null;
+                var vals = arr.map(function(e){ return e.value; });
+                return { min: Math.min.apply(null,vals), max: Math.max.apply(null,vals) };
+            }
+            function _sMostRecent(arrs) {
+                var all = []; arrs.forEach(function(a){ if(a) a.forEach(function(e){ all.push(e); }); });
+                if (!all.length) return null;
+                all.sort(function(a,b){ return b.dt-a.dt; }); return all[0];
+            }
+            var ioPerDay = [null,null,null];
+            if (lastImportedData) {
+                try { ioPerDay[0] = extractIntakeOutputData(lastImportedData, cutoff7am, _now); } catch(e) {}
+                try { ioPerDay[1] = extractIntakeOutputData(lastImportedData, day1Start, cutoff7am); } catch(e) {}
+                try { ioPerDay[2] = extractIntakeOutputData(lastImportedData, day2Start, day1Start); } catch(e) {}
+            }
+            function _sSumVol(entries) { return (entries||[]).reduce(function(s,e){ return s+(e.volume||0); },0); }
+            function _sIoDate(dtStr) {
+                if (!dtStr) return '';
+                var mm = dtStr.match(/(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}:\d{2})/);
+                return mm ? mm[1]+' '+mm[2] : dtStr.substring(0,11);
+            }
+            function _sLastIoEntry(arrsPerDay) {
+                var all = []; arrsPerDay.forEach(function(a){ if(a) a.forEach(function(e){ if(e.dateTime) all.push(e); }); });
+                if (!all.length) return null;
+                all.sort(function(a,b){ return b.dateTime-a.dateTime; }); return all[0];
+            }
+            var hasO2 = !!(labData && (labData.o2therapyCode || labData.o2therapyRaw));
+            var hasAnyVit = vitalDefs.some(function(vd){ return vitalsPerDay.some(function(dp){ return dp[vd.key]&&dp[vd.key].length>0; }); });
+            var hasAnyIO = ioPerDay.some(function(io){
+                if (!io) return false;
+                return Object.values(io.intakes||{}).some(function(a){return a&&a.length>0;})||
+                    (io.outputs&&(io.outputs.urine||[]).length>0)||
+                    Object.values((io.outputs&&io.outputs.drains)||{}).some(function(a){return a&&a.length>0;})||
+                    Object.values((io.outputs&&io.outputs.other)||{}).some(function(a){return a&&a.length>0;});
+            });
+            if (!hasAnyVit && !hasAnyIO && !hasO2) return '<p style="color:#94a3b8;padding:1rem;">No vitals or I/O data available.</p>';
+            var uid = 'vio_' + Math.floor(Math.random()*1e9);
+            var html = '<style>' +
+                '.vio-sum{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;}' +
+                '.vio-sum table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000;}' +
+                '.vio-sum th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:5px 10px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
+                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;}' +
+                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:3px 8px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:nowrap;min-width:75px;}' +
+                '.vio-sum tr:hover td{background-color:rgba(255,255,255,0.04);}' +
+                '.vio-sum tr:hover td:first-child{background:#0d0d0d;}' +
+                '.vio-dc{padding:5px 14px;font-size:0.92rem;text-align:center;vertical-align:middle;}' +
+                '.vio-lc{padding:4px 10px;font-size:0.8rem;text-align:center;color:#94a3b8;white-space:nowrap;vertical-align:middle;min-width:90px;}' +
+                '.vio-sh td{font-size:0.82rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;color:#fff;}' +
+                '.vio-xbtn{display:block;width:100%;padding:8px 14px;background:#1c1c1e;color:#6b7280;font-size:0.8rem;font-family:monospace;border:none;border-top:0.5px solid rgba(84,84,88,0.3);cursor:pointer;text-align:left;border-radius:0 0 10px 10px;letter-spacing:0.03em;}' +
+                '.vio-xbtn:hover{background:#2c2c2e;color:#e5e7eb;}' +
+                '</style>';
+            html += '<div class="vio-sum"><table>';
+            html += '<tr>' +
+                '<th>Parameter</th>' +
+                '<th>' + dayDates[0] + '<div style="font-size:0.72rem;color:#10b981;font-weight:400;">Today</div></th>' +
+                '<th>' + dayDates[1] + '<div style="font-size:0.72rem;color:#a78bfa;font-weight:400;">Day-1</div></th>' +
+                '<th>' + dayDates[2] + '<div style="font-size:0.72rem;color:#6b7280;font-weight:400;">Day-2</div></th>' +
+                '<th>Last Recorded</th>' +
+                '</tr>';
+            if (hasAnyVit || hasO2) {
+                html += '<tr class="vio-sh"><td colspan="5" style="background:#0f4c81;">Vitals — 24h Min / Max per Day</td></tr>';
+                vitalDefs.forEach(function(vd) {
+                    if (!vitalsPerDay.some(function(dp){ return dp[vd.key]&&dp[vd.key].length>0; })) return;
+                    var lastE = _sMostRecent(vitalsPerDay.map(function(dp){ return dp[vd.key]; }));
+                    html += '<tr><td>' + vd.label + '</td>';
+                    vitalsPerDay.forEach(function(dp) {
+                        var mm = _sGetMM(dp[vd.key]);
+                        if (!mm) { html += '<td class="vio-dc" style="color:#4b5563;">—</td>'; return; }
+                        var minClr = mm.min < vd.lo ? '#ff6b6b' : '#6ee7b7';
+                        var maxClr = mm.max > vd.hi ? '#ff6b6b' : '#6ee7b7';
+                        var disp = mm.min === mm.max
+                            ? '<span style="color:'+minClr+';font-weight:700;">'+mm.min+vd.unit+'</span>'
+                            : '<span style="color:'+minClr+';font-weight:700;">'+mm.min+'</span><span style="color:#555;"> – </span><span style="color:'+maxClr+';font-weight:700;">'+mm.max+vd.unit+'</span>';
+                        html += '<td class="vio-dc">' + disp + '</td>';
+                    });
+                    if (lastE) {
+                        var lClr = (lastE.value < vd.lo || lastE.value > vd.hi) ? '#ff6b6b' : '#6ee7b7';
+                        html += '<td class="vio-lc"><span style="color:'+lClr+';font-weight:700;">'+lastE.value+vd.unit+'</span><div>'+lastE.label+'</div></td>';
+                    } else { html += '<td></td>'; }
+                    html += '</tr>';
+                });
+                if (hasO2) {
+                    var o2C=labData.o2therapyCode||'', o2R=labData.o2therapyRaw||'', o2F=(labData.o2flowRaw||'').replace(/\s*L\/min/i,'L'), o2D;
+                    if (o2C==='RA') o2D='Room Air';
+                    else if (o2C==='Vent') { var vP=['Vent']; if(labData.ventModeRaw)vP.push(labData.ventModeRaw.trim()); if(labData.ventFrequencyRaw)vP.push('RR:'+labData.ventFrequencyRaw); if(labData.ventTidalRaw)vP.push('TV:'+labData.ventTidalRaw+'mL'); if(labData.ventPeepRaw)vP.push('PEEP:'+labData.ventPeepRaw); if(labData.ventFiO2Raw)vP.push('FiO₂:'+labData.ventFiO2Raw+'%'); o2D=vP.join(' | '); }
+                    else if (o2C==='NC') o2D=(o2F?o2F+' ':'')+' NC';
+                    else if (o2C==='HFNC') o2D='HFNC'+(o2F?' '+o2F:'');
+                    else if (o2C==='NRB')  o2D='NRB'+(o2F?' '+o2F:'');
+                    else if (o2C==='BiPAP/CPAP') o2D='BiPAP/CPAP'+(o2F?' '+o2F:'');
+                    else o2D=(o2R||o2C||'O2')+(o2F?' '+o2F:'');
+                    var o2Sup = o2C && o2C !== 'RA';
+                    var o2Clr = o2Sup ? 'color:#fb923c;font-weight:700;' : 'color:#6ee7b7;';
+                    html += '<tr><td style="color:#7dd3fc;font-weight:600;">O2 Method</td>' +
+                        '<td colspan="3" style="padding:4px 12px;font-size:0.92rem;'+o2Clr+'">'+o2D+'</td>' +
+                        '<td class="vio-lc" style="color:#7dd3fc;">Current</td></tr>';
+                }
+            }
+            if (hasAnyIO) {
+                var _sIK=[],_sIKS={};
+                ioPerDay.forEach(function(io){ if(!io)return; Object.keys(io.intakes||{}).forEach(function(k){if(!_sIKS[k]){_sIKS[k]=1;_sIK.push(k);}}); });
+                var _sDK=[],_sDKS={};
+                ioPerDay.forEach(function(io){ if(!io||!io.outputs||!io.outputs.drains)return; Object.keys(io.outputs.drains).forEach(function(k){if(!_sDKS[k]){_sDKS[k]=1;_sDK.push(k);}}); });
+                var _sOK=[],_sOKS={};
+                ioPerDay.forEach(function(io){ if(!io||!io.outputs||!io.outputs.other)return; Object.keys(io.outputs.other).forEach(function(k){if(!_sOKS[k]){_sOKS[k]=1;_sOK.push(k);}}); });
+                var _sHasUrine = ioPerDay.some(function(io){ return io&&io.outputs&&io.outputs.urine&&io.outputs.urine.length>0; });
+                function _sIoRow(label, arrsPerDay, unit) {
+                    unit = unit || '';
+                    var totals = arrsPerDay.map(_sSumVol);
+                    if (!totals.some(function(t){ return t>0; })) return '';
+                    var le = _sLastIoEntry(arrsPerDay);
+                    var lastStr = le&&le.dateTimeStr ? _sIoDate(le.dateTimeStr) : '';
+                    var dispLabel = label.replace(/^Other:\s*/i,'');
+                    if (dispLabel.length > 35) dispLabel = dispLabel.substring(0,33)+'…';
+                    var row = '<tr><td title="'+label.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+dispLabel+'</td>';
+                    totals.forEach(function(t){ row += t>0 ? '<td class="vio-dc" style="color:#6ee7b7;">'+t+unit+'</td>' : '<td class="vio-dc" style="color:#4b5563;">—</td>'; });
+                    row += '<td class="vio-lc">' + lastStr + '</td>';
+                    return row + '</tr>';
+                }
+                if (_sIK.length > 0) {
+                    html += '<tr class="vio-sh"><td colspan="5" style="background:#155724;">↑ Intake — Daily Totals</td></tr>';
+                    _sIK.forEach(function(k){ html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.intakes&&io.intakes[k]?io.intakes[k]:[]; }), ' mL'); });
+                }
+                var _sHasOut = _sHasUrine || _sDK.length>0 || _sOK.length>0;
+                if (_sHasOut) {
+                    html += '<tr class="vio-sh"><td colspan="5" style="background:#6b1a0f;">↓ Output — Daily Totals</td></tr>';
+                    if (_sHasUrine) html += _sIoRow('Urine', ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.urine?io.outputs.urine:[]; }), ' mL');
+                    _sDK.forEach(function(k){ html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.drains&&io.outputs.drains[k]?io.outputs.drains[k]:[]; }), ' mL'); });
+                    _sOK.forEach(function(k){ html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.other&&io.outputs.other[k]?io.outputs.other[k]:[]; }), ' mL'); });
+                }
+                var balPerDay = ioPerDay.map(function(io) {
+                    if (!io) return null;
+                    var tIn=0,tOut=0;
+                    Object.values(io.intakes||{}).forEach(function(a){tIn+=_sSumVol(a);});
+                    tOut+=_sSumVol(io.outputs&&io.outputs.urine);
+                    Object.values((io.outputs&&io.outputs.drains)||{}).forEach(function(a){tOut+=_sSumVol(a);});
+                    Object.values((io.outputs&&io.outputs.other)||{}).forEach(function(a){tOut+=_sSumVol(a);});
+                    return { in:tIn, out:tOut, bal:tIn-tOut };
+                });
+                if (balPerDay.some(function(b){ return b&&(b.in>0||b.out>0); })) {
+                    html += '<tr style="background:#1a2035;"><td style="font-weight:700;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>';
+                    balPerDay.forEach(function(b) {
+                        if (!b||(b.in===0&&b.out===0)) { html += '<td style="text-align:center;color:#4b5563;background:#1a2035;">—</td>'; return; }
+                        var bC = b.bal>=0?'#10b981':'#f59e0b';
+                        html += '<td style="padding:4px 8px;background:#1a2035;text-align:center;">' +
+                            '<div style="color:#60a5fa;font-size:0.8rem;">↑ '+b.in+' mL</div>' +
+                            '<div style="color:#f87171;font-size:0.8rem;">↓ '+b.out+' mL</div>' +
+                            '<div style="color:'+bC+';font-weight:700;font-size:0.88rem;">'+(b.bal>=0?'+':'')+b.bal+' mL</div></td>';
+                    });
+                    html += '<td style="background:#1a2035;"></td></tr>';
+                }
+                var _sCK=[],_sCKS={};
+                ioPerDay.forEach(function(io){ if(!io)return; Object.keys(io.counts||{}).forEach(function(k){if(!_sCKS[k]){_sCKS[k]=1;_sCK.push(k);}}); });
+                if (_sCK.length > 0) {
+                    html += '<tr class="vio-sh"><td colspan="5" style="background:#4a3500;">Counts</td></tr>';
+                    _sCK.forEach(function(k) {
+                        var arrs = ioPerDay.map(function(io){ return io&&io.counts&&io.counts[k]?io.counts[k]:[]; });
+                        var totals = arrs.map(function(arr){ return arr.reduce(function(s,e){ return s+(e.count||0); },0); });
+                        if (!totals.some(function(t){ return t>0; })) return;
+                        var le = _sLastIoEntry(arrs);
+                        var lastStr = le&&le.dateTimeStr ? _sIoDate(le.dateTimeStr) : '';
+                        html += '<tr><td>'+k+'</td>';
+                        totals.forEach(function(t){ html += t>0 ? '<td class="vio-dc" style="color:#6ee7b7;">'+t+'</td>' : '<td class="vio-dc" style="color:#4b5563;">—</td>'; });
+                        html += '<td class="vio-lc">'+lastStr+'</td></tr>';
+                    });
+                }
+            }
+            html += '</table>';
+            html += '<button class="vio-xbtn" id="'+uid+'_btn" onclick="(function(){' +
+                'var det=document.getElementById(\''+uid+'_det\');' +
+                'var btn=document.getElementById(\''+uid+'_btn\');' +
+                'if(!det||!btn)return;' +
+                'var show=det.style.display===\'none\'||det.style.display===\'\';' +
+                'det.style.display=show?\'block\':\'none\';' +
+                'btn.textContent=show?\'▲ Collapse hourly view\':\'► Expand to view hourly data\';' +
+                '})()\">► Expand to view hourly data</button></div>';
+            html += '<div id="'+uid+'_det" style="display:none;margin-top:4px;">'+buildVitalsIODetailHTML(labData, lastImportedData)+'</div>';
+            return html;
+        }
+
+        // Returns combined Vitals/IO summary + Labs tables HTML.
+        function buildSeparatedTablesHTML(labDataArg, lastImportedDataArg) {
+            var vioHTML = buildVitalsIOTableHTML(labDataArg, lastImportedDataArg);
+            var labsHTML = buildUnifiedTableHTML(labDataArg, lastImportedDataArg);
+            return '<div style="margin-bottom:14px;">' + vioHTML + '</div>' + labsHTML;
+        }
+
+        // Returns the labs-only table HTML string; usable both inline and in modal.
         function buildUnifiedTableHTML(labDataArg, lastImportedDataArg) {
             var labData = labDataArg;
             var lastImportedData = lastImportedDataArg;
@@ -8450,84 +8936,13 @@ saveToLocalStorage();
             historyStart.setHours(historyStart.getHours() - 72); // up to 72 hrs before 7 AM
             var elapsedHours = Math.round((_now - cutoff7am) / 36000) / 100; // hrs since 7 AM
 
-            // ── VITAL DEFS ───────────────────────────────────────────────────────
-            var vitalDefs = [
-                { key: 'temp', label: 'Temp', unit: '°C',   lo: 35,  hi: 38  },
-                { key: 'hr',   label: 'HR',   unit: ' bpm', lo: 60,  hi: 100 },
-                { key: 'sbp',  label: 'SBP',  unit: '',     lo: 90,  hi: 180 },
-                { key: 'dbp',  label: 'DBP',  unit: '',     lo: 60,  hi: 120 },
-                { key: 'o2',   label: 'O2',   unit: '%',    lo: 94,  hi: 100 }
-            ];
-
-            // ── EXTRACT VITALS: today (since 7 AM) + history (up to 72 h before) ─
-            var vitals = {};
-            vitalDefs.forEach(function(d) { vitals[d.key] = { today: [], history: [] }; });
-
-            if (lastImportedData) {
-                function pushVital(key, value, dateStr, timeStr) {
-                    var p = dateStr.split('/');
-                    var yr = (p[2] && p[2].length === 2) ? ('20' + p[2]) : (p[2] || '2025');
-                    var dt;
-                    try { dt = new Date(yr + '-' + p[0] + '-' + p[1] + 'T' + timeStr); } catch(e) { return; }
-                    if (!dt || isNaN(dt.getTime())) return;
-                    var dm = dateStr.match(/(\d{1,2}\/\d{1,2})/);
-                    var tm = timeStr ? timeStr.match(/(\d{1,2}:\d{2})/) : null;
-                    var entry = { value: value, label: (dm ? dm[1] : dateStr) + (tm ? ' ' + tm[1] : '') };
-                    if (dt >= cutoff7am && dt <= _now) vitals[key].today.push(entry);
-                    else if (dt >= historyStart && dt < cutoff7am) vitals[key].history.push(entry);
-                }
-                var _vm;
-                var _tRe = /Temperature\s*(?:Temporal Artery|Axillary)?:\s*([\d.]+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_vm = _tRe.exec(lastImportedData))) pushVital('temp', parseFloat(_vm[1]), _vm[2], _vm[3]);
-                var _hRe = /(?:Heart Rate|Heart Rate Monitored|Apical Heart Rate).*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_vm = _hRe.exec(lastImportedData))) pushVital('hr', parseInt(_vm[1]), _vm[2], _vm[3]);
-                var _sRe = /Systolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_vm = _sRe.exec(lastImportedData))) pushVital('sbp', parseInt(_vm[1]), _vm[2], _vm[3]);
-                var _dRe = /Diastolic Blood Pressure(?:\s+Invasive)?:\s*(\d+)\s*mmHg(?:\s+(?:Low|High|Critical))?\s*\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_vm = _dRe.exec(lastImportedData))) pushVital('dbp', parseInt(_vm[1]), _vm[2], _vm[3]);
-                var _oRe = /O2 Saturation.*?:\s*(\d+).*?\((\d{2}\/\d{2}\/\d{2,4})\s+(\d{2}:\d{2}(?::\d{2})?)\)/gi;
-                while ((_vm = _oRe.exec(lastImportedData))) pushVital('o2', parseInt(_vm[1]), _vm[2], _vm[3]);
-            }
-
-            // ── EXTRACT I/O: today (since 7 AM) + history (up to 72 h before) + 24hr total ───
-            var ioData = null, ioHistory = null, io24hr = null;
-            if (lastImportedData) {
-                try { ioData    = extractIntakeOutputData(lastImportedData); } catch(e) {}
-                try { ioHistory = extractIntakeOutputData(lastImportedData, historyStart, cutoff7am); } catch(e) {}
-                // Previous 24h: yesterday 7 AM → today 7 AM (always visible after 7 AM)
-                var start24hr = new Date(cutoff7am);
-                start24hr.setDate(start24hr.getDate() - 1);
-                try { io24hr = extractIntakeOutputData(lastImportedData, start24hr, cutoff7am); } catch(e) { io24hr = null; }
-            }
-
-            // ── COMPUTE COLUMN COUNT ─────────────────────────────────────────────
-            function ioMaxCols(io) {
-                if (!io) return 0;
-                var arrs = Object.values(io.intakes || {})
-                    .concat([(io.outputs && io.outputs.urine) || []])
-                    .concat(Object.values((io.outputs && io.outputs.drains) || {}))
-                    .concat(Object.values((io.outputs && io.outputs.other)  || {}))
-                    .concat(Object.values(io.counts || {}));
-                return Math.max.apply(null, [0].concat(arrs.map(function(a){ return a ? a.length : 0; })));
-            }
-            var maxLabs     = Math.max.apply(null, [0].concat(Object.values(labData.labs || {}).map(function(a){ return a ? a.length : 0; })));
-            var maxTodayVit = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return vitals[d.key].today.length; })));
-            var maxHistVit  = Math.max.apply(null, [0].concat(vitalDefs.map(function(d){ return vitals[d.key].history.length; })));
-            var maxTodayIO  = ioMaxCols(ioData);
-            var maxHistIO   = ioMaxCols(ioHistory);
-            // maxMainCols: shared "today" columns used by labs, today vitals, today I/O
-            var maxMainCols = Math.max(maxLabs, maxTodayVit, maxTodayIO, 1);
-            // maxHistCols: extra columns for history vitals / history I/O (shown to the right)
-            var maxHistCols  = Math.max(maxHistVit, maxHistIO);
-            var hasSeparator = maxHistCols > 0;
-            // Show 24hr column only when io24hr has actual entries (yesterday 7AM → today 7AM)
-            var has24hrTotal = io24hr ? (
-                Object.values(io24hr.intakes || {}).some(function(a){ return a && a.length > 0; }) ||
-                (io24hr.outputs && (io24hr.outputs.urine || []).length > 0) ||
-                Object.values((io24hr.outputs && io24hr.outputs.drains) || {}).some(function(a){ return a && a.length > 0; }) ||
-                Object.values((io24hr.outputs && io24hr.outputs.other)  || {}).some(function(a){ return a && a.length > 0; })
-            ) : false;
-            var maxValues    = maxMainCols + (hasSeparator ? 1 + maxHistCols : 0) + (has24hrTotal ? 1 : 0);
+            // ── LABS-ONLY COLUMN COUNT ────────────────────────────────────────────
+            var maxLabs = Math.max.apply(null, [0].concat(Object.values(labData.labs || {}).map(function(a){ return a ? a.length : 0; })));
+            var maxMainCols = Math.max(maxLabs, 1);
+            var maxHistCols = 0;
+            var hasSeparator = false;
+            var has24hrTotal = false;
+            var maxValues = maxMainCols;
 
             // ── CELL / ROW HELPERS ───────────────────────────────────────────────
             function dataCell(val, dt, abnormal, unit) {
@@ -8720,147 +9135,6 @@ saveToLocalStorage();
             }
             tableHTML += '</tr>';
 
-            // ── VITALS (today in main cols, pre-7AM history in extra right cols) ──
-            var hasO2TherapyData = !!(labData && (labData.o2therapyCode || labData.o2therapyRaw));
-            var hasVit = vitalDefs.some(function(d){ return vitals[d.key].today.length > 0 || vitals[d.key].history.length > 0; }) || hasO2TherapyData;
-            if (hasVit) {
-                tableHTML += sectionHdr('Vitals — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#0f4c81');
-                vitalDefs.forEach(function(vd) {
-                    var todayArr = vitals[vd.key].today;
-                    var histArr  = vitals[vd.key].history;
-                    if (!todayArr.length && !histArr.length) return;
-                    var row = '<tr><td>' + vd.label + '</td>';
-                    // Today columns
-                    for (var i = 0; i < maxMainCols; i++) {
-                        row += i < todayArr.length
-                            ? dataCell(todayArr[i].value, todayArr[i].label, todayArr[i].value < vd.lo || todayArr[i].value > vd.hi, vd.unit)
-                            : emptyCell();
-                    }
-                    // Empty 24hr total cell (vitals don't have a daily total) — before Pre-7AM
-                    if (has24hrTotal) row += emptyTotalCell();
-                    // Separator + history columns
-                    if (hasSeparator) {
-                        row += sepCell();
-                        for (var j = 0; j < maxHistCols; j++) {
-                            row += j < histArr.length
-                                ? histDataCell(histArr[j].value, histArr[j].label, vd.unit)
-                                : emptyCell();
-                        }
-                    }
-                    tableHTML += row + '</tr>';
-                });
-                // O2 Therapy row
-                if (hasO2TherapyData) {
-                    var o2Code = labData.o2therapyCode || '';
-                    var o2Raw  = labData.o2therapyRaw  || '';
-                    var o2Flow = (labData.o2flowRaw || '').replace(/\s*L\/min/i, 'L');
-                    var o2Display;
-                    if (o2Code === 'RA') {
-                        o2Display = 'Room Air';
-                    } else if (o2Code === 'Vent') {
-                        var vParts = ['Vent'];
-                        if (labData.ventModeRaw)     vParts.push(labData.ventModeRaw.trim());
-                        if (labData.ventFrequencyRaw) vParts.push('RR:' + labData.ventFrequencyRaw);
-                        if (labData.ventTidalRaw)     vParts.push('TV:' + labData.ventTidalRaw + 'mL');
-                        if (labData.ventPeepRaw)      vParts.push('PEEP:' + labData.ventPeepRaw);
-                        if (labData.ventFiO2Raw)      vParts.push('FiO\u2082:' + labData.ventFiO2Raw + '%');
-                        o2Display = vParts.join(' | ');
-                    } else if (o2Code === 'NC') {
-                        o2Display = (o2Flow ? o2Flow + ' ' : '') + 'NC';
-                    } else if (o2Code === 'HFNC') {
-                        o2Display = 'HFNC' + (o2Flow ? ' ' + o2Flow : '');
-                    } else if (o2Code === 'NRB') {
-                        o2Display = 'NRB' + (o2Flow ? ' ' + o2Flow : '');
-                    } else if (o2Code === 'BiPAP/CPAP') {
-                        o2Display = 'BiPAP/CPAP' + (o2Flow ? ' ' + o2Flow : '');
-                    } else {
-                        o2Display = (o2Raw || o2Code || 'O2') + (o2Flow ? ' ' + o2Flow : '');
-                    }
-                    var isSupplemental = o2Code && o2Code !== 'RA';
-                    var o2CellClr = isSupplemental
-                        ? 'background:rgba(251,146,60,0.15);color:#fb923c;font-weight:700;'
-                        : 'color:#6ee7b7;';
-                    var o2Row = '<tr><td style="color:#7dd3fc;font-weight:600;">O2 Therapy</td>';
-                    o2Row += '<td colspan="' + maxMainCols + '" style="padding:4px 8px;font-size:0.92rem;' + o2CellClr + '">' + o2Display + '</td>';
-                    if (has24hrTotal) o2Row += emptyTotalCell();
-                    if (hasSeparator) {
-                        o2Row += sepCell();
-                        for (var _oj = 0; _oj < maxHistCols; _oj++) o2Row += emptyCell();
-                    }
-                    tableHTML += o2Row + '</tr>';
-                }
-            }
-
-            // ── INTAKES (today cols + pre-7AM history cols + 24hr total) ─────────
-            var allIntakeKeys = [], intakeKeySet = {};
-            if (ioData)    Object.keys(ioData.intakes    || {}).forEach(function(k){ if (!intakeKeySet[k]){ intakeKeySet[k]=1; allIntakeKeys.push(k); } });
-            if (ioHistory) Object.keys(ioHistory.intakes || {}).forEach(function(k){ if (!intakeKeySet[k]){ intakeKeySet[k]=1; allIntakeKeys.push(k); } });
-            var hasAnyIntake = allIntakeKeys.some(function(k){
-                return ((ioData    && ioData.intakes    && ioData.intakes[k]    && ioData.intakes[k].length    > 0) ||
-                        (ioHistory && ioHistory.intakes && ioHistory.intakes[k] && ioHistory.intakes[k].length > 0));
-            });
-            if (hasAnyIntake) {
-                tableHTML += sectionHdr('Intake — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#155724');
-                allIntakeKeys.forEach(function(k) {
-                    var t   = (ioData    && ioData.intakes    && ioData.intakes[k])    || [];
-                    var h   = (ioHistory && ioHistory.intakes && ioHistory.intakes[k]) || [];
-                    var t24 = (io24hr    && io24hr.intakes    && io24hr.intakes[k])    || [];
-                    tableHTML += ioRowHTMLCombined(k, t, h, t24, ' mL');
-                });
-            }
-
-            // ── OUTPUTS (today cols + pre-7AM history cols + 24hr total) ─────────
-            var allUrineToday = (ioData    && ioData.outputs    && ioData.outputs.urine)    || [];
-            var allUrineHist  = (ioHistory && ioHistory.outputs && ioHistory.outputs.urine) || [];
-            var allUrine24    = (io24hr    && io24hr.outputs    && io24hr.outputs.urine)    || [];
-            var hasUrine = allUrineToday.length > 0 || allUrineHist.length > 0;
-
-            var allDrainKeys = [], drainKeySet = {};
-            if (ioData    && ioData.outputs    && ioData.outputs.drains)    Object.keys(ioData.outputs.drains).forEach(function(k){ if (!drainKeySet[k]){ drainKeySet[k]=1; allDrainKeys.push(k); } });
-            if (ioHistory && ioHistory.outputs && ioHistory.outputs.drains) Object.keys(ioHistory.outputs.drains).forEach(function(k){ if (!drainKeySet[k]){ drainKeySet[k]=1; allDrainKeys.push(k); } });
-
-            var allOtherKeys = [], otherKeySet = {};
-            if (ioData    && ioData.outputs    && ioData.outputs.other)    Object.keys(ioData.outputs.other).forEach(function(k){ if (!otherKeySet[k]){ otherKeySet[k]=1; allOtherKeys.push(k); } });
-            if (ioHistory && ioHistory.outputs && ioHistory.outputs.other) Object.keys(ioHistory.outputs.other).forEach(function(k){ if (!otherKeySet[k]){ otherKeySet[k]=1; allOtherKeys.push(k); } });
-
-            var hasAnyOutput = hasUrine || allDrainKeys.length > 0 || allOtherKeys.length > 0;
-            if (hasAnyOutput) {
-                tableHTML += sectionHdr('Output — Since 7 AM' + (hasSeparator ? ' | Pre-7AM \u25ba' : ''), '#6b1a0f');
-                if (hasUrine) tableHTML += ioRowHTMLCombined('Urine', allUrineToday, allUrineHist, allUrine24, ' mL');
-                allDrainKeys.forEach(function(k) {
-                    var t   = (ioData    && ioData.outputs    && ioData.outputs.drains    && ioData.outputs.drains[k])    || [];
-                    var h   = (ioHistory && ioHistory.outputs && ioHistory.outputs.drains && ioHistory.outputs.drains[k]) || [];
-                    var t24 = (io24hr    && io24hr.outputs    && io24hr.outputs.drains    && io24hr.outputs.drains[k])    || [];
-                    tableHTML += ioRowHTMLCombined(k.replace(/^Other:\s*/i, ''), t, h, t24, ' mL');
-                });
-                allOtherKeys.forEach(function(k) {
-                    var t   = (ioData    && ioData.outputs    && ioData.outputs.other    && ioData.outputs.other[k])    || [];
-                    var h   = (ioHistory && ioHistory.outputs && ioHistory.outputs.other && ioHistory.outputs.other[k]) || [];
-                    var t24 = (io24hr    && io24hr.outputs    && io24hr.outputs.other    && io24hr.outputs.other[k])    || [];
-                    tableHTML += ioRowHTMLCombined(k, t, h, t24, ' mL');
-                });
-            }
-
-            // ── I/O BALANCE (after outputs) ───────────────────────────────────────
-            tableHTML += balanceRowHTMLNew(ioData, ioHistory, io24hr);
-
-            // ── COUNTS (today cols + pre-7AM history cols) ────────────────────────
-            var allCountKeys = [], countKeySet = {};
-            if (ioData)    Object.keys(ioData.counts    || {}).forEach(function(k){ if (!countKeySet[k]){ countKeySet[k]=1; allCountKeys.push(k); } });
-            if (ioHistory) Object.keys(ioHistory.counts || {}).forEach(function(k){ if (!countKeySet[k]){ countKeySet[k]=1; allCountKeys.push(k); } });
-            var hasAnyCounts = allCountKeys.some(function(k){
-                return ((ioData    && ioData.counts    && ioData.counts[k]    && ioData.counts[k].length    > 0) ||
-                        (ioHistory && ioHistory.counts && ioHistory.counts[k] && ioHistory.counts[k].length > 0));
-            });
-            if (hasAnyCounts) {
-                tableHTML += sectionHdr('Counts' + (hasSeparator ? ' — Since 7 AM | Pre-7AM \u25ba' : ''), '#4a3500');
-                allCountKeys.forEach(function(k) {
-                    var t = (ioData    && ioData.counts    && ioData.counts[k])    || [];
-                    var h = (ioHistory && ioHistory.counts && ioHistory.counts[k]) || [];
-                    tableHTML += ioRowHTMLCombined(k, t, h, [], '');
-                });
-            }
-
             // ── LABS ─────────────────────────────────────────────────────────────
             var labSections = [
                 { color: '#1a5c2b', label: 'CBC', labs: [
@@ -9011,7 +9285,7 @@ saveToLocalStorage();
                 document.getElementById('tableContainer').innerHTML = '<p>No lab data available. Please import data first.</p>';
                 return;
             }
-            document.getElementById('tableContainer').innerHTML = buildUnifiedTableHTML(labData, lastImportedData);
+            document.getElementById('tableContainer').innerHTML = buildSeparatedTablesHTML(labData, lastImportedData);
         }
 
         function appendChartSuggestions(container) {
@@ -16616,7 +16890,7 @@ while (i < fishboneLines.length && !foundFluidBalance) {
   {
     var unifiedDiv = document.createElement('div');
     unifiedDiv.style.cssText = 'white-space:normal;overflow-x:auto;margin-bottom:0.5rem;';
-    unifiedDiv.innerHTML = buildUnifiedTableHTML(_labData, _lastImportedData);
+    unifiedDiv.innerHTML = buildSeparatedTablesHTML(_labData, _lastImportedData);
     violinDisplay.appendChild(unifiedDiv);
   }
 
