@@ -8691,8 +8691,8 @@ saveToLocalStorage();
                 '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
                 '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;}' +
-                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 5px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;max-width:72px;white-space:normal;word-break:break-word;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:72px;line-height:1.25;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
                 '</style><div class="uni-tbl"><table><tr><th>Parameter</th>';
@@ -8875,8 +8875,8 @@ saveToLocalStorage();
                 '.vio-sum{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;}' +
                 '.vio-sum table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000;}' +
                 '.vio-sum th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:5px 10px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;}' +
-                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:3px 8px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:nowrap;min-width:75px;}' +
+                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;max-width:72px;white-space:normal;word-break:break-word;}' +
+                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:3px 6px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:normal;word-break:break-word;max-width:72px;}' +
                 '.vio-sum tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.vio-sum tr:hover td:first-child{background:#0d0d0d;}' +
                 '.vio-dc{padding:5px 14px;font-size:0.92rem;text-align:center;vertical-align:middle;}' +
@@ -8952,22 +8952,29 @@ saveToLocalStorage();
                 var _sOK=[],_sOKS={};
                 ioPerDay.forEach(function(io){ if(!io||!io.outputs||!io.outputs.other)return; Object.keys(io.outputs.other).forEach(function(k){if(!_sOKS[k]){_sOKS[k]=1;_sOK.push(k);}}); });
                 var _sHasUrine = ioPerDay.some(function(io){ return io&&io.outputs&&io.outputs.urine&&io.outputs.urine.length>0; });
-                function _sIoRow(label, arrsPerDay, unit) {
+                var _sEnteralRate = (function() { for (var _i=0;_i<ioPerDay.length;_i++) { if (ioPerDay[_i]&&ioPerDay[_i].enteralRate) return ioPerDay[_i].enteralRate; } return null; })();
+                var _sEnteralFormula = (function() { for (var _i=0;_i<ioPerDay.length;_i++) { if (ioPerDay[_i]&&ioPerDay[_i].enteralFormula) return ioPerDay[_i].enteralFormula; } return null; })();
+                function _sIoRow(label, arrsPerDay, unit, ratePerHr) {
                     unit = unit || '';
                     var totals = arrsPerDay.map(_sSumVol);
                     if (!totals.some(function(t){ return t>0; })) return '';
                     var le = _sLastIoEntry(arrsPerDay);
                     var lastStr = le&&le.dateTimeStr ? _sIoDate(le.dateTimeStr) : '';
                     var dispLabel = label.replace(/^Other:\s*/i,'');
-                    if (dispLabel.length > 35) dispLabel = dispLabel.substring(0,33)+'…';
-                    var row = '<tr><td title="'+label.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+dispLabel+'</td>';
+                    if (dispLabel.length > 30) dispLabel = dispLabel.substring(0,28)+'…';
+                    var rateSuffix = ratePerHr ? '<div style="color:#7dd3fc;font-size:0.68rem;font-weight:600;white-space:nowrap;">@'+ratePerHr+' cc/hr</div>' : '';
+                    var row = '<tr><td title="'+label.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+dispLabel+rateSuffix+'</td>';
                     totals.forEach(function(t){ row += t>0 ? '<td class="vio-dc" style="color:#6ee7b7;">'+t+unit+'</td>' : '<td class="vio-dc" style="color:#4b5563;">—</td>'; });
                     row += '<td class="vio-lc">' + lastStr + '</td>';
                     return row + '</tr>';
                 }
                 if (_sIK.length > 0) {
                     html += '<tr class="vio-sh"><td colspan="5" style="background:#155724;">↑ Intake — Daily Totals</td></tr>';
-                    _sIK.forEach(function(k){ html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.intakes&&io.intakes[k]?io.intakes[k]:[]; }), ' mL'); });
+                    _sIK.forEach(function(k){
+                        var ratePerHr = null;
+                        if (_sEnteralRate && /enteral.*tube.*feed|tube.*feed.*continuous|enteral.*feed/i.test(k)) ratePerHr = _sEnteralRate;
+                        html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.intakes&&io.intakes[k]?io.intakes[k]:[]; }), ' mL', ratePerHr);
+                    });
                 }
                 var _sHasOut = _sHasUrine || _sDK.length>0 || _sOK.length>0;
                 if (_sHasOut) {
@@ -8986,16 +8993,31 @@ saveToLocalStorage();
                     return { in:tIn, out:tOut, bal:tIn-tOut };
                 });
                 if (balPerDay.some(function(b){ return b&&(b.in>0||b.out>0); })) {
-                    html += '<tr style="background:#1a2035;"><td style="font-weight:700;color:#f1f5f9;background:#1a2035;white-space:nowrap;">★ I/O Balance</td>';
+                    var _bBg = '#1a2035';
+                    var _bTdStyle = 'background:'+_bBg+';';
+                    var _bLblStyle = 'font-weight:700;white-space:nowrap;font-size:0.78rem;padding:3px 6px;'+_bTdStyle;
+                    // Row 1: Total Intake
+                    html += '<tr style="background:'+_bBg+';"><td style="color:#60a5fa;'+_bLblStyle+'">↑ Total In</td>';
                     balPerDay.forEach(function(b) {
-                        if (!b||(b.in===0&&b.out===0)) { html += '<td style="text-align:center;color:#4b5563;background:#1a2035;">—</td>'; return; }
-                        var bC = b.bal>=0?'#10b981':'#f59e0b';
-                        html += '<td style="padding:4px 8px;background:#1a2035;text-align:center;">' +
-                            '<div style="color:#60a5fa;font-size:0.8rem;">↑ '+b.in+' mL</div>' +
-                            '<div style="color:#f87171;font-size:0.8rem;">↓ '+b.out+' mL</div>' +
-                            '<div style="color:'+bC+';font-weight:700;font-size:0.88rem;">'+(b.bal>=0?'+':'')+b.bal+' mL</div></td>';
+                        if (!b||b.in===0) { html += '<td class="vio-dc" style="color:#4b5563;'+_bTdStyle+'">—</td>'; return; }
+                        html += '<td class="vio-dc" style="color:#60a5fa;font-weight:700;'+_bTdStyle+'">'+b.in+' mL</td>';
                     });
-                    html += '<td style="background:#1a2035;"></td></tr>';
+                    html += '<td style="'+_bTdStyle+'"></td></tr>';
+                    // Row 2: Total Output
+                    html += '<tr style="background:'+_bBg+';"><td style="color:#f87171;'+_bLblStyle+'">↓ Total Out</td>';
+                    balPerDay.forEach(function(b) {
+                        if (!b||b.out===0) { html += '<td class="vio-dc" style="color:#4b5563;'+_bTdStyle+'">—</td>'; return; }
+                        html += '<td class="vio-dc" style="color:#f87171;font-weight:700;'+_bTdStyle+'">'+b.out+' mL</td>';
+                    });
+                    html += '<td style="'+_bTdStyle+'"></td></tr>';
+                    // Row 3: Balance
+                    html += '<tr style="background:'+_bBg+';"><td style="color:#f1f5f9;'+_bLblStyle+'">= Balance</td>';
+                    balPerDay.forEach(function(b) {
+                        if (!b||(b.in===0&&b.out===0)) { html += '<td class="vio-dc" style="color:#4b5563;'+_bTdStyle+'">—</td>'; return; }
+                        var bC = b.bal>=0?'#10b981':'#f59e0b';
+                        html += '<td class="vio-dc" style="color:'+bC+';font-weight:700;'+_bTdStyle+'">'+(b.bal>=0?'+':'')+b.bal+' mL</td>';
+                    });
+                    html += '<td style="'+_bTdStyle+'"></td></tr>';
                 }
                 var _sCK=[],_sCKS={};
                 ioPerDay.forEach(function(io){ if(!io)return; Object.keys(io.counts||{}).forEach(function(k){if(!_sCKS[k]){_sCKS[k]=1;_sCK.push(k);}}); });
@@ -9236,11 +9258,11 @@ saveToLocalStorage();
                 '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
                 '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;}' +
-                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 5px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:120px;line-height:1.25;}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;max-width:72px;white-space:normal;word-break:break-word;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:72px;line-height:1.25;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
-                '</style><div class="uni-tbl"><table><tr><th>Parameter / Total</th>';
+                '</style><div class="uni-tbl"><table><tr><th>Lab</th>';
             for (var _ci = 0; _ci < maxMainCols; _ci++) tableHTML += '<th>#' + (_ci + 1) + '</th>';
             if (has24hrTotal) tableHTML += '<th style="background:#2d1f00;color:#fbbf24;white-space:nowrap;font-size:0.75rem;border-left:2px solid #f59e0b;border-right:1px solid #3a2a00;padding:3px 5px;" title="Previous 24h: yesterday 7AM \u2192 today 7AM">Prev\u00a024h</th>';
             if (hasSeparator) {
@@ -12195,29 +12217,9 @@ const ioData = {
             // Only add if rate is a valid number
             if (rate && /^\d+$/.test(rate)) {
                 const rateValue = parseInt(rate);
-
-                // Format as "[Formula Name] @[Rate]cc/hr" - this will be used as the intake type for display
-                const formattedDescription = `${formulaName.toUpperCase()} @${rateValue}cc/hr`;
-
-                const entry = {
-                    description: formattedDescription,
-                    type: formattedDescription, // Use formatted description as type so it displays correctly
-                    volume: rateValue, // Store rate as volume for hourly display
-                    dateTime: nutritionDateTime || now,
-                    dateTimeStr: nutritionDateTimeStr || 'Current'
-                };
-
-                // Add to intakes using formatted description as the key
-                if (!ioData.intakes[formattedDescription]) {
-                    ioData.intakes[formattedDescription] = [];
-                }
-                ioData.intakes[formattedDescription].push(entry);
-
-                console.log('Parsed nutrition data:', {
-                    formula: formulaName,
-                    rate: rateValue,
-                    formatted: formattedDescription
-                });
+                // Store as metadata so it can be shown alongside real intake volume totals
+                ioData.enteralRate = rateValue;
+                ioData.enteralFormula = formulaName.toUpperCase();
             }
         }
     }
