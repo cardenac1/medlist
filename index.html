@@ -5642,8 +5642,10 @@ function getChecklistStatus(patient, patientIndex) {
     const patientKey = `${patientIndex}_${patient.Name || 'unnamed'}`;
     const isTrauma = patient.Type !== 'Consult';
 
-    // Counts exclude ✍️ ORDERS (2 items) and 🔪 OR (10 items) from each type
-    const totalItems = isTrauma ? 35 : 30;
+    // Only STAFF/NOTE + RECOMMENDATIONS count for consult (6 items)
+    // Only STAFF/NOTE + IMAGING + DISPO count for trauma (10 items)
+    // All ORDERS subsections and OR section are excluded
+    const totalItems = isTrauma ? 10 : 6;
 
     if (!tempChecklistStates[patientKey]) {
         return { completed: 0, total: totalItems, percentage: 0 };
@@ -5653,9 +5655,11 @@ function getChecklistStatus(patient, patientIndex) {
     // Use precomputed excluded indices if available, else fall back to hardcoded sets
     let excluded = (_checklistExcludedItemIndices || {})[patientKey];
     if (!excluded) {
+        // consult: indices 6–41 excluded (ORDERS, OR, PATIENT CARE, ACTIVITY, DIET, MEDS, LAB, RESP, EBM)
+        // trauma: indices 10–46 excluded (ORDERS, PATIENT CARE, ACTIVITY, DIET, MEDS, LAB, RESP, EBM, OR)
         excluded = isTrauma
-            ? new Set([10, 11, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46])
-            : new Set([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
+            ? new Set(Array.from({length: 37}, (_, i) => i + 10))
+            : new Set(Array.from({length: 36}, (_, i) => i + 6));
     }
     const completed = Object.keys(states).filter(k => {
         if (!k.startsWith('item_') || !states[k]) return false;
@@ -14678,7 +14682,12 @@ function generateFullChecklistHTML() {
   const items = isTrauma ? traumaItems : consultItems;
 
   // ========= PROGRESS (exclude ✍️ ORDERS and 🔪 OR sections) =========
-  const _EXCL_SECS = new Set(['✍️ ORDERS', '🔪 OR']);
+  const _EXCL_SECS = new Set([
+    '✍️ ORDERS', '🔪 OR',
+    '🫀 PATIENT CARE', '🏃 ACTIVITY', '🍔 DIET / NUTRITION',
+    '💊 MEDICATIONS', '🧪 LABORATORY', '🫁 RESPIRATORY',
+    '🧑‍⚕️ EVIDENCE BASED', '🧑‍⚕️ EVIDENCE-BASED TREATMENT'
+  ]);
   const excludedIdxSet = new Set();
   items.forEach((it, i) => { if (_EXCL_SECS.has(it.section)) excludedIdxSet.add(i); });
   _checklistExcludedItemIndices[patientKey] = excludedIdxSet;
