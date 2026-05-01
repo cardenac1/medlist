@@ -8433,6 +8433,92 @@ saveToLocalStorage();
 
 
 
+        // ── LINES / TUBES / DRAINS HELPERS ───────────────────────────────────────
+        function _abbrevLineDevice(deviceType, description) {
+            var dt = (deviceType || '').trim();
+            var ds = (description || '').toLowerCase();
+            var dtl = dt.toLowerCase();
+            // Peripheral / vascular access
+            if (/peripheral\s*iv|angiocath/i.test(dtl))        return 'PIV';
+            if (/picc/i.test(dtl))                              return 'PICC';
+            if (/midline/i.test(dtl))                           return 'Midline';
+            if (/arterial\s*(line|cath|catheter)|a[-\s]?line/i.test(dtl)) return 'A-Line';
+            if (/central\s*venous|central\s*line|cvl|cvc/i.test(dtl))    return 'CVC';
+            if (/pulmonary\s*artery|swan.?ganz|pa\s*cath/i.test(dtl))    return 'PA Cath';
+            if (/hemodialysis|dialysis\s*cath/i.test(dtl))     return 'HD Cath';
+            if (/port.a.cath|implanted\s*port|subcutaneous\s*port/i.test(dtl)) return 'Port';
+            if (/umbilical\s*venous|uvc/i.test(dtl))           return 'UVC';
+            if (/umbilical\s*arterial|uac/i.test(dtl))         return 'UAC';
+            // Airway
+            if (/endotracheal|ett/i.test(dtl))                  return 'ETT';
+            if (/tracheostom/i.test(dtl))                       return 'Trach';
+            if (/nasotracheal/i.test(dtl))                      return 'NTT';
+            if (/laryngeal\s*mask|lma/i.test(dtl))              return 'LMA';
+            // GI tubes — use description to differentiate
+            if (/gastrointestinal|gi\s*tube/i.test(dtl)) {
+                if (/gastrostomy|g.?tube/i.test(ds))        return 'G-Tube';
+                if (/jejunostomy|j.?tube/i.test(ds))        return 'J-Tube';
+                if (/dobhoff|nasojejunal/i.test(ds))        return 'NJT';
+                if (/nasogastric|ngt/i.test(ds))            return 'NGT';
+                if (/orogastric|ogt/i.test(ds))             return 'OGT';
+                return 'GI Tube';
+            }
+            if (/gastrostomy/i.test(dtl))                       return 'G-Tube';
+            if (/jejunostomy/i.test(dtl))                       return 'J-Tube';
+            if (/dobhoff|nasojejunal/i.test(dtl))               return 'NJT';
+            if (/nasogastric/i.test(dtl))                       return 'NGT';
+            if (/orogastric/i.test(dtl))                        return 'OGT';
+            // Urinary
+            if (/urinary\s*cath|foley|urethral|indwelling\s*cath/i.test(dtl)) return 'Foley';
+            if (/suprapubic/i.test(dtl))                        return 'SP Cath';
+            if (/condom\s*cath|external\s*cath/i.test(dtl))    return 'Condom Cath';
+            if (/nephrostomy/i.test(dtl))                       return 'Nephrostomy';
+            if (/urostomy/i.test(dtl))                          return 'Urostomy';
+            // Surgical / wound drains — use description to differentiate
+            if (/surgical\s*drain|drain.*tube|tube.*drain/i.test(dtl)) {
+                if (/jackson.?pratt|jp\b|self.?contain/i.test(ds)) return 'JP';
+                if (/hemovac/i.test(ds))                return 'Hemovac';
+                if (/blake/i.test(ds))                  return 'Blake';
+                if (/chest|thorac|pleur/i.test(ds))     return 'Chest Tube';
+                if (/penrose/i.test(ds))                return 'Penrose';
+                return 'Drain';
+            }
+            if (/chest\s*tube|thoracostomy/i.test(dtl))         return 'Chest Tube';
+            if (/jackson.?pratt/i.test(dtl))                    return 'JP';
+            if (/hemovac/i.test(dtl))                           return 'Hemovac';
+            if (/pigtail/i.test(dtl))                           return 'Pigtail';
+            if (/wound\s*vac|npwt/i.test(dtl))                 return 'Wound VAC';
+            if (/penrose/i.test(dtl))                           return 'Penrose';
+            // Fallback — return trimmed original
+            return dt.length > 18 ? dt.substring(0, 16) + '…' : dt;
+        }
+
+        function extractLinesTubesDrains(text) {
+            if (!text) return [];
+            var m = text.match(/\[LINES\/TUBES\/DRAINS\s+START\]([\s\S]*?)\[LINES\/TUBES\/DRAINS\s+END\]/i);
+            if (!m) return [];
+            var section = m[1];
+            var devices = [];
+            // Skip lines that look like category headers (right of tab is blank/whitespace)
+            var categoryRe = /^[\s ]*(?:Lines|Tubes\/Drains|Surgical Drains\/Tubes|Lines\/Tubes\/Drains|---DATA.*?)[\s ]*$/i;
+            section.split('\n').forEach(function(line) {
+                var parts = line.split('\t');
+                if (parts.length < 2) return;
+                var deviceType = parts[0].replace(/^\s+|\s+$/g, '');
+                var description = parts.slice(1).join(' ').replace(/^\s+|\s+$/g, '');
+                if (!deviceType || !description) return;
+                if (categoryRe.test(deviceType) && !description) return;
+                // Extract duration like "- 4 Days" or "- 1 Day"
+                var durMatch = description.match(/-\s*(\d+)\s*days?/i);
+                var duration = durMatch ? durMatch[1] + 'd' : '';
+                // Strip the duration from description for display
+                var detail = description.replace(/-\s*\d+\s*days?/i, '').replace(/\s+$/, '').replace(/,?\s*$/, '').trim();
+                var abbr = _abbrevLineDevice(deviceType, description);
+                devices.push({ type: deviceType, abbr: abbr, detail: detail, duration: duration });
+            });
+            return devices;
+        }
+
         // ── VITALS/IO HOURLY DETAIL TABLE (expand view) ──────────────────────────
         function buildVitalsIODetailHTML(labData, lastImportedData) {
             if (!lastImportedData) return '<p style="color:#94a3b8;padding:1rem;">No vitals/IO data available.</p>';
@@ -8647,6 +8733,20 @@ saveToLocalStorage();
                     tHTML += o2Row + '</tr>';
                 }
             }
+            // Lines / Tubes / Drains section in hourly detail view
+            var _dLTD = lastImportedData ? extractLinesTubesDrains(lastImportedData) : [];
+            if (_dLTD.length > 0) {
+                tHTML += _dSecHdr('Lines / Tubes / Drains', '#1a3a5c');
+                _dLTD.forEach(function(d) {
+                    var dStr = d.detail || '';
+                    var durBadge = d.duration ? ' <span style="color:#6b7280;font-size:0.78rem;">('+d.duration+')</span>' : '';
+                    var row = '<tr><td style="color:#7dd3fc;font-weight:700;">'+d.abbr+'</td>';
+                    row += '<td colspan="'+maxMainCols+'" style="padding:3px 8px;font-size:0.88rem;color:#cbd5e1;">'+dStr+durBadge+'</td>';
+                    if (has24hrTotal) row += _dEmptyTotalCell();
+                    if (hasSeparator) { row += _dSepCell(); for (var _lj=0;_lj<maxHistCols;_lj++) row += _dEmptyCell(); }
+                    tHTML += row + '</tr>';
+                });
+            }
             var _dIK=[],_dIKS={};
             if (ioData)    Object.keys(ioData.intakes   ||{}).forEach(function(k){if(!_dIKS[k]){_dIKS[k]=1;_dIK.push(k);}});
             if (ioHistory) Object.keys(ioHistory.intakes||{}).forEach(function(k){if(!_dIKS[k]){_dIKS[k]=1;_dIK.push(k);}});
@@ -8761,6 +8861,7 @@ saveToLocalStorage();
             }
             var hasO2 = !!(labData && (labData.o2therapyCode || labData.o2therapyRaw));
             var hasAnyVit = vitalDefs.some(function(vd){ return vitalsPerDay.some(function(dp){ return dp[vd.key]&&dp[vd.key].length>0; }); });
+            var ltdDevices = lastImportedData ? extractLinesTubesDrains(lastImportedData) : [];
             var hasAnyIO = ioPerDay.some(function(io){
                 if (!io) return false;
                 return Object.values(io.intakes||{}).some(function(a){return a&&a.length>0;})||
@@ -8768,7 +8869,7 @@ saveToLocalStorage();
                     Object.values((io.outputs&&io.outputs.drains)||{}).some(function(a){return a&&a.length>0;})||
                     Object.values((io.outputs&&io.outputs.other)||{}).some(function(a){return a&&a.length>0;});
             });
-            if (!hasAnyVit && !hasAnyIO && !hasO2) return '<p style="color:#94a3b8;padding:1rem;">No vitals or I/O data available.</p>';
+            if (!hasAnyVit && !hasAnyIO && !hasO2 && !ltdDevices.length) return '<p style="color:#94a3b8;padding:1rem;">No vitals or I/O data available.</p>';
             var uid = 'vio_' + Math.floor(Math.random()*1e9);
             var html = '<style>' +
                 '.vio-sum{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;}' +
@@ -8829,6 +8930,19 @@ saveToLocalStorage();
                         '<td colspan="3" style="padding:4px 12px;font-size:0.92rem;'+o2Clr+'">'+o2D+'</td>' +
                         '<td class="vio-lc" style="color:#7dd3fc;">Current</td></tr>';
                 }
+            }
+            // Lines / Tubes / Drains section
+            if (ltdDevices.length > 0) {
+                html += '<tr class="vio-sh"><td colspan="5" style="background:#1a3a5c;">Lines / Tubes / Drains</td></tr>';
+                ltdDevices.forEach(function(d) {
+                    var dStr = d.detail || '';
+                    var durBadge = d.duration ? '<span style="margin-left:6px;color:#6b7280;font-size:0.78rem;">'+d.duration+'</span>' : '';
+                    html += '<tr>' +
+                        '<td style="color:#7dd3fc;font-weight:700;white-space:nowrap;">'+d.abbr+'</td>' +
+                        '<td colspan="3" style="padding:4px 12px;font-size:0.88rem;color:#cbd5e1;">'+dStr+durBadge+'</td>' +
+                        '<td class="vio-lc" style="color:#6b7280;font-size:0.78rem;" title="'+d.type.replace(/"/g,'&quot;')+'">'+d.type+'</td>' +
+                        '</tr>';
+                });
             }
             if (hasAnyIO) {
                 var _sIK=[],_sIKS={};
