@@ -8918,11 +8918,11 @@ saveToLocalStorage();
                 return row + '</tr>';
             }
             var tHTML = '<style>' +
-                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
+                '.uni-tbl{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;max-height:70vh;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
-                '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;max-width:72px;white-space:normal;word-break:break-word;}' +
-                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:72px;line-height:1.25;}' +
+                '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;width:55px;max-width:55px;white-space:normal;word-break:break-word;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;width:55px;max-width:55px;overflow:hidden;line-height:1.25;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
                 '</style><div class="uni-tbl"><table><tr><th>Parameter</th>';
@@ -9025,6 +9025,8 @@ saveToLocalStorage();
                 { start: day1Start, end: cutoff7am },
                 { start: day2Start, end: day1Start }
             ];
+            var _sElapsedHours = Math.max(0.5, Math.round((_now - cutoff7am) / 36000) / 100);
+            var _sDayHours = [_sElapsedHours, 24, 24];
             function _sfmtDate(d) { return (d.getMonth()+1) + '/' + d.getDate(); }
             var dayDates = [_sfmtDate(cutoff7am), _sfmtDate(day1Start), _sfmtDate(day2Start)];
             var vitalDefs = [
@@ -9102,16 +9104,16 @@ saveToLocalStorage();
             if (!hasAnyVit && !hasAnyIO && !hasO2 && !ltdDevices.length) return '<p style="color:#94a3b8;padding:1rem;">No vitals or I/O data available.</p>';
             var uid = 'vio_' + Math.floor(Math.random()*1e9);
             var html = '<style>' +
-                '.vio-sum{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;}' +
+                '.vio-sum{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;max-height:70vh;}' +
                 '.vio-sum table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000;}' +
-                '.vio-sum th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:5px 10px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;max-width:72px;white-space:normal;word-break:break-word;}' +
-                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:3px 6px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:normal;word-break:break-word;max-width:72px;}' +
+                '.vio-sum th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
+                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;width:55px;max-width:55px;white-space:normal;word-break:break-word;}' +
+                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:3px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:normal;word-break:break-word;width:55px;max-width:55px;overflow:hidden;}' +
                 '.vio-sum tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.vio-sum tr:hover td:first-child{background:#0d0d0d;}' +
-                '.vio-dc{padding:5px 14px;font-size:0.92rem;text-align:center;vertical-align:middle;}' +
-                '.vio-lc{padding:4px 10px;font-size:0.8rem;text-align:center;color:#94a3b8;white-space:nowrap;vertical-align:middle;min-width:90px;}' +
-                '.vio-sh td{font-size:0.82rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;text-transform:uppercase;color:#fff;}' +
+                '.vio-dc{padding:3px 8px;font-size:0.88rem;text-align:center;vertical-align:middle;}' +
+                '.vio-lc{padding:3px 6px;font-size:0.78rem;text-align:left;color:#94a3b8;white-space:nowrap;vertical-align:middle;min-width:55px;}' +
+                '.vio-sh td{font-size:0.82rem;font-weight:700;letter-spacing:0.08em;padding:4px 8px;text-transform:uppercase;color:#fff;}' +
                 '.vio-xbtn{display:block;width:100%;padding:8px 14px;background:#1c1c1e;color:#6b7280;font-size:0.8rem;font-family:monospace;border:none;border-top:0.5px solid rgba(84,84,88,0.3);cursor:pointer;text-align:left;border-radius:0 0 10px 10px;letter-spacing:0.03em;}' +
                 '.vio-xbtn:hover{background:#2c2c2e;color:#e5e7eb;}' +
                 '</style>';
@@ -9184,7 +9186,8 @@ saveToLocalStorage();
                 var _sHasUrine = ioPerDay.some(function(io){ return io&&io.outputs&&io.outputs.urine&&io.outputs.urine.length>0; });
                 var _sEnteralRate = (function() { for (var _i=0;_i<ioPerDay.length;_i++) { if (ioPerDay[_i]&&ioPerDay[_i].enteralRate) return ioPerDay[_i].enteralRate; } return null; })();
                 var _sEnteralFormula = (function() { for (var _i=0;_i<ioPerDay.length;_i++) { if (ioPerDay[_i]&&ioPerDay[_i].enteralFormula) return ioPerDay[_i].enteralFormula; } return null; })();
-                function _sIoRow(label, arrsPerDay, unit, ratePerHr) {
+                function _sIoRow(label, arrsPerDay, unit, opts) {
+                    opts = opts || {};
                     unit = unit || '';
                     var totals = arrsPerDay.map(_sSumVol);
                     if (!totals.some(function(t){ return t>0; })) return '';
@@ -9192,26 +9195,69 @@ saveToLocalStorage();
                     var lastStr = le&&le.dateTimeStr ? _sIoDate(le.dateTimeStr) : '';
                     var dispLabel = label.replace(/^Other:\s*/i,'');
                     if (dispLabel.length > 30) dispLabel = dispLabel.substring(0,28)+'…';
-                    var rateSuffix = ratePerHr ? '<div style="color:#7dd3fc;font-size:0.68rem;font-weight:600;white-space:nowrap;">@'+ratePerHr+' cc/hr</div>' : '';
+                    var rateSuffix = opts.ratePerHr ? '<div style="color:#7dd3fc;font-size:0.68rem;font-weight:600;white-space:nowrap;">@'+opts.ratePerHr+' cc/hr</div>' : '';
                     var row = '<tr><td title="'+label.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+dispLabel+rateSuffix+'</td>';
-                    totals.forEach(function(t){ row += t>0 ? '<td class="vio-dc" style="color:#6ee7b7;">'+t+unit+'</td>' : '<td class="vio-dc" style="color:#4b5563;">—</td>'; });
+                    totals.forEach(function(t, idx) {
+                        if (t > 0) {
+                            var cellHtml = t + unit;
+                            var hrs = opts.hoursPerDay ? opts.hoursPerDay[idx] : 0;
+                            if (opts.isContinuous && hrs > 0) {
+                                var ccHr = Math.round(t / hrs);
+                                cellHtml += '<div style="color:#7dd3fc;font-size:0.7rem;">~'+ccHr+'/hr</div>';
+                            }
+                            if (opts.showCcKgHr && opts.wtKg && hrs > 0) {
+                                var ccKgHr = (t / hrs / opts.wtKg).toFixed(2);
+                                var rateClr = parseFloat(ccKgHr) < 0.5 ? '#f87171' : '#86efac';
+                                cellHtml += '<div style="color:'+rateClr+';font-size:0.7rem;">'+ccKgHr+' cc/kg/hr</div>';
+                            }
+                            row += '<td class="vio-dc" style="color:#6ee7b7;">'+cellHtml+'</td>';
+                        } else {
+                            row += '<td class="vio-dc" style="color:#4b5563;">—</td>';
+                        }
+                    });
                     row += '<td class="vio-lc">' + lastStr + '</td>';
                     return row + '</tr>';
                 }
                 if (_sIK.length > 0) {
                     html += '<tr class="vio-sh"><td colspan="5" style="background:#155724;">↑ Intake — Daily Totals</td></tr>';
                     _sIK.forEach(function(k){
-                        var ratePerHr = null;
-                        if (_sEnteralRate && /enteral.*tube.*feed|tube.*feed.*continuous|enteral.*feed/i.test(k)) ratePerHr = _sEnteralRate;
-                        html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.intakes&&io.intakes[k]?io.intakes[k]:[]; }), ' mL', ratePerHr);
+                        var opts = {};
+                        if (/enteral|tube.?feed|nasogastric|ng.?tube|peg|jejunostomy|@\d+cc\/hr/i.test(k)) {
+                            if (_sEnteralRate) opts.ratePerHr = _sEnteralRate;
+                            opts.isContinuous = true;
+                            opts.hoursPerDay = _sDayHours;
+                        } else if (/continuous/i.test(k)) {
+                            opts.isContinuous = true;
+                            opts.hoursPerDay = _sDayHours;
+                        }
+                        html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.intakes&&io.intakes[k]?io.intakes[k]:[]; }), ' mL', opts);
                     });
+                    var _sTiTotals = [0,0,0];
+                    _sIK.forEach(function(k){ ioPerDay.forEach(function(io,i){ if(io&&io.intakes&&io.intakes[k]) _sTiTotals[i]+=_sSumVol(io.intakes[k]); }); });
+                    if (_sTiTotals.some(function(t){ return t>0; })) {
+                        html += '<tr style="background:#0a2a14;"><td style="color:#60a5fa;font-weight:700;font-size:0.75rem;padding:3px 4px;position:-webkit-sticky;position:sticky;left:0;background:#0a2a14;z-index:1;">↑ Total In</td>';
+                        _sTiTotals.forEach(function(t){ html += t>0 ? '<td class="vio-dc" style="color:#60a5fa;font-weight:700;">'+t+' mL</td>' : '<td class="vio-dc" style="color:#4b5563;">—</td>'; });
+                        html += '<td class="vio-lc"></td></tr>';
+                    }
                 }
                 var _sHasOut = _sHasUrine || _sDK.length>0 || _sOK.length>0;
                 if (_sHasOut) {
                     html += '<tr class="vio-sh"><td colspan="5" style="background:#6b1a0f;">↓ Output — Daily Totals</td></tr>';
-                    if (_sHasUrine) html += _sIoRow('Urine', ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.urine?io.outputs.urine:[]; }), ' mL');
+                    if (_sHasUrine) html += _sIoRow('Urine', ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.urine?io.outputs.urine:[]; }), ' mL', {showCcKgHr:true, wtKg:labData&&labData.weight, hoursPerDay:_sDayHours});
                     _sDK.forEach(function(k){ html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.drains&&io.outputs.drains[k]?io.outputs.drains[k]:[]; }), ' mL'); });
                     _sOK.forEach(function(k){ html += _sIoRow(k, ioPerDay.map(function(io){ return io&&io.outputs&&io.outputs.other&&io.outputs.other[k]?io.outputs.other[k]:[]; }), ' mL'); });
+                    var _sToTotals = [0,0,0];
+                    ioPerDay.forEach(function(io,i){
+                        if(!io)return;
+                        _sToTotals[i]+=_sSumVol(io.outputs&&io.outputs.urine);
+                        Object.values((io.outputs&&io.outputs.drains)||{}).forEach(function(a){_sToTotals[i]+=_sSumVol(a);});
+                        Object.values((io.outputs&&io.outputs.other)||{}).forEach(function(a){_sToTotals[i]+=_sSumVol(a);});
+                    });
+                    if (_sToTotals.some(function(t){ return t>0; })) {
+                        html += '<tr style="background:#2a0a0a;"><td style="color:#f87171;font-weight:700;font-size:0.75rem;padding:3px 4px;position:-webkit-sticky;position:sticky;left:0;background:#2a0a0a;z-index:1;">↓ Total Out</td>';
+                        _sToTotals.forEach(function(t){ html += t>0 ? '<td class="vio-dc" style="color:#f87171;font-weight:700;">'+t+' mL</td>' : '<td class="vio-dc" style="color:#4b5563;">—</td>'; });
+                        html += '<td class="vio-lc"></td></tr>';
+                    }
                 }
                 var balPerDay = ioPerDay.map(function(io) {
                     if (!io) return null;
@@ -9485,11 +9531,11 @@ saveToLocalStorage();
 
             // ── TABLE HTML ───────────────────────────────────────────────────────
             var tableHTML = '<style>' +
-                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
+                '.uni-tbl{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;max-height:70vh;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
-                '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 8px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;max-width:72px;white-space:normal;word-break:break-word;}' +
-                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.75rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;max-width:72px;line-height:1.25;}' +
+                '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;width:55px;max-width:55px;white-space:normal;word-break:break-word;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;width:55px;max-width:55px;overflow:hidden;line-height:1.25;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
                 '</style><div class="uni-tbl"><table><tr><th>Lab</th>';
