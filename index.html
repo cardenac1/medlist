@@ -3817,14 +3817,20 @@ const helpContent = {
             setTimeout(function() { try { autoResizeTextarea(ta); } catch(e) {} }, 0);
         }
 
-        function _makeSysHTML(violinText) {
+        function _makeSysHTML(rawText) {
             var labData = {};
-            try { labData = extractLabValues(violinText); } catch(e) {}
-            return buildSystemsHTML(labData, violinText);
+            try { labData = extractLabValues(rawText); } catch(e) {}
+            return buildSystemsHTML(labData, rawText);
+        }
+
+        function _sysSourceText(patient) {
+            // Prefer raw imported data (full lab/vital/order detail);
+            // patient.VIOLIN is the fishbone summary which lacks orders/full lab history.
+            return (patient && patient.ImportedData) || (typeof lastImportedData !== 'undefined' && lastImportedData) || (patient && patient['VIOLIN']) || '';
         }
 
         function _buildSystemsView(bodyEl, patient) {
-            var violinText = (patient && patient['VIOLIN']) || '';
+            var violinText = _sysSourceText(patient);
             try {
                 var sysHTML = _makeSysHTML(violinText);
                 bodyEl.innerHTML = sysHTML;
@@ -3843,7 +3849,7 @@ const helpContent = {
                         var dispEl = bodyEl.querySelector('#sd-content');
                         var dispVal = dispEl ? dispEl.innerText : '';
 
-                        var fresh = (patient && patient['VIOLIN']) || '';
+                        var fresh = _sysSourceText(patient);
                         bodyEl.innerHTML = _makeSysHTML(fresh);
 
                         // Restore plan fields
@@ -3881,7 +3887,7 @@ const helpContent = {
                     var dispEl = bodyEl.querySelector('#sd-content');
                     var dispVal = dispEl ? dispEl.innerText : '';
 
-                    bodyEl.innerHTML = _makeSysHTML((patient && patient['VIOLIN']) || '');
+                    bodyEl.innerHTML = _makeSysHTML(_sysSourceText(patient));
 
                     ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
                         if (plans[id] !== undefined) { var el = bodyEl.querySelector('#' + id + '-plan'); if (el) el.innerText = plans[id]; }
@@ -6986,12 +6992,15 @@ function switchView(mode) {
                 // Store state on the element — renderProblemsCard reads these
                 body._probRaw = !!(parseProblemsList(patient['ICS'] || '').legacy);
                 body._rawBtn  = rawBtn; // renderProblemsCard keeps label in sync
-                body._probSystems = false;
+                // Restore systems mode preference from patient (sticky across renders/patient switches)
+                body._probSystems = !!(patient && patient._sysMode);
+                if (body._probSystems) body._probRaw = false;
                 body._sysBtn = sysBtn;
 
                 rawBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     body._probSystems = false;
+                    if (patient) patient._sysMode = false;
                     body._probRaw = !body._probRaw;
                     sysBtn.classList.remove('active');
                     renderProblemsCard(body, patient);
@@ -7000,6 +7009,7 @@ function switchView(mode) {
                 sysBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     body._probSystems = !body._probSystems;
+                    if (patient) patient._sysMode = body._probSystems;
                     if (body._probSystems) {
                         body._probRaw = false;
                         sysBtn.classList.add('active');
@@ -9415,10 +9425,14 @@ saveToLocalStorage();
                     if (!totals.some(function(t){ return t>0; })) return '';
                     var le = _sLastIoEntry(arrsPerDay);
                     var lastStr = le&&le.dateTimeStr ? _sIoDate(le.dateTimeStr) : '';
-                    var dispLabel = label.replace(/^Other:\s*/i,'');
-                    if (dispLabel.length > 30) dispLabel = dispLabel.substring(0,28)+'…';
+                    var fullLabel = label.replace(/^Other:\s*/i,'');
+                    var dispLabel = fullLabel;
+                    var truncated = false;
+                    if (dispLabel.length > 30) { dispLabel = dispLabel.substring(0,28)+'…'; truncated = true; }
                     var rateSuffix = opts.ratePerHr ? '<div style="color:#7dd3fc;font-size:0.68rem;font-weight:600;white-space:nowrap;">@'+opts.ratePerHr+' cc/hr</div>' : '';
-                    var row = '<tr><td title="'+label.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+dispLabel+rateSuffix+'</td>';
+                    var safeFull = fullLabel.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+                    var tdStyle = truncated ? ' style="cursor:help;text-decoration:underline dotted rgba(148,163,184,0.4);text-underline-offset:2px;"' : '';
+                    var row = '<tr><td title="'+safeFull+'"'+tdStyle+'>'+dispLabel+rateSuffix+'</td>';
                     totals.forEach(function(t, idx) {
                         if (t > 0) {
                             var cellHtml = t + unit;
