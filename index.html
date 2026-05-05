@@ -4091,6 +4091,165 @@ const helpContent = {
             }
         }
 
+        // Appends collapsible Problems and Systems sections to a sidebar element (chartcheck / consult views)
+        function _appendSidebarProblemsSystems(sidebarEl, patient) {
+            // ── Problems section ──
+            var probSection = document.createElement('div');
+            probSection.className = 'chartcheck-section';
+
+            var probHeader = document.createElement('div');
+            probHeader.className = 'chartcheck-section-header';
+            probHeader.style.cssText = 'cursor:pointer;';
+
+            var probTitleSpan = document.createElement('span');
+            probTitleSpan.className = 'section-title';
+            probTitleSpan.style.color = '#06b6d4';
+            probTitleSpan.textContent = 'Problems';
+            probHeader.appendChild(probTitleSpan);
+
+            var probRawBtn = document.createElement('button');
+            probRawBtn.type = 'button';
+            probRawBtn.className = 'inline-action-btn';
+            probRawBtn.style.marginLeft = '0';
+            probHeader.appendChild(probRawBtn);
+
+            var probExpandBtn = document.createElement('button');
+            probExpandBtn.type = 'button';
+            probExpandBtn.className = 'inline-action-btn';
+            probExpandBtn.textContent = '⊞ All';
+            probExpandBtn.title = 'Expand / collapse all';
+            probHeader.appendChild(probExpandBtn);
+
+            var probSysBtn = document.createElement('button');
+            probSysBtn.type = 'button';
+            probSysBtn.className = 'inline-action-btn';
+            probSysBtn.textContent = '⊞ Systems';
+            probSysBtn.title = 'Toggle systems view';
+            probHeader.appendChild(probSysBtn);
+
+            var probChev = document.createElement('span');
+            probChev.textContent = '▾';
+            probChev.style.cssText = 'color:#64748b;font-size:0.75rem;transition:transform 200ms ease;';
+            probChev.style.transform = 'rotate(-90deg)';
+            probHeader.appendChild(probChev);
+
+            probSection.appendChild(probHeader);
+
+            var probBody = document.createElement('div');
+            probBody.className = 'chartcheck-section-body';
+            probBody.style.cssText = 'display:none;padding:0;';
+            probBody._probRaw = !!(parseProblemsList(patient['ICS'] || '').legacy);
+            probBody._probSystems = false;
+            probBody._rawBtn = probRawBtn;
+            probBody._sysBtn = probSysBtn;
+
+            probSection.appendChild(probBody);
+
+            // Toggle open/close — stop propagation on header buttons
+            [probRawBtn, probExpandBtn, probSysBtn].forEach(function(btn) {
+                btn.addEventListener('click', function(e) { e.stopPropagation(); });
+            });
+
+            probHeader.addEventListener('click', function() {
+                if (probBody.style.display === 'none') {
+                    probBody.style.display = 'block';
+                    probChev.style.transform = 'rotate(0deg)';
+                    renderProblemsCard(probBody, patient);
+                } else {
+                    probBody.style.display = 'none';
+                    probChev.style.transform = 'rotate(-90deg)';
+                }
+            });
+
+            probRawBtn.addEventListener('click', function() {
+                probBody._probSystems = false;
+                if (patient) patient._sysMode = false;
+                probBody._probRaw = !probBody._probRaw;
+                probSysBtn.classList.remove('active');
+                renderProblemsCard(probBody, patient);
+            });
+
+            probSysBtn.addEventListener('click', function() {
+                probBody._probSystems = !probBody._probSystems;
+                if (patient) patient._sysMode = probBody._probSystems;
+                if (probBody._probSystems) {
+                    probBody._probRaw = false;
+                    probSysBtn.classList.add('active');
+                    probSysBtn.textContent = '✕ Systems';
+                } else {
+                    probSysBtn.classList.remove('active');
+                    probSysBtn.textContent = '⊞ Systems';
+                }
+                renderProblemsCard(probBody, patient);
+            });
+
+            probExpandBtn.addEventListener('click', function() {
+                var details = probBody.querySelectorAll('.prob-detail');
+                var allOpen = Array.prototype.every.call(details, function(d) { return d.style.display !== 'none'; });
+                if (!probBody._probExpandedNames) probBody._probExpandedNames = new Set();
+                details.forEach(function(d) {
+                    var probItem = d.parentElement;
+                    var chevron  = probItem && probItem.querySelector('.prob-chevron');
+                    var nameEl   = probItem && probItem.querySelector('.prob-name');
+                    if (allOpen) {
+                        d.style.display = 'none';
+                        if (chevron) chevron.style.transform = 'rotate(0deg)';
+                        if (nameEl)  probBody._probExpandedNames.delete(nameEl.textContent.trim());
+                    } else {
+                        d.style.display = 'block';
+                        if (chevron) chevron.style.transform = 'rotate(90deg)';
+                        if (nameEl)  probBody._probExpandedNames.add(nameEl.textContent.trim());
+                    }
+                });
+                probExpandBtn.textContent = allOpen ? '⊞ All' : '⊟ All';
+                probExpandBtn.title = allOpen ? 'Expand all problems' : 'Collapse all problems';
+            });
+
+            sidebarEl.appendChild(probSection);
+
+            // ── Systems section ──
+            var sysSection = document.createElement('div');
+            sysSection.className = 'chartcheck-section';
+            sysSection.style.overflow = 'visible';
+
+            var sysHeader = document.createElement('div');
+            sysHeader.className = 'chartcheck-section-header';
+            sysHeader.style.cssText = 'cursor:pointer;';
+
+            var sysTitleSpan = document.createElement('span');
+            sysTitleSpan.className = 'section-title';
+            sysTitleSpan.style.color = '#a78bfa';
+            sysTitleSpan.textContent = 'Systems';
+            sysHeader.appendChild(sysTitleSpan);
+
+            var sysChev = document.createElement('span');
+            sysChev.textContent = '▾';
+            sysChev.style.cssText = 'color:#64748b;font-size:0.75rem;transition:transform 200ms ease;margin-left:auto;';
+            sysChev.style.transform = 'rotate(-90deg)';
+            sysHeader.appendChild(sysChev);
+
+            sysSection.appendChild(sysHeader);
+
+            var sysBody = document.createElement('div');
+            sysBody.className = 'chartcheck-section-body';
+            sysBody.style.cssText = 'display:none;padding:0;';
+
+            sysSection.appendChild(sysBody);
+
+            sysHeader.addEventListener('click', function() {
+                if (sysBody.style.display === 'none') {
+                    sysBody.style.display = 'block';
+                    sysChev.style.transform = 'rotate(0deg)';
+                    _buildSystemsView(sysBody, patient);
+                } else {
+                    sysBody.style.display = 'none';
+                    sysChev.style.transform = 'rotate(-90deg)';
+                }
+            });
+
+            sidebarEl.appendChild(sysSection);
+        }
+
         function _buildProblemsStructured(bodyEl, patient) {
             var parsed   = parseProblemsList(patient['ICS'] || '');
             var problems = parsed.problems; // safe: parseProblemsList never throws
@@ -7491,6 +7650,8 @@ case 'chartcheck': {
             todoCard.appendChild(todoBody);
             ccSidebar.appendChild(todoCard);
 
+            _appendSidebarProblemsSystems(ccSidebar, patient);
+
             ccLayout.appendChild(ccMain);
             ccLayout.appendChild(ccSidebar);
             form.appendChild(ccLayout);
@@ -7645,6 +7806,8 @@ case 'chartcheck': {
                     renderTodoList(omTodoBody, patient);
                     omTodoCard.appendChild(omTodoBody);
                     omSidebar.appendChild(omTodoCard);
+
+                    _appendSidebarProblemsSystems(omSidebar, patient);
 
                     omLayout.appendChild(omMain);
                     omLayout.appendChild(omSidebar);
