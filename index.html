@@ -1162,6 +1162,11 @@
     flex-wrap: wrap; align-items: center; border-bottom: 1px solid #1a1a1c;
 }
 .sys-toolbar-hint { color: #475569; font-size: 0.65rem; }
+.sys-sync-btn {
+    font-size: 0.62rem; font-weight: 700; background: #0a1a30; border: 1px solid #3b82f6;
+    color: #60a5fa; border-radius: 5px; padding: 2px 8px; cursor: pointer;
+}
+.sys-sync-btn:hover { background: #1a3a60; }
 .sys-compile-btn {
     font-size: 0.62rem; font-weight: 700; background: #0a2a1a; border: 1px solid #10b981;
     color: #34d399; border-radius: 5px; padding: 2px 8px; cursor: pointer;
@@ -3817,20 +3822,81 @@ const helpContent = {
             try {
                 var sysHTML = buildSystemsHTML(violinText);
                 bodyEl.innerHTML = sysHTML;
-                // Wire up compile/copy buttons
-                var compBtn = bodyEl.querySelector('.sys-compile-btn');
-                if (compBtn) {
-                    compBtn.addEventListener('click', function(e) {
+
+                // Sync button — rebuilds cards from latest VIOLIN data, preserving Plan fields
+                var syncBtn = bodyEl.querySelector('.sys-sync-btn');
+                if (syncBtn) {
+                    syncBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        var noteText = compileSysNote(bodyEl);
-                        navigator.clipboard.writeText(noteText).then(function() {
-                            compBtn.textContent = '✓ Copied!';
-                            setTimeout(function() { compBtn.textContent = '📋 Copy Note'; }, 1800);
-                        }).catch(function() { window.prompt('Copy:', noteText); });
+                        // Save plan fields before rebuild
+                        var plans = {};
+                        ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
+                            var el = bodyEl.querySelector('#' + id + '-plan');
+                            if (el) plans[id] = el.innerText;
+                        });
+                        var dispEl = bodyEl.querySelector('#sd-content');
+                        var dispVal = dispEl ? dispEl.innerText : '';
+
+                        var fresh = (patient && patient['VIOLIN']) || '';
+                        bodyEl.innerHTML = buildSystemsHTML(fresh);
+
+                        // Restore plan fields
+                        ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
+                            if (plans[id] !== undefined) {
+                                var el = bodyEl.querySelector('#' + id + '-plan');
+                                if (el) el.innerText = plans[id];
+                            }
+                        });
+                        if (dispVal) { var de = bodyEl.querySelector('#sd-content'); if (de) de.innerText = dispVal; }
+
+                        // Re-wire buttons after rebuild
+                        _wireSysButtons(bodyEl, patient);
+                        syncBtn = bodyEl.querySelector('.sys-sync-btn');
+                        if (syncBtn) { syncBtn.textContent = '✓ Synced!'; setTimeout(function() { if(syncBtn) syncBtn.textContent = '🔄 Sync VIOLIN'; }, 1500); }
                     });
                 }
+
+                _wireSysButtons(bodyEl, patient);
             } catch(err) {
                 bodyEl.innerHTML = '<p style="color:#ef4444;padding:0.75rem;font-size:0.8rem;">Error building systems view: ' + (err && err.message || err) + '</p>';
+            }
+        }
+
+        function _wireSysButtons(bodyEl, patient) {
+            var syncBtn = bodyEl.querySelector('.sys-sync-btn');
+            if (syncBtn) {
+                syncBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    var plans = {};
+                    ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
+                        var el = bodyEl.querySelector('#' + id + '-plan');
+                        if (el) plans[id] = el.innerText;
+                    });
+                    var dispEl = bodyEl.querySelector('#sd-content');
+                    var dispVal = dispEl ? dispEl.innerText : '';
+
+                    bodyEl.innerHTML = buildSystemsHTML((patient && patient['VIOLIN']) || '');
+
+                    ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
+                        if (plans[id] !== undefined) { var el = bodyEl.querySelector('#' + id + '-plan'); if (el) el.innerText = plans[id]; }
+                    });
+                    if (dispVal) { var de = bodyEl.querySelector('#sd-content'); if (de) de.innerText = dispVal; }
+
+                    _wireSysButtons(bodyEl, patient);
+                    var sb = bodyEl.querySelector('.sys-sync-btn');
+                    if (sb) { sb.textContent = '✓ Synced!'; setTimeout(function() { if(sb) sb.textContent = '🔄 Sync VIOLIN'; }, 1500); }
+                };
+            }
+            var compBtn = bodyEl.querySelector('.sys-compile-btn');
+            if (compBtn) {
+                compBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    var noteText = compileSysNote(bodyEl);
+                    navigator.clipboard.writeText(noteText).then(function() {
+                        compBtn.textContent = '✓ Copied!';
+                        setTimeout(function() { if(compBtn) compBtn.textContent = '📋 Copy Note'; }, 1800);
+                    }).catch(function() { window.prompt('Copy:', noteText); });
+                };
             }
         }
 
@@ -9071,8 +9137,8 @@ saveToLocalStorage();
                 '.uni-tbl{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;max-height:70vh;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
                 '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;width:55px;max-width:55px;white-space:normal;word-break:break-word;}' +
-                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;width:55px;max-width:55px;overflow:hidden;line-height:1.25;}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;white-space:nowrap;min-width:52px;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:2px 6px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:nowrap;min-width:52px;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
                 '</style><div class="uni-tbl"><table><tr><th>Parameter</th>';
@@ -9257,8 +9323,8 @@ saveToLocalStorage();
                 '.vio-sum{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;max-height:70vh;}' +
                 '.vio-sum table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000;}' +
                 '.vio-sum th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;width:55px;max-width:55px;white-space:normal;word-break:break-word;}' +
-                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:3px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:normal;word-break:break-word;width:55px;max-width:55px;overflow:hidden;}' +
+                '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;white-space:nowrap;min-width:52px;}' +
+                '.vio-sum td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:3px 6px;position:-webkit-sticky;position:sticky;left:0;background:#000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:middle;white-space:nowrap;min-width:52px;}' +
                 '.vio-sum tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.vio-sum tr:hover td:first-child{background:#0d0d0d;}' +
                 '.vio-dc{padding:3px 8px;font-size:0.88rem;text-align:center;vertical-align:middle;}' +
@@ -9684,8 +9750,8 @@ saveToLocalStorage();
                 '.uni-tbl{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;max-height:70vh;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
                 '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
-                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;width:55px;max-width:55px;white-space:normal;word-break:break-word;}' +
-                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:2px 4px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:normal;word-break:break-word;width:55px;max-width:55px;overflow:hidden;line-height:1.25;}' +
+                '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;white-space:nowrap;min-width:52px;}' +
+                '.uni-tbl td:first-child{color:#aeaeb2;font-size:0.72rem;font-weight:600;padding:2px 6px;position:-webkit-sticky;position:sticky;left:0;background:#000000;z-index:1;border-right:0.5px solid rgba(84,84,88,0.3);vertical-align:top;white-space:nowrap;min-width:52px;}' +
                 '.uni-tbl tr:hover td{background-color:rgba(255,255,255,0.04);}' +
                 '.uni-tbl tr:hover td:first-child{background:#0d0d0d;}' +
                 '</style><div class="uni-tbl"><table><tr><th>Lab</th>';
@@ -19379,7 +19445,8 @@ function buildSystemsHTML(violinText) {
              '</div></div></div>';
 
     return '<div class="sys-toolbar">' +
-           '<span class="sys-toolbar-hint">Click any field to edit · Populated from VIOLIN data</span>' +
+           '<span class="sys-toolbar-hint">Click any field to edit</span>' +
+           '<button class="sys-sync-btn">🔄 Sync VIOLIN</button>' +
            '<button class="sys-compile-btn">📋 Copy Note</button>' +
            '</div>' +
            '<div class="sys-grid">' + cards + '</div>';
