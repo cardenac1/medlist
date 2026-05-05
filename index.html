@@ -1113,6 +1113,9 @@
     background: rgba(0,0,0,0.3);
     border-bottom: 1px solid rgba(255,255,255,0.04);
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 .sys-card-body {
     padding: 0.4rem 0.6rem 0.5rem;
@@ -1156,6 +1159,36 @@
 .sys-field:hover { border-color: rgba(255,255,255,0.12); }
 .sys-field:focus { outline: none; border-color: #3b82f6; background: rgba(59,130,246,0.07); }
 .sys-field.multi { min-height: 2.5em; }
+.sys-val {
+    color: #e2e8f0; font-size: 0.7rem; line-height: 1.35; flex: 1;
+    word-break: break-word; white-space: pre-wrap; padding: 0.1rem 0.35rem;
+    border-radius: 3px; min-height: 1.1em;
+}
+.sys-val.multi { min-height: 1.8em; }
+.sys-val:empty::after { content: '—'; color: #374151; font-style: italic; }
+.sys-edit-btn {
+    font-size: 0.58rem; font-weight: 700;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+    color: var(--sc, #3b82f6); border-radius: 4px; padding: 1px 7px;
+    cursor: pointer; flex-shrink: 0; margin-left: 6px; line-height: 1.5;
+}
+.sys-edit-btn:hover { background: rgba(255,255,255,0.13); }
+.sys-done-btn {
+    margin-top: 0.4rem; align-self: flex-end;
+    font-size: 0.68rem; font-weight: 700;
+    background: rgba(59,130,246,0.15); border: 1px solid #3b82f6;
+    color: #60a5fa; border-radius: 5px; padding: 3px 14px; cursor: pointer;
+}
+.sys-done-btn:hover { background: rgba(59,130,246,0.28); }
+.sys-textarea {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(59,130,246,0.35);
+    border-radius: 3px; padding: 0.2rem 0.35rem; color: #e2e8f0;
+    font-size: 0.7rem; line-height: 1.35; flex: 1; font-family: inherit;
+    resize: none; overflow: hidden; min-height: 1.6em; outline: none;
+    width: 100%; box-sizing: border-box;
+}
+.sys-textarea:focus { border-color: #3b82f6; background: rgba(59,130,246,0.07); }
+.sys-textarea.multi { min-height: 3.2em; }
 .sys-sep { border-top: 1px solid rgba(255,255,255,0.04); margin: 0.15rem 0; }
 .sys-toolbar {
     display: flex; gap: 0.4rem; padding: 0.4rem 0.5rem 0;
@@ -3689,6 +3722,71 @@ const helpContent = {
             return result;
         }
 
+        // Push non-empty lines from a system plan field into the todo checklist.
+        // Lines prefixed with ✓ are added as already-done tasks.
+        function syncPlanLinesToTodo(planText, patient) {
+            try {
+                if (!planText || !planText.trim()) return;
+                var tp = parseTodoText(patient['To do'] || '');
+                var changed = false;
+                planText.split('\n').forEach(function(line) {
+                    var isDone = /^✓/.test(line.trim());
+                    var text = line.replace(/^[✓]\s*/, '').trim();
+                    if (!text) return;
+                    var lo = text.toLowerCase();
+                    var existing = null;
+                    tp.tasks.some(function(t) {
+                        if (t.type === 'task' && (t.text || '').trim().toLowerCase() === lo) { existing = t; return true; }
+                        return false;
+                    });
+                    if (!existing) {
+                        tp.tasks.push({ type: 'task', text: text, done: isDone });
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    patient['To do'] = serializeTodoItems(tp.tasks, tp.suggestions);
+                    saveToLocalStorage();
+                    var tc = document.getElementById('todoContainer');
+                    if (tc) renderTodoList(tc, patient);
+                    if (typeof updateTodoBadge === 'function') updateTodoBadge(patient);
+                }
+            } catch(e) {}
+        }
+
+        // Sync a todo task's done-state back into system plan fields stored in patient.systemFields
+        function syncTodoDoneToPlans(text, isDone, patient) {
+            try {
+                if (!patient || !patient.systemFields) return;
+                var lo = (text || '').trim().toLowerCase();
+                ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
+                    var planKey = id + '-plan';
+                    var planText = patient.systemFields[planKey];
+                    if (!planText) return;
+                    var lines = planText.split('\n');
+                    var changed = false;
+                    var newLines = lines.map(function(line) {
+                        var stripped = line.replace(/^[✓]\s*/, '').trim();
+                        if (stripped.toLowerCase() === lo) {
+                            changed = true;
+                            return isDone ? '✓ ' + stripped : stripped;
+                        }
+                        return line;
+                    });
+                    if (changed) {
+                        patient.systemFields[planKey] = newLines.join('\n');
+                        // Update DOM if card is in edit mode (textarea) or display mode (div)
+                        var taEl = document.querySelector('textarea[data-fid="' + planKey + '"]');
+                        if (taEl) { taEl.value = patient.systemFields[planKey]; }
+                        else {
+                            var dvEl = document.querySelector('[data-fid="' + planKey + '"]');
+                            if (dvEl) dvEl.textContent = patient.systemFields[planKey];
+                        }
+                    }
+                });
+            } catch(e) {}
+        }
+
         // ── Problems list: parse / serialize / render ──
 
         function parseProblemsList(text) {
@@ -3832,42 +3930,7 @@ const helpContent = {
         function _buildSystemsView(bodyEl, patient) {
             var violinText = _sysSourceText(patient);
             try {
-                var sysHTML = _makeSysHTML(violinText);
-                bodyEl.innerHTML = sysHTML;
-
-                // Sync button — rebuilds cards from latest VIOLIN data, preserving Plan fields
-                var syncBtn = bodyEl.querySelector('.sys-sync-btn');
-                if (syncBtn) {
-                    syncBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        // Save plan fields before rebuild
-                        var plans = {};
-                        ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
-                            var el = bodyEl.querySelector('#' + id + '-plan');
-                            if (el) plans[id] = el.innerText;
-                        });
-                        var dispEl = bodyEl.querySelector('#sd-content');
-                        var dispVal = dispEl ? dispEl.innerText : '';
-
-                        var fresh = _sysSourceText(patient);
-                        bodyEl.innerHTML = _makeSysHTML(fresh);
-
-                        // Restore plan fields
-                        ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
-                            if (plans[id] !== undefined) {
-                                var el = bodyEl.querySelector('#' + id + '-plan');
-                                if (el) el.innerText = plans[id];
-                            }
-                        });
-                        if (dispVal) { var de = bodyEl.querySelector('#sd-content'); if (de) de.innerText = dispVal; }
-
-                        // Re-wire buttons after rebuild
-                        _wireSysButtons(bodyEl, patient);
-                        syncBtn = bodyEl.querySelector('.sys-sync-btn');
-                        if (syncBtn) { syncBtn.textContent = '✓ Synced!'; setTimeout(function() { if(syncBtn) syncBtn.textContent = '🔄 Sync VIOLIN'; }, 1500); }
-                    });
-                }
-
+                bodyEl.innerHTML = _makeSysHTML(violinText);
                 _wireSysButtons(bodyEl, patient);
             } catch(err) {
                 bodyEl.innerHTML = '<p style="color:#ef4444;padding:0.75rem;font-size:0.8rem;">Error building systems view: ' + (err && err.message || err) + '</p>';
@@ -3875,30 +3938,146 @@ const helpContent = {
         }
 
         function _wireSysButtons(bodyEl, patient) {
+            if (!patient.systemFields) patient.systemFields = {};
+
+            // Restore saved values into display divs
+            bodyEl.querySelectorAll('[data-fid]').forEach(function(el) {
+                var fid = el.getAttribute('data-fid');
+                if (fid && patient.systemFields[fid] !== undefined) {
+                    el.textContent = patient.systemFields[fid];
+                }
+            });
+
+            // Wire each card's Edit button
+            bodyEl.querySelectorAll('.sys-edit-btn').forEach(function(editBtn) {
+                editBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    var card = editBtn.closest('.sys-card');
+                    if (!card) return;
+                    var body = card.querySelector('[data-card-body]');
+                    if (!body) return;
+
+                    // Collect current display row structure
+                    var fieldRows = [];
+                    body.childNodes.forEach(function(node) {
+                        if (node.classList && node.classList.contains('sys-sep')) {
+                            fieldRows.push({ sep: true });
+                        } else if (node.classList && node.classList.contains('sys-row')) {
+                            var lbl = node.querySelector('.sys-lbl');
+                            var val = node.querySelector('[data-fid]');
+                            if (lbl && val) {
+                                fieldRows.push({
+                                    label: lbl.textContent,
+                                    fid: val.getAttribute('data-fid'),
+                                    value: val.textContent,
+                                    multi: val.classList.contains('multi')
+                                });
+                            }
+                        }
+                    });
+
+                    // Switch body to edit mode
+                    body.innerHTML = '';
+                    body.style.display = 'flex';
+                    body.style.flexDirection = 'column';
+
+                    fieldRows.forEach(function(f) {
+                        if (f.sep) {
+                            var sep = document.createElement('div');
+                            sep.className = 'sys-sep';
+                            body.appendChild(sep);
+                            return;
+                        }
+                        var row = document.createElement('div');
+                        row.className = 'sys-row';
+                        var lbl = document.createElement('span');
+                        lbl.className = 'sys-lbl';
+                        lbl.textContent = f.label;
+                        var ta = document.createElement('textarea');
+                        ta.className = 'sys-textarea' + (f.multi ? ' multi' : '');
+                        ta.setAttribute('data-fid', f.fid);
+                        ta.value = patient.systemFields[f.fid] !== undefined ? patient.systemFields[f.fid] : f.value;
+                        ta.addEventListener('input', function() {
+                            this.style.height = 'auto';
+                            this.style.height = this.scrollHeight + 'px';
+                        });
+                        row.appendChild(lbl);
+                        row.appendChild(ta);
+                        body.appendChild(row);
+                    });
+
+                    var doneBtn = document.createElement('button');
+                    doneBtn.type = 'button';
+                    doneBtn.className = 'sys-done-btn';
+                    doneBtn.textContent = 'Done';
+                    body.appendChild(doneBtn);
+
+                    // Auto-size all textareas
+                    setTimeout(function() {
+                        body.querySelectorAll('textarea').forEach(function(ta) {
+                            ta.style.height = 'auto';
+                            ta.style.height = ta.scrollHeight + 'px';
+                        });
+                        var first = body.querySelector('textarea');
+                        if (first) first.focus();
+                    }, 0);
+
+                    // Done button: save values and return to display mode
+                    doneBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        body.querySelectorAll('textarea[data-fid]').forEach(function(ta) {
+                            var fid = ta.getAttribute('data-fid');
+                            patient.systemFields[fid] = ta.value;
+                            if (fid.endsWith('-plan')) {
+                                syncPlanLinesToTodo(ta.value, patient);
+                            }
+                        });
+                        saveToLocalStorage();
+
+                        // Rebuild display rows
+                        body.innerHTML = '';
+                        fieldRows.forEach(function(f) {
+                            if (f.sep) {
+                                var sep = document.createElement('div');
+                                sep.className = 'sys-sep';
+                                body.appendChild(sep);
+                                return;
+                            }
+                            var row = document.createElement('div');
+                            row.className = 'sys-row';
+                            var lbl = document.createElement('span');
+                            lbl.className = 'sys-lbl';
+                            lbl.textContent = f.label;
+                            var val = document.createElement('div');
+                            val.className = 'sys-val' + (f.multi ? ' multi' : '');
+                            val.setAttribute('data-fid', f.fid);
+                            val.textContent = patient.systemFields[f.fid] !== undefined ? patient.systemFields[f.fid] : f.value;
+                            row.appendChild(lbl);
+                            row.appendChild(val);
+                            body.appendChild(row);
+                        });
+                    };
+                };
+            });
+
+            // Sync VIOLIN button
             var syncBtn = bodyEl.querySelector('.sys-sync-btn');
             if (syncBtn) {
                 syncBtn.onclick = function(e) {
                     e.stopPropagation();
-                    var plans = {};
-                    ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
-                        var el = bodyEl.querySelector('#' + id + '-plan');
-                        if (el) plans[id] = el.innerText;
+                    // Save any open edit-mode textarea values first
+                    bodyEl.querySelectorAll('textarea[data-fid]').forEach(function(ta) {
+                        var fid = ta.getAttribute('data-fid');
+                        if (fid) patient.systemFields[fid] = ta.value;
                     });
-                    var dispEl = bodyEl.querySelector('#sd-content');
-                    var dispVal = dispEl ? dispEl.innerText : '';
-
                     bodyEl.innerHTML = _makeSysHTML(_sysSourceText(patient));
-
-                    ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
-                        if (plans[id] !== undefined) { var el = bodyEl.querySelector('#' + id + '-plan'); if (el) el.innerText = plans[id]; }
-                    });
-                    if (dispVal) { var de = bodyEl.querySelector('#sd-content'); if (de) de.innerText = dispVal; }
-
                     _wireSysButtons(bodyEl, patient);
                     var sb = bodyEl.querySelector('.sys-sync-btn');
                     if (sb) { sb.textContent = '✓ Synced!'; setTimeout(function() { if(sb) sb.textContent = '🔄 Sync VIOLIN'; }, 1500); }
                 };
             }
+
+            // Copy Note button
             var compBtn = bodyEl.querySelector('.sys-compile-btn');
             if (compBtn) {
                 compBtn.onclick = function(e) {
@@ -5336,6 +5515,8 @@ const helpContent = {
                         if (probBodyEl) renderProblemsCard(probBodyEl, patient);
                     }
                 } catch(e2) {}
+                // Sync check state back to system plan fields
+                try { syncTodoDoneToPlans(item.text, item.done, patient); } catch(e3) {}
                 saveToLocalStorage();
                 renderTodoList(container, patient);
                 updateTodoBadge(patient);
@@ -9150,7 +9331,7 @@ saveToLocalStorage();
                 return row + '</tr>';
             }
             var tHTML = '<style>' +
-                '.uni-tbl{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;max-height:70vh;}' +
+                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
                 '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
                 '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;white-space:nowrap;min-width:52px;}' +
@@ -9336,7 +9517,7 @@ saveToLocalStorage();
             if (!hasAnyVit && !hasAnyIO && !hasO2 && !ltdDevices.length) return '<p style="color:#94a3b8;padding:1rem;">No vitals or I/O data available.</p>';
             var uid = 'vio_' + Math.floor(Math.random()*1e9);
             var html = '<style>' +
-                '.vio-sum{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;max-height:70vh;}' +
+                '.vio-sum{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000;border-radius:10px 10px 0 0;}' +
                 '.vio-sum table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000;}' +
                 '.vio-sum th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
                 '.vio-sum th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;white-space:nowrap;min-width:52px;}' +
@@ -9767,7 +9948,7 @@ saveToLocalStorage();
 
             // ── TABLE HTML ───────────────────────────────────────────────────────
             var tableHTML = '<style>' +
-                '.uni-tbl{overflow:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;max-height:70vh;}' +
+                '.uni-tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;background:#000000;border-radius:10px;}' +
                 '.uni-tbl table{border-collapse:collapse;font-family:monospace;min-width:100%;background:#000000;}' +
                 '.uni-tbl th{background:#0d0d0d;color:#8E8E93;font-size:0.78rem;padding:4px 6px;text-align:center;position:-webkit-sticky;position:sticky;top:0;z-index:2;white-space:nowrap;border-bottom:0.5px solid rgba(84,84,88,0.5);}' +
                 '.uni-tbl th:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:3;background:#0d0d0d;white-space:nowrap;min-width:52px;}' +
@@ -11679,36 +11860,6 @@ else {
 
         // DISPO Section
         tableHTML += _secRow('#bf5af2', 'DISPO', 'editDISPO', existingDispo, 'No dispo data', 'DISPO is empty — remember to document discharge planning and disposition status');
-
-        // HOME MEDS section (at the very end) — always rendered
-        const homeMedsRaw = lastImportedData ? extractHomeMeds(lastImportedData) : '';
-        const homeMedLines = homeMedsRaw
-            ? homeMedsRaw.split('\n')
-                .map(l => l.trim())
-                .filter(l => l.length > 0 && !l.match(/^(PRN|Scheduled|Continuous|Active|Active\s+PRN|Active\s+Scheduled|Active\s+Continuous|Medications?\s*\(\d+\))$/i))
-            : [];
-        tableHTML += `<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:0.5px solid rgba(84,84,88,0.35);">`;
-        tableHTML += `<div style="color:#a78bfa;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;">Home Meds</div>`;
-        if (homeMedLines.length > 0) {
-            homeMedLines.forEach((line, idx) => {
-                const medId = `homed_${idx}`;
-                if (deletedOrders.has(medId)) return;
-                const displayLine = showAbbreviatedTable ? abbreviateMedText(line) : line;
-                const medName = line.split(/\s+/)[0].toLowerCase();
-                const homeOrdered = isHomeMedOrdered(line);
-                const statusPill = homeOrdered
-                    ? `<span style="display:inline-block;background:rgba(52,211,153,0.15);color:#34d399;border-radius:4px;padding:0 4px;font-size:8px;font-weight:700;margin-left:3px;vertical-align:middle;">ordered</span>`
-                    : `<span style="display:inline-block;background:rgba(251,191,36,0.15);color:#fbbf24;border-radius:4px;padding:0 4px;font-size:8px;font-weight:700;margin-left:3px;vertical-align:middle;">not ordered</span>`;
-                const lineColor = homeOrdered ? '#e5e5ea' : '#fbbf24';
-                tableHTML += `<div style="color:${lineColor};font-size:11.5px;padding:4px 0 4px 4px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.05);gap:6px;line-height:1.3;" title="${homeOrdered ? 'Ordered inpatient' : 'Not yet ordered inpatient — consider restarting'}">`;
-                tableHTML += `<span style="flex:1;min-width:0;">${displayLine}${statusPill}</span>`;
-                tableHTML += `<button type="button" onclick="toggleMedStatus(event,'${medId}','stop','${medName}')" class="med-status-btn" data-med-id="${medId}" data-status="stop" style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:10px;color:#ff453a;font-family:inherit;border-radius:4px;flex-shrink:0;" title="Remove">✕</button>`;
-                tableHTML += `</div>`;
-            });
-        } else {
-            tableHTML += `<span style="color:#48484a;font-style:italic;font-size:11px;">No home meds</span>`;
-        }
-        tableHTML += `</div>`;
 
         tableHTML += '</div>';
         tableHTML += '</div>';
@@ -19267,16 +19418,16 @@ function extractSysUOP(text, weight) {
 // HTML-escape helper
 function _se(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// Build one editable card
+// Build one display-mode card (read-only, with Edit button)
 function _sysCard(id, title, color, fields, extraClass) {
     var rows = fields.map(function(f) {
         if (f.sep) return '<div class="sys-sep"></div>';
         return '<div class="sys-row"><span class="sys-lbl">' + _se(f.label) + '</span>' +
-               '<div class="sys-field' + (f.multi?' multi':'') + '" id="' + id + '-' + f.key + '" contenteditable="true">' + _se(f.value) + '</div></div>';
+               '<div class="sys-val' + (f.multi?' multi':'') + '" data-fid="' + id + '-' + f.key + '">' + _se(f.value) + '</div></div>';
     }).join('');
-    return '<div class="sys-card' + (extraClass?' '+extraClass:'') + '" style="--sc:' + color + '">' +
-           '<div class="sys-card-hdr">' + title + '</div>' +
-           '<div class="sys-card-body">' + rows + '</div></div>';
+    return '<div class="sys-card' + (extraClass?' '+extraClass:'') + '" data-card-id="' + id + '" style="--sc:' + color + '">' +
+           '<div class="sys-card-hdr"><span>' + title + '</span><button class="sys-edit-btn" type="button">Edit</button></div>' +
+           '<div class="sys-card-body" data-card-body="' + id + '">' + rows + '</div></div>';
 }
 
 function buildSystemsHTML(labData, violinText) {
@@ -19470,14 +19621,14 @@ function buildSystemsHTML(labData, violinText) {
         {label:'Plan', key:'plan', value:'', multi:true},
     ]);
     // DISPO full-width
-    cards += '<div class="sys-card sys-full" style="--sc:#2dd4bf">' +
-             '<div class="sys-card-hdr">DISPO / PT</div>' +
-             '<div class="sys-card-body"><div class="sys-row">' +
-             '<div class="sys-field multi" id="sd-content" contenteditable="true">ICU level of care · PT/OT OOB · Goals of care discussed</div>' +
+    cards += '<div class="sys-card sys-full" data-card-id="sd" style="--sc:#2dd4bf">' +
+             '<div class="sys-card-hdr"><span>DISPO / PT</span><button class="sys-edit-btn" type="button">Edit</button></div>' +
+             '<div class="sys-card-body" data-card-body="sd"><div class="sys-row">' +
+             '<div class="sys-val multi" data-fid="sd-content">ICU level of care · PT/OT OOB · Goals of care discussed</div>' +
              '</div></div></div>';
 
     return '<div class="sys-toolbar">' +
-           '<span class="sys-toolbar-hint">Click any field to edit</span>' +
+           '<span class="sys-toolbar-hint">Click Edit on any card to edit</span>' +
            '<button class="sys-sync-btn">🔄 Sync VIOLIN</button>' +
            '<button class="sys-compile-btn">📋 Copy Note</button>' +
            '</div>' +
@@ -19487,7 +19638,15 @@ function buildSystemsHTML(labData, violinText) {
 function _sysFld(id) { var el=document.getElementById(id); return el?el.innerText.trim():''; }
 
 function compileSysNote(container) {
-    function gf(id) { var el=container?container.querySelector('#'+id):document.getElementById(id); return el?el.innerText.trim():''; }
+    // Read field value: try textarea (edit mode) then display div (read mode)
+    function gf(id) {
+        var root = container || document;
+        var ta = root.querySelector('textarea[data-fid="'+id+'"]');
+        if (ta) return ta.value.trim();
+        var dv = root.querySelector('[data-fid="'+id+'"]');
+        if (dv) return dv.textContent.trim();
+        return '';
+    }
     var n = '';
     n += 'NEURO:\nDx: '+gf('sn-dx')+'\nExam: '+gf('sn-exam')+'\nMeds: '+gf('sn-meds')+'\nPlan: \n'+gf('sn-plan')+'\n\n';
     n += 'PULM:\nDx: '+gf('sp-dx')+'\nExam: '+gf('sp-exam')+'\nO2 method: '+gf('sp-o2')+'\nMeds: '+gf('sp-meds')+'\nPlan: \n'+gf('sp-plan')+'\n\n';
