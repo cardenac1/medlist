@@ -3721,13 +3721,14 @@ const helpContent = {
             } catch(e) {}
         }
 
-        // Sync a todo task's done-state back into system plan fields stored in patient.systemPlans
+        // Sync a todo task's done-state back into system plan fields stored in patient.systemFields
         function syncTodoDoneToPlans(text, isDone, patient) {
             try {
-                if (!patient || !patient.systemPlans) return;
+                if (!patient || !patient.systemFields) return;
                 var lo = (text || '').trim().toLowerCase();
                 ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
-                    var planText = patient.systemPlans[id];
+                    var planKey = id + '-plan';
+                    var planText = patient.systemFields[planKey];
                     if (!planText) return;
                     var lines = planText.split('\n');
                     var changed = false;
@@ -3740,9 +3741,9 @@ const helpContent = {
                         return line;
                     });
                     if (changed) {
-                        patient.systemPlans[id] = newLines.join('\n');
-                        var planEl = document.querySelector('#' + id + '-plan');
-                        if (planEl && planEl.innerText !== patient.systemPlans[id]) planEl.innerText = patient.systemPlans[id];
+                        patient.systemFields[planKey] = newLines.join('\n');
+                        var planEl = document.querySelector('#' + planKey);
+                        if (planEl && planEl.innerText !== patient.systemFields[planKey]) planEl.innerText = patient.systemFields[planKey];
                     }
                 });
             } catch(e) {}
@@ -3898,52 +3899,44 @@ const helpContent = {
             }
         }
 
-        var _SYS_IDS = ['sn','sp','sc','sg','sr','sh','si','se','sm'];
-        var _SYS_MEDS_FIELDS = ['sn-meds','sp-meds','sc-meds','sg-ppx','sg-bowel','sr-meds','sh-meds','si-meds','se-meds','sm-meds'];
+        var _SYS_PLAN_IDS = ['sn','sp','sc','sg','sr','sh','si','se','sm'];
 
         function _wireSysButtons(bodyEl, patient) {
-            // Ensure patient storage objects exist
-            if (!patient.systemPlans) patient.systemPlans = {};
-            if (!patient.systemMeds)  patient.systemMeds  = {};
+            // Ensure patient storage exists for ALL system card fields
+            if (!patient.systemFields) patient.systemFields = {};
 
-            // Restore saved plan fields into DOM
-            _SYS_IDS.forEach(function(id) {
-                if (patient.systemPlans[id] !== undefined) {
-                    var el = bodyEl.querySelector('#' + id + '-plan');
-                    if (el) el.innerText = patient.systemPlans[id];
-                }
+            // Restore all saved field values into DOM
+            Object.keys(patient.systemFields).forEach(function(fieldId) {
+                var el = bodyEl.querySelector('#' + fieldId);
+                if (el) el.innerText = patient.systemFields[fieldId];
             });
 
-            // Restore saved meds fields (preserve user edits across Sync VIOLIN)
-            _SYS_MEDS_FIELDS.forEach(function(fid) {
-                if (patient.systemMeds[fid] !== undefined) {
-                    var el = bodyEl.querySelector('#' + fid);
-                    if (el) el.innerText = patient.systemMeds[fid];
-                }
-            });
+            // Event delegation: save ANY contenteditable field in the sys-grid on input
+            var sysGrid = bodyEl.querySelector('.sys-grid');
+            if (sysGrid) {
+                sysGrid.addEventListener('input', function(e) {
+                    var fieldId = e.target && e.target.id;
+                    if (!fieldId) return;
+                    patient.systemFields[fieldId] = e.target.innerText;
+                    saveToLocalStorage();
+                });
+            }
 
-            // Wire plan fields: persist on input, sync lines to todo on blur
-            _SYS_IDS.forEach(function(id) {
+            // Also save the DISPO field (outside the grid)
+            var dispEl = bodyEl.querySelector('#sd-content');
+            if (dispEl) {
+                dispEl.addEventListener('input', function() {
+                    patient.systemFields['sd-content'] = this.innerText;
+                    saveToLocalStorage();
+                });
+            }
+
+            // Plan field blur: sync lines to todo checklist
+            _SYS_PLAN_IDS.forEach(function(id) {
                 var planEl = bodyEl.querySelector('#' + id + '-plan');
                 if (!planEl) return;
-                planEl.addEventListener('input', function() {
-                    patient.systemPlans[id] = this.innerText;
-                    saveToLocalStorage();
-                });
                 planEl.addEventListener('blur', function() {
-                    patient.systemPlans[id] = this.innerText;
-                    saveToLocalStorage();
                     syncPlanLinesToTodo(this.innerText, patient);
-                });
-            });
-
-            // Wire meds fields: persist on input so Sync VIOLIN preserves them
-            _SYS_MEDS_FIELDS.forEach(function(fid) {
-                var medsEl = bodyEl.querySelector('#' + fid);
-                if (!medsEl) return;
-                medsEl.addEventListener('input', function() {
-                    patient.systemMeds[fid] = this.innerText;
-                    saveToLocalStorage();
                 });
             });
 
@@ -3951,23 +3944,14 @@ const helpContent = {
             if (syncBtn) {
                 syncBtn.onclick = function(e) {
                     e.stopPropagation();
-                    // Save current plan + meds before rebuild
-                    _SYS_IDS.forEach(function(id) {
-                        var el = bodyEl.querySelector('#' + id + '-plan');
-                        if (el) patient.systemPlans[id] = el.innerText;
+                    // Snapshot all current field values before DOM rebuild
+                    var allFields = bodyEl.querySelectorAll('[id][contenteditable]');
+                    allFields.forEach(function(el) {
+                        if (el.id) patient.systemFields[el.id] = el.innerText;
                     });
-                    _SYS_MEDS_FIELDS.forEach(function(fid) {
-                        var el = bodyEl.querySelector('#' + fid);
-                        if (el) patient.systemMeds[fid] = el.innerText;
-                    });
-                    var dispEl = bodyEl.querySelector('#sd-content');
-                    var dispVal = dispEl ? dispEl.innerText : '';
 
                     bodyEl.innerHTML = _makeSysHTML(_sysSourceText(patient));
-
-                    // Restore plan + meds (patient objects are already up to date)
                     _wireSysButtons(bodyEl, patient);
-                    if (dispVal) { var de = bodyEl.querySelector('#sd-content'); if (de) de.innerText = dispVal; }
 
                     var sb = bodyEl.querySelector('.sys-sync-btn');
                     if (sb) { sb.textContent = '✓ Synced!'; setTimeout(function() { if(sb) sb.textContent = '🔄 Sync VIOLIN'; }, 1500); }
