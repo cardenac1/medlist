@@ -19057,11 +19057,10 @@ const SYS_MED_ABBR = {
 };
 
 function sysAbbrevMed(name) {
-    var lo = name.toLowerCase().trim();
-    for (var key in SYS_MED_ABBR) {
-        if (lo === key || lo.indexOf(key) !== -1) return SYS_MED_ABBR[key];
-    }
-    return name.charAt(0).toUpperCase() + name.slice(1);
+    // Capitalize first letter of each word (full name, not abbreviated)
+    return name.replace(/\b([a-z])([a-z]*)/gi, function(_, a, b) {
+        return a.toUpperCase() + b.toLowerCase();
+    });
 }
 
 function extractSysMeds(text) {
@@ -19201,8 +19200,8 @@ function categorizeSysMed(med, cats) {
     if (/hydromorphone|dilaudid|oxycodone|morphine|fentanyl|acetaminophen|tylenol|propofol|midazolam|versed|dexmedetomidine|precedex|prec\s?gtt|lorazepam|ativan|diazepam|ketamine|levetiracetam|keppra|gabapentin|neurontin|pregabalin|lyrica|phenytoin|dilantin|valproic|depakote|haloperidol|haldol|quetiapine|seroquel|olanzapine|zyprexa|trazodone|cyclobenzaprine|flexeril|baclofen|lacosamide|clonazepam|klonopin|alprazolam|xanax|phenobarbital|carbamazepine|tegretol|lamotrigine|topiramate|fosphenytoin|amantadine|zolpidem|cisatracurium|nimbex|vecuronium|rocuronium|succinylcholine|tramadol|meperidine|hydrocodone|naloxone|ibuprofen|ketorolac/i.test(lo)) cats.neuro.push(med.name);
     else if (/albuterol|ipratropium|atrovent|duoneb|combivent|budesonide|pulmicort|fluticasone|flovent|tiotropium|spiriva|montelukast|singulair|aminophylline|theophylline/i.test(lo)) cats.pulm.push(med.name);
     else if (/norepinephrine|levophed|levo\s?gtt|epinephrine|epi\s?gtt|vasopressin|vaso\s?gtt|phenylephrine|neo\s?gtt|dopamine|dopa\s?gtt|dobutamine|dobu\s?gtt|metoprolol|carvedilol|coreg|labetalol|furosemide|lasix|bumetanide|bumex|torsemide|amiodarone|diltiazem|cardizem|nicardipine|cardene|atorvastatin|lipitor|rosuvastatin|crestor|lisinopril|enalapril|losartan|amlodipine|norvasc|hydralazine|milrinone|nitroglycerin|ntg\b|nitroprusside|nifedipine|clevidipine|adenosine|atropine|lidocaine\s?gtt|procainamide|sotalol|ivabradine|sacubitril|digoxin|spironolactone|hydrochlorothiazide|hctz\b|metolazone|eplerenone|chlorothiazide|isosorbide/i.test(lo)) cats.cv.push(med.name);
-    else if (/ondansetron|zofran|pantoprazole|protonix|famotidine|pepcid|omeprazole|prilosec|esomeprazole|nexium|lansoprazole|prevacid|metoclopramide|reglan|sucralfate|octreotide|promethazine|phenergan/i.test(lo)) cats.gi_ppx.push(med.name);
-    else if (/docusate|colace|senna\b|bisacodyl|dulcolax|polyethylene glycol|miralax|lactulose|rifaximin|xifaxan|methylnaltrexone|relistor|sodium phosphate|magnesium citrate|mineral oil|lubiprostone|naloxegol/i.test(lo)) cats.gi_bowel.push(med.name);
+    else if (/pantoprazole|protonix|famotidine|pepcid|omeprazole|prilosec|esomeprazole|nexium|lansoprazole|prevacid|sucralfate/i.test(lo)) cats.gi_ppx.push(med.name);
+    else if (/docusate|colace|senna\b|bisacodyl|dulcolax|polyethylene glycol|miralax|lactulose|methylnaltrexone|relistor|magnesium citrate|mineral oil|lubiprostone|naloxegol/i.test(lo)) cats.gi_bowel.push(med.name);
     else if (/heparin\b|enoxaparin|lovenox|warfarin|coumadin|apixaban|eliquis|rivaroxaban|xarelto|dabigatran|pradaxa|aspirin\b|asa\b|clopidogrel|plavix|ticagrelor|brilinta|argatroban|bivalirudin|angiomax|fondaparinux|arixtra|alteplase|tenecteplase|phytonadione|vitamin k/i.test(lo)) cats.anticoag.push(med.name);
     else if (/vancomycin|vanc\b|cefepime|piperacillin|pip-tazo|zosyn|meropenem|mero\b|imipenem|ceftriaxone|ceftazidime|cefazolin|ancef|azithromycin|levofloxacin|ciprofloxacin|cipro\b|metronidazole|flagyl|daptomycin|dapto|linezolid|zyvox|micafungin|fluconazole|diflucan|bactrim|tmp-smx|clindamycin|ampicillin|gentamicin|tobramycin|doxycycline|aztreonam|colistin|polymyxin|ertapenem|nafcillin|oxacillin|cephalexin|keflex|minocycline|tigecycline|nitrofurantoin|fosfomycin|voriconazole|posaconazole|itraconazole|caspofungin|anidulafungin|acyclovir|ganciclovir|valganciclovir|oseltamivir|tamiflu|remdesivir|unasyn|augmentin/i.test(lo)) cats.abx.push(med.name);
     else if (/insulin|lispro|humalog|aspart|novolog|glargine|lantus|tresiba|levemir|nph\b|iss\b|sliding scale|levothyroxine|synthroid|hydrocortisone|solu-cortef|dexamethasone|decadron|methylprednisolone|solumedrol|prednisone|metformin|glipizide|glimepiride|sitagliptin|januvia|linagliptin|empagliflozin|jardiance|canagliflozin|liraglutide|semaglutide|desmopressin|ddavp|fludrocortisone/i.test(lo)) cats.endo.push(med.name);
@@ -19276,16 +19275,19 @@ function buildSystemsHTML(violinText) {
     function lv(key) { return (L[key] && L[key].length) ? L[key][0] : null; }
     function flag(val, lo, hi) { return val !== null ? ((val < lo || val > hi) ? val + '*' : String(val)) : ''; }
 
-    // O2
+    // O2 method + vent settings
     var o2Val = labData.o2therapyCode || 'RA';
-    if (o2Val === 'Vent' && labData.ventModeRaw) {
-        o2Val = 'Vent ' + labData.ventModeRaw.trim();
-        if (labData.ventFrequencyRaw) o2Val += ' RR' + labData.ventFrequencyRaw;
-        if (labData.ventTidalRaw) o2Val += '/Vt' + labData.ventTidalRaw;
-        if (labData.ventFiO2Raw) o2Val += '/FiO2' + labData.ventFiO2Raw + '%';
-        if (labData.ventPeepRaw) o2Val += '/PEEP' + labData.ventPeepRaw;
+    var hasVent = labData.ventModeRaw || labData.ventFrequencyRaw || labData.ventTidalRaw || labData.ventPeepRaw || labData.ventFiO2Raw;
+    if (hasVent) {
+        o2Val = 'Vent';
+        if (labData.ventModeRaw)      o2Val += ' ' + labData.ventModeRaw.trim();
+        if (labData.ventFrequencyRaw) o2Val += ' · RR ' + labData.ventFrequencyRaw;
+        if (labData.ventTidalRaw)     o2Val += ' · Vt ' + labData.ventTidalRaw;
+        if (labData.ventFiO2Raw)      o2Val += ' · FiO2 ' + labData.ventFiO2Raw + '%';
+        if (labData.ventPeepRaw)      o2Val += ' · PEEP ' + labData.ventPeepRaw;
+    } else if (labData.o2flowRaw) {
+        o2Val += ' ' + labData.o2flowRaw;
     }
-    if ((o2Val === 'NC' || !labData.ventModeRaw) && labData.o2flowRaw) o2Val += ' ' + labData.o2flowRaw;
 
     // MAP / HR strings — compute MAP from SBP/DBP if available
     var cvExam = 'MAP>65, RRR, no edema, 2+ BL PT/DP pulses';
@@ -19303,19 +19305,24 @@ function buildSystemsHTML(violinText) {
         cvExam = 'MAP>65, HR '+Math.min.apply(null,V.hr)+'-'+Math.max.apply(null,V.hr)+', RRR, no edema, 2+ BL PT/DP pulses';
     }
 
-    // Renal/UO string
+    // Renal UO/IO string — UO/24h, hourly cc/kg/hr, I/O/Balance
     var uoStr = urin;
-    if (uop.total > 0 && uop.ccKgHr !== null) {
-        var cc = uop.ccKgHr.toFixed(1);
-        uoStr += ', UOP ' + Math.round(uop.total) + ' cc (' + cc + ' cc/kg/hr' + (parseFloat(cc)<0.5?'*':'') + ')';
-    } else if (labData.output && labData.weight) {
-        var cc2 = (labData.output/24/labData.weight).toFixed(1);
-        uoStr += ', UOP ' + Math.round(labData.output) + ' cc/24h (' + cc2 + ' cc/kg/hr' + (parseFloat(cc2)<0.5?'*':'') + ')';
+    var uoParts = [];
+    if (labData.output) {
+        var line = 'UO ' + Math.round(labData.output) + ' cc/24h';
+        if (labData.weight) {
+            var ccKg = (labData.output/24/labData.weight).toFixed(2);
+            line += ' (' + ccKg + ' cc/kg/hr' + (parseFloat(ccKg)<0.5?'*':'') + ')';
+        }
+        uoParts.push(line);
+    } else if (uop.total > 0 && uop.ccKgHr !== null) {
+        uoParts.push('UO ' + Math.round(uop.total) + ' cc since 7AM (' + uop.ccKgHr.toFixed(2) + ' cc/kg/hr' + (uop.ccKgHr<0.5?'*':'') + ')');
     }
-    if (labData.intake && labData.output) {
-        var bal = labData.intake - labData.output;
-        uoStr += ', I:' + Math.round(labData.intake) + ' O:' + Math.round(labData.output) + ' Bal:' + (bal>=0?'+':'') + Math.round(bal) + (Math.abs(bal)>1000?'*':'');
+    if (labData.intake !== null && labData.output !== null) {
+        var bal = (labData.intake||0) - (labData.output||0);
+        uoParts.push('I ' + Math.round(labData.intake||0) + ' / O ' + Math.round(labData.output||0) + ' / Bal ' + (bal>=0?'+':'') + Math.round(bal) + (Math.abs(bal)>1000?'*':''));
     }
+    if (uoParts.length) uoStr += ' · ' + uoParts.join(' · ');
 
     // Electrolytes
     var elec = [];
@@ -19330,20 +19337,26 @@ function buildSystemsHTML(violinText) {
     if (_mg   !== null) elec.push('Mg '   + flag(_mg,1.7,2.2));
     if (_phos !== null) elec.push('Phos ' + flag(_phos,2.5,4.5));
 
-    // HEME labs
+    // HEME labs (Hgb, PLT, PT, PTT, INR, Fibrinogen)
     var hemeLabs = [];
-    var _hgb=lv('hgb'),_hct=lv('hct'),_plt=lv('plt'),_inr=lv('inr'),_pt=lv('pt'),_ptt=lv('ptt');
+    var _hgb=lv('hgb'),_hct=lv('hct'),_plt=lv('plt'),_inr=lv('inr'),_pt=lv('pt'),_ptt=lv('ptt'),_fib=lv('fib');
     if (_hgb !== null) hemeLabs.push('Hgb ' + (_hgb<7?_hgb+'*':_hgb));
     if (_hct !== null) hemeLabs.push('Hct ' + (_hct<21?_hct+'*':_hct));
     if (_plt !== null) hemeLabs.push('PLT ' + flag(_plt,150,400));
-    if (_inr !== null) hemeLabs.push('INR ' + (_inr>1.1?_inr+'*':_inr));
     if (_pt  !== null) hemeLabs.push('PT '  + (_pt>13.5?_pt+'*':_pt));
     if (_ptt !== null) hemeLabs.push('PTT ' + (_ptt>35?_ptt+'*':_ptt));
+    if (_inr !== null) hemeLabs.push('INR ' + (_inr>1.1?_inr+'*':_inr));
+    if (_fib !== null) hemeLabs.push('Fib ' + flag(_fib,200,400));
 
-    // Infection labs
+    // Infection labs — show prev WBC if current is elevated/abnormal
     var infLabs = [];
-    var _wbc=lv('wbc');
-    if (_wbc !== null) infLabs.push('WBC ' + flag(_wbc,4.5,11));
+    var _wbc = lv('wbc');
+    var _wbcPrev = (L.wbc && L.wbc.length > 1) ? L.wbc[1] : null;
+    if (_wbc !== null) {
+        var wbcStr = 'WBC ' + flag(_wbc,4.5,11);
+        if ((_wbc < 4.5 || _wbc > 11) && _wbcPrev !== null) wbcStr += ' (prev ' + _wbcPrev + ')';
+        infLabs.push(wbcStr);
+    }
     if (V.temp && V.temp.length) { var tmax=Math.max.apply(null,V.temp); infLabs.push('Tmax '+(tmax>38?tmax+'°C*':tmax+'°C')); }
     var _pct=lv('procalcitonin');
     if (_pct !== null) infLabs.push('PCT ' + _pct);
