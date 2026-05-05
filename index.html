@@ -3817,10 +3817,16 @@ const helpContent = {
             setTimeout(function() { try { autoResizeTextarea(ta); } catch(e) {} }, 0);
         }
 
+        function _makeSysHTML(violinText) {
+            var labData = {};
+            try { labData = extractLabValues(violinText); } catch(e) {}
+            return buildSystemsHTML(labData, violinText);
+        }
+
         function _buildSystemsView(bodyEl, patient) {
             var violinText = (patient && patient['VIOLIN']) || '';
             try {
-                var sysHTML = buildSystemsHTML(violinText);
+                var sysHTML = _makeSysHTML(violinText);
                 bodyEl.innerHTML = sysHTML;
 
                 // Sync button — rebuilds cards from latest VIOLIN data, preserving Plan fields
@@ -3838,7 +3844,7 @@ const helpContent = {
                         var dispVal = dispEl ? dispEl.innerText : '';
 
                         var fresh = (patient && patient['VIOLIN']) || '';
-                        bodyEl.innerHTML = buildSystemsHTML(fresh);
+                        bodyEl.innerHTML = _makeSysHTML(fresh);
 
                         // Restore plan fields
                         ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
@@ -3875,7 +3881,7 @@ const helpContent = {
                     var dispEl = bodyEl.querySelector('#sd-content');
                     var dispVal = dispEl ? dispEl.innerText : '';
 
-                    bodyEl.innerHTML = buildSystemsHTML((patient && patient['VIOLIN']) || '');
+                    bodyEl.innerHTML = _makeSysHTML((patient && patient['VIOLIN']) || '');
 
                     ['sn','sp','sc','sg','sr','sh','si','se','sm'].forEach(function(id) {
                         if (plans[id] !== undefined) { var el = bodyEl.querySelector('#' + id + '-plan'); if (el) el.innerText = plans[id]; }
@@ -19259,11 +19265,10 @@ function _sysCard(id, title, color, fields, extraClass) {
            '<div class="sys-card-body">' + rows + '</div></div>';
 }
 
-function buildSystemsHTML(violinText) {
-    // Extract data from VIOLIN
-    var labData = {};
-    try { labData = extractLabValues(violinText); } catch(e) { labData = {vitals:{},labs:{},weight:null,intake:null,output:null,o2therapyCode:null,ventModeRaw:null,ventFrequencyRaw:null,ventTidalRaw:null,ventFiO2Raw:null,ventPeepRaw:null}; }
-    var meds = extractSysMeds(violinText);
+function buildSystemsHTML(labData, violinText) {
+    // labData is pre-extracted inside closure (where extractLabValues is accessible)
+    if (!labData || typeof labData !== 'object') labData = {};
+    var meds = extractSysMeds(violinText || '');
     var diet = extractSysDietOrder(violinText);
     var urin = extractSysUrinary(violinText);
     var uop  = extractSysUOP(violinText, labData.weight);
