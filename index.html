@@ -4896,12 +4896,12 @@ const helpContent = {
 
                 probEl.appendChild(head);
                 probEl.appendChild(detail);
-                // Insert system group header when the system changes
+                // Insert system group header when the system changes (only for named systems)
                 if (patientSystems.length) {
                     var _curSys = prob.system || null;
                     if (_curSys !== lastSysGroup) {
                         lastSysGroup = _curSys;
-                        list.appendChild(buildSysHeader(_curSys));
+                        if (_curSys) list.appendChild(buildSysHeader(_curSys));
                     }
                 }
                 list.appendChild(probEl);
