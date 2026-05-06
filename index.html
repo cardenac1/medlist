@@ -1085,6 +1085,42 @@
 .prob-sys-btn:hover { background: #1a3a60; color: #93c5fd; }
 .prob-sys-btn.active { background: #1a4a8a; color: #bfdbfe; border-color: #3b82f6; }
 
+/* ── System grouping headers inside Problems card ── */
+.prob-sys-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 10px 3px; margin-top: 2px;
+}
+.prob-sys-header-name {
+    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #94a3b8;
+    text-decoration: underline; flex: 1;
+}
+.prob-sys-del-btn {
+    color: #3a3a3c; font-size: 0.7rem; cursor: pointer;
+    padding: 0 3px; line-height: 1; transition: color 0.15s;
+    flex-shrink: 0;
+}
+.prob-sys-del-btn:hover { color: #ef4444; }
+/* System tag on each prob head */
+.prob-sys-tag {
+    font-size: 0.52rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; background: #1a1a1c; border: 1px solid #3a3a3c;
+    border-radius: 3px; padding: 1px 5px; cursor: pointer;
+    color: #636366; white-space: nowrap; flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1.6;
+}
+.prob-sys-tag:hover { background: #2c2c2e; color: #94a3b8; border-color: #636366; }
+.prob-sys-tag[data-assigned="true"] { color: #7dd3fc; border-color: #1e4a7a; background: #071828; }
+/* Add system row */
+.prob-add-sys-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px; font-size: 0.63rem; color: #3a3a3c;
+    cursor: pointer; border-top: 1px dashed #222; margin-top: 4px;
+    transition: color 0.15s, border-color 0.15s; user-select: none;
+}
+.prob-add-sys-row:hover { color: #636366; border-color: #48484a; }
+
 /* ── Systems view inside Problems card ── */
 .sys-grid {
     display: flex;
@@ -3798,9 +3834,9 @@ const helpContent = {
                 var current = null;
                 for (var li = 0; li < lines.length; li++) {
                     var line = lines[li];
-                    var m = line.match(/^##\s+\d+\.\s+\[(\w+)\]\s+(.+)/);
+                    var m = line.match(/^##\s+\d+\.\s+\[(\w+)\]\s+(?:\[sys:([^\]]+)\]\s+)?(.+)/);
                     if (m) {
-                        current = { name: m[2].trim(), status: m[1].toLowerCase(), items: [] };
+                        current = { name: m[3].trim(), status: m[1].toLowerCase(), system: (m[2] || '').trim() || null, items: [] };
                         problems.push(current);
                     } else if (current) {
                         var t = line.trim();
@@ -3828,7 +3864,7 @@ const helpContent = {
                     var items = (p.items || []).map(function(it) {
                         return pfx[it.type] ? pfx[it.type] + ' ' + it.text : it.text;
                     });
-                    return ['## ' + (i + 1) + '. [' + (p.status || 'active') + '] ' + (p.name || '')].concat(items).join('\n');
+                    return ['## ' + (i + 1) + '. [' + (p.status || 'active') + '] ' + (p.system ? '[sys:' + p.system + '] ' : '') + (p.name || '')].concat(items).join('\n');
                 }).join('\n\n');
             } catch(e) { return ''; }
         }
@@ -3855,10 +3891,7 @@ const helpContent = {
             if (!bodyEl || !patient) return;
             try {
                 bodyEl.innerHTML = '';
-                if (bodyEl._probSystems) {
-                    bodyEl.style.padding = '0';
-                    _buildSystemsView(bodyEl, patient);
-                } else if (bodyEl._probRaw) {
+                if (bodyEl._probRaw) {
                     bodyEl.style.padding = '0.65rem 0.85rem';
                     _buildProblemsRaw(bodyEl, patient);
                 } else {
@@ -3868,11 +3901,6 @@ const helpContent = {
                 // keep header button labels in sync
                 if (bodyEl._rawBtn) {
                     bodyEl._rawBtn.textContent = bodyEl._probRaw ? '⊞ Structured' : '✎ Raw';
-                }
-                if (bodyEl._sysBtn) {
-                    bodyEl._sysBtn.textContent = bodyEl._probSystems ? '✕ Systems' : '⊞ Systems';
-                    if (bodyEl._probSystems) bodyEl._sysBtn.classList.add('active');
-                    else bodyEl._sysBtn.classList.remove('active');
                 }
             } catch(e) {
                 // Hard fallback — always show something editable
@@ -4122,13 +4150,6 @@ const helpContent = {
             probExpandBtn.title = 'Expand / collapse all';
             probHeader.appendChild(probExpandBtn);
 
-            var probSysBtn = document.createElement('button');
-            probSysBtn.type = 'button';
-            probSysBtn.className = 'inline-action-btn';
-            probSysBtn.textContent = '⊞ Systems';
-            probSysBtn.title = 'Toggle systems view';
-            probHeader.appendChild(probSysBtn);
-
             var probChev = document.createElement('span');
             probChev.textContent = '▾';
             probChev.style.cssText = 'color:#64748b;font-size:0.75rem;transition:transform 200ms ease;';
@@ -4141,14 +4162,12 @@ const helpContent = {
             probBody.className = 'chartcheck-section-body';
             probBody.style.cssText = 'display:none;padding:0;';
             probBody._probRaw = !!(parseProblemsList(patient['ICS'] || '').legacy);
-            probBody._probSystems = false;
             probBody._rawBtn = probRawBtn;
-            probBody._sysBtn = probSysBtn;
 
             probSection.appendChild(probBody);
 
             // Toggle open/close — stop propagation on header buttons
-            [probRawBtn, probExpandBtn, probSysBtn].forEach(function(btn) {
+            [probRawBtn, probExpandBtn].forEach(function(btn) {
                 btn.addEventListener('click', function(e) { e.stopPropagation(); });
             });
 
@@ -4166,24 +4185,7 @@ const helpContent = {
             });
 
             probRawBtn.addEventListener('click', function() {
-                probBody._probSystems = false;
-                if (patient) patient._sysMode = false;
                 probBody._probRaw = !probBody._probRaw;
-                probSysBtn.classList.remove('active');
-                renderProblemsCard(probBody, patient);
-            });
-
-            probSysBtn.addEventListener('click', function() {
-                probBody._probSystems = !probBody._probSystems;
-                if (patient) patient._sysMode = probBody._probSystems;
-                if (probBody._probSystems) {
-                    probBody._probRaw = false;
-                    probSysBtn.classList.add('active');
-                    probSysBtn.textContent = '✕ Systems';
-                } else {
-                    probSysBtn.classList.remove('active');
-                    probSysBtn.textContent = '⊞ Systems';
-                }
                 renderProblemsCard(probBody, patient);
             });
 
@@ -4210,50 +4212,6 @@ const helpContent = {
             });
 
             sidebarEl.appendChild(probSection);
-
-            // ── Systems section ──
-            var sysSection = document.createElement('div');
-            sysSection.className = 'chartcheck-section';
-            sysSection.style.overflow = 'visible';
-
-            var sysHeader = document.createElement('div');
-            sysHeader.className = 'chartcheck-section-header';
-            sysHeader.style.cssText = 'cursor:pointer;';
-
-            var sysTitleSpan = document.createElement('span');
-            sysTitleSpan.className = 'section-title';
-            sysTitleSpan.style.color = '#a78bfa';
-            sysTitleSpan.textContent = 'Systems';
-            sysHeader.appendChild(sysTitleSpan);
-
-            var sysChev = document.createElement('span');
-            sysChev.textContent = '▾';
-            sysChev.style.cssText = 'color:#64748b;font-size:0.75rem;transition:transform 200ms ease;margin-left:auto;';
-            sysChev.style.transform = 'rotate(-90deg)';
-            sysHeader.appendChild(sysChev);
-
-            sysSection.appendChild(sysHeader);
-
-            var sysBody = document.createElement('div');
-            sysBody.className = 'chartcheck-section-body';
-            sysBody.style.cssText = 'display:none;padding:0;';
-
-            sysSection.appendChild(sysBody);
-
-            sysHeader.addEventListener('click', function() {
-                if (sysBody.style.display === 'none') {
-                    sysBody.style.display = 'block';
-                    sysBody.style.maxHeight = '60vh';
-                    sysBody.style.overflowY = 'auto';
-                    sysChev.style.transform = 'rotate(0deg)';
-                    _buildSystemsView(sysBody, patient);
-                } else {
-                    sysBody.style.display = 'none';
-                    sysChev.style.transform = 'rotate(-90deg)';
-                }
-            });
-
-            sidebarEl.appendChild(sysSection);
         }
 
         function _buildProblemsStructured(bodyEl, patient) {
@@ -4348,12 +4306,54 @@ const helpContent = {
                 } catch(e) {}
             }
 
-            // Sort problems: active first, stable last
+            // Patient-defined system list
+            var patientSystems = patient.problemSystems || [];
+
+            // Sort: by system group first (when systems defined), then by status within group
             problems.sort(function(a, b) {
+                if (patientSystems.length) {
+                    var sa = patientSystems.indexOf(a.system);
+                    var sb = patientSystems.indexOf(b.system);
+                    if (sa === -1) sa = patientSystems.length;
+                    if (sb === -1) sb = patientSystems.length;
+                    if (sa !== sb) return sa - sb;
+                }
                 var oa = STATUS_ORDER[a.status] !== undefined ? STATUS_ORDER[a.status] : 99;
                 var ob = STATUS_ORDER[b.status] !== undefined ? STATUS_ORDER[b.status] : 99;
                 return oa - ob;
             });
+
+            // Builds a system header divider element
+            function buildSysHeader(sysName) {
+                var hdr = document.createElement('div');
+                hdr.className = 'prob-sys-header';
+                var nameEl = document.createElement('span');
+                nameEl.className = 'prob-sys-header-name';
+                nameEl.textContent = sysName || 'Other';
+                var delBtn = document.createElement('span');
+                delBtn.className = 'prob-sys-del-btn';
+                delBtn.textContent = '×';
+                delBtn.title = 'Remove system (problems will become unassigned)';
+                if (sysName) {
+                    (function(s) {
+                        delBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var idx = patientSystems.indexOf(s);
+                            if (idx !== -1) patientSystems.splice(idx, 1);
+                            problems.forEach(function(p) { if (p.system === s) p.system = null; });
+                            patient.problemSystems = patientSystems;
+                            rebuildAndSave();
+                        });
+                    }(sysName));
+                } else {
+                    delBtn.style.display = 'none';
+                }
+                hdr.appendChild(nameEl);
+                hdr.appendChild(delBtn);
+                return hdr;
+            }
+
+            var lastSysGroup = undefined; // tracks system changes for header insertion
 
             problems.forEach(function(prob, pi) {
                 if (!prob || typeof prob !== 'object') return;
@@ -4515,8 +4515,57 @@ const helpContent = {
                 chevron.textContent = '▶';
                 chevron.style.transform = 'rotate(0deg)';
 
+                // System tag — shown when patient has systems defined
+                var sysTag = null;
+                if (patientSystems.length) {
+                    sysTag = document.createElement('span');
+                    sysTag.className = 'prob-sys-tag';
+                    sysTag.textContent = prob.system || '◌ system';
+                    sysTag.title = 'System: ' + (prob.system || 'unassigned') + ' — click to change';
+                    if (prob.system) sysTag.setAttribute('data-assigned', 'true');
+                    (function(pr, tag) {
+                        tag.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var existing = document.querySelector('.prob-sys-popup');
+                            if (existing) { existing.remove(); return; }
+                            var popup = document.createElement('div');
+                            popup.className = 'prob-sys-popup';
+                            popup.style.cssText = 'position:fixed;z-index:9100;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:8px;padding:4px 0;box-shadow:0 4px 20px rgba(0,0,0,0.9);min-width:120px;';
+                            var none = document.createElement('div');
+                            none.style.cssText = 'padding:6px 14px;font-size:0.75rem;cursor:pointer;color:#636366;white-space:nowrap;' + (!pr.system ? 'font-weight:700;background:rgba(255,255,255,0.06);' : '');
+                            none.textContent = '— None';
+                            none.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.08)'; };
+                            none.onmouseleave = function() { this.style.background = !pr.system ? 'rgba(255,255,255,0.06)' : ''; };
+                            none.addEventListener('click', function(ev) { ev.stopPropagation(); pr.system = null; popup.remove(); rebuildAndSave(); });
+                            popup.appendChild(none);
+                            patientSystems.forEach(function(s) {
+                                var opt = document.createElement('div');
+                                opt.style.cssText = 'padding:6px 14px;font-size:0.75rem;cursor:pointer;color:#7dd3fc;white-space:nowrap;letter-spacing:0.05em;' + (pr.system === s ? 'font-weight:700;background:rgba(255,255,255,0.06);' : '');
+                                opt.textContent = s;
+                                opt.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.08)'; };
+                                opt.onmouseleave = function() { this.style.background = pr.system === s ? 'rgba(255,255,255,0.06)' : ''; };
+                                opt.addEventListener('click', function(ev) { ev.stopPropagation(); pr.system = s; popup.remove(); rebuildAndSave(); });
+                                popup.appendChild(opt);
+                            });
+                            document.body.appendChild(popup);
+                            var rect = tag.getBoundingClientRect();
+                            popup.style.top = (rect.bottom + 4) + 'px';
+                            popup.style.left = rect.left + 'px';
+                            requestAnimationFrame(function() {
+                                var pw = popup.offsetWidth, ph = popup.offsetHeight;
+                                var vw = window.innerWidth, vh = window.innerHeight;
+                                if (rect.left + pw > vw - 6) popup.style.left = Math.max(6, vw - pw - 6) + 'px';
+                                if (rect.bottom + 4 + ph > vh - 6) popup.style.top = Math.max(6, rect.top - ph - 4) + 'px';
+                            });
+                            var close = function(ev) { if (!popup.contains(ev.target) && ev.target !== tag) { popup.remove(); document.removeEventListener('click', close); } };
+                            setTimeout(function() { document.addEventListener('click', close); }, 0);
+                        });
+                    }(prob, sysTag));
+                }
+
                 head.appendChild(numSpan);
                 head.appendChild(statusDot);
+                if (sysTag) head.appendChild(sysTag);
                 head.appendChild(nameSpan);
                 head.appendChild(editNameBtn);
                 head.appendChild(previewSpan);
@@ -4847,6 +4896,14 @@ const helpContent = {
 
                 probEl.appendChild(head);
                 probEl.appendChild(detail);
+                // Insert system group header when the system changes
+                if (patientSystems.length) {
+                    var _curSys = prob.system || null;
+                    if (_curSys !== lastSysGroup) {
+                        lastSysGroup = _curSys;
+                        list.appendChild(buildSysHeader(_curSys));
+                    }
+                }
                 list.appendChild(probEl);
             });
 
@@ -4940,6 +4997,64 @@ const helpContent = {
 
             list.appendChild(addProbRow);
             list.appendChild(addProbForm);
+
+            // ── Add System row ──────────────────────────────────────────
+            var addSysRow = document.createElement('div');
+            addSysRow.className = 'prob-add-sys-row';
+            addSysRow.innerHTML = '<span style="font-size:0.75rem;">⊕</span><span>Add system</span>';
+
+            var addSysForm = document.createElement('div');
+            addSysForm.className = 'prob-edit-row';
+            addSysForm.style.cssText = 'display:none;padding:4px 8px 6px;';
+
+            var sysNameInp = document.createElement('input');
+            sysNameInp.className = 'prob-edit-input';
+            sysNameInp.placeholder = 'e.g. NEURO, PULM, CV…';
+            sysNameInp.style.cssText = 'text-transform:uppercase;letter-spacing:0.05em;flex:1;min-width:80px;';
+
+            var sysAddBtn = document.createElement('button');
+            sysAddBtn.type = 'button';
+            sysAddBtn.className = 'prob-confirm-btn';
+            sysAddBtn.textContent = 'Add';
+
+            var sysCancelBtn = document.createElement('button');
+            sysCancelBtn.type = 'button';
+            sysCancelBtn.className = 'prob-cancel-btn';
+            sysCancelBtn.textContent = '✕';
+
+            function doAddSystem() {
+                var name = sysNameInp.value.trim().toUpperCase();
+                if (!name) return;
+                if (!patient.problemSystems) patient.problemSystems = [];
+                if (patient.problemSystems.indexOf(name) === -1) {
+                    patient.problemSystems.push(name);
+                }
+                rebuildAndSave();
+            }
+            sysAddBtn.addEventListener('click', function(e) { e.stopPropagation(); doAddSystem(); });
+            sysNameInp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); doAddSystem(); return; }
+                if (e.key === 'Escape') { addSysForm.style.display = 'none'; addSysRow.style.display = 'flex'; }
+            });
+            sysCancelBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                addSysForm.style.display = 'none';
+                addSysRow.style.display = 'flex';
+            });
+            addSysRow.addEventListener('click', function() {
+                addSysRow.style.display = 'none';
+                addSysForm.style.display = 'flex';
+                sysNameInp.value = '';
+                sysNameInp.focus();
+            });
+            addSysForm.appendChild(sysNameInp);
+            addSysForm.appendChild(sysAddBtn);
+            addSysForm.appendChild(sysCancelBtn);
+
+            list.appendChild(addSysRow);
+            list.appendChild(addSysForm);
+            // ───────────────────────────────────────────────────────────
+
             list.appendChild(hintsBar);
             bodyEl.appendChild(list);
 
@@ -7310,14 +7425,6 @@ function switchView(mode) {
                 txtBtn.title = 'Copy as plain text';
                 hdr.appendChild(txtBtn);
 
-                // Systems format toggle button
-                var sysBtn = document.createElement('button');
-                sysBtn.type = 'button';
-                sysBtn.className = 'prob-sys-btn';
-                sysBtn.textContent = '⊞ Systems';
-                sysBtn.title = 'Convert to systems-based format';
-                hdr.appendChild(sysBtn);
-
                 var probChev = document.createElement('span');
                 probChev.textContent = '▾';
                 probChev.style.cssText = 'color:#64748b;font-size:0.75rem;transition:transform 200ms ease;cursor:pointer;';
@@ -7338,32 +7445,10 @@ function switchView(mode) {
                 // Store state on the element — renderProblemsCard reads these
                 body._probRaw = !!(parseProblemsList(patient['ICS'] || '').legacy);
                 body._rawBtn  = rawBtn; // renderProblemsCard keeps label in sync
-                // Restore systems mode preference from patient (sticky across renders/patient switches)
-                body._probSystems = !!(patient && patient._sysMode);
-                if (body._probSystems) body._probRaw = false;
-                body._sysBtn = sysBtn;
 
                 rawBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    body._probSystems = false;
-                    if (patient) patient._sysMode = false;
                     body._probRaw = !body._probRaw;
-                    sysBtn.classList.remove('active');
-                    renderProblemsCard(body, patient);
-                });
-
-                sysBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    body._probSystems = !body._probSystems;
-                    if (patient) patient._sysMode = body._probSystems;
-                    if (body._probSystems) {
-                        body._probRaw = false;
-                        sysBtn.classList.add('active');
-                        sysBtn.textContent = '✕ Systems';
-                    } else {
-                        sysBtn.classList.remove('active');
-                        sysBtn.textContent = '⊞ Systems';
-                    }
                     renderProblemsCard(body, patient);
                 });
 
