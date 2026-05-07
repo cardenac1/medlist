@@ -17272,10 +17272,10 @@ function showPriorityStatus(index) {
 function showStatusSelector(patient, index, statusElement) {
     const priorityOptions = [
         { num: '',           name: 'No Priority',                                                         color: '#000000' },
-        { num: 'critical',   name: 'Critical – Evaluating a critical patient',                            color: '#FF1111' },
-        { num: 'high',       name: 'High – Evaluating urgent patient / Following up urgent scans',        color: '#8B0000' },
-        { num: 'medium',     name: 'Medium – Ordering urgent medication or therapy / Non-urgent consult', color: '#FF8800' },
-        { num: 'medium-low', name: 'Medium-Low – Following up non-urgent scans',                          color: '#FFD700' },
+        { num: 'critical',   name: 'Critical – Critical patient',                            color: '#FF1111' },
+        { num: 'high',       name: 'High – Urgent patient',        color: '#8B0000' },
+        { num: 'medium',     name: 'Medium – Non-urgent consult', color: '#FF8800' },
+        { num: 'medium-low', name: 'Medium-Low – F/u/Non-urgent scans/orders',                          color: '#FFD700' },
         { num: 'low',        name: 'Low – Clinical notes and small tasks',                                color: '#9333EA' },
         { num: 'very-low',   name: 'Very Low – Late follow-ups',                                         color: '#3B82F6' },
         { num: 'complete',   name: 'Complete',                                                            color: '#23CC72' },
