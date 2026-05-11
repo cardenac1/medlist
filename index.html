@@ -12842,25 +12842,40 @@ extractLabValue('Procalcitonin:', 'procalcitonin');
                     const kPrev = num(second(data.labs.k));
                     const kStr = (k < 4.0 || k > 5.0) ? `*${k}*` : String(k);
                     const kPrevStr = kPrev !== undefined ? `(${kPrev})` : '(--) ';
-                    if (k >= 3.3 && k <= 3.9) {
-                        suggestions.push(`*Give 40 meq K PO or IV, K=${kStr}${kPrevStr}*`);
-                    } else if (k >= 3.0 && k <= 3.2) {
-                        suggestions.push(`*Give 60 meq K IV, K=${kStr}${kPrevStr}*`);
-                    } else if (k > 0 && k <= 2.6) {
-                        suggestions.push(`*Give 100 meq K and NHO, K=${kStr}${kPrevStr}*`);
-                    } else if (k > 5) {
+                    if (k > 5) {
                         suggestions.push(`*Hyperkalemic!!, K=${kStr}${kPrevStr}*`);
+                    } else if (k > 0 && k < 4.0) {
+                        // IV potassium
+                        if (k >= 3.4 && k <= 3.9) {
+                            suggestions.push(`*KCl IV: Central 20mEq/2h ×1 or Peripheral 10mEq/1h ×2, K=${kStr}${kPrevStr}*`);
+                        } else if (k >= 3.1 && k <= 3.3) {
+                            suggestions.push(`*KCl IV: Central 20mEq/2h ×2 or Peripheral 10mEq/1h ×4, K=${kStr}${kPrevStr}*`);
+                        } else if (k >= 2.6 && k <= 3.0) {
+                            suggestions.push(`*KCl IV: Central 20mEq/2h ×2 + 10mEq ×1 or Peripheral 10mEq/1h ×5, K=${kStr}${kPrevStr}*`);
+                        } else if (k < 2.6) {
+                            suggestions.push(`*KCl IV: Central 20mEq/2h ×3 or Peripheral 10mEq/1h ×6, K=${kStr}${kPrevStr}*`);
+                        }
+                        // Oral potassium
+                        if (k >= 3.7 && k <= 3.9) {
+                            suggestions.push(`*KCl PO: 20mEq ×1 dose, K=${kStr}${kPrevStr}*`);
+                        } else if (k >= 3.3 && k <= 3.6) {
+                            suggestions.push(`*KCl PO: 20mEq ×2 doses (BID), K=${kStr}${kPrevStr}*`);
+                        } else if (k >= 3.0 && k <= 3.2) {
+                            suggestions.push(`*KCl PO: 20mEq ×3 doses (TID), K=${kStr}${kPrevStr}*`);
+                        } else if (k < 3.0) {
+                            suggestions.push(`*KCl PO: 20mEq ×4 doses (consider IV), K=${kStr}${kPrevStr}*`);
+                        }
                     }
                 }
 
-                // Calcium
+                // Calcium Ionized (mg/dL)
                 if (data.labs.ca && first(data.labs.ca) !== undefined) {
                     const ca = num(first(data.labs.ca));
                     const caPrev = num(second(data.labs.ca));
                     const caStr = caPrev !== undefined ? `*${ca}* (*${caPrev}*)` : `*${ca}*`;
-                    if (ca >= 3.5 && ca < 4) {
+                    if (ca >= 3.5 && ca <= 3.9) {
                         suggestions.push(`*Give 4g calcium gluconate, 2g/hr, iCa=${caStr}*`);
-                    } else if (ca >= 3 && ca <= 3.4) {
+                    } else if (ca >= 3.0 && ca <= 3.4) {
                         suggestions.push(`*Give 6g calcium gluconate 2g/hr, iCa=${caStr}*`);
                     } else if (ca >= 2.5 && ca <= 2.9) {
                         suggestions.push(`*Give 8g calcium gluconate 2g/hr, iCa=${caStr}*`);
@@ -12869,31 +12884,43 @@ extractLabValue('Procalcitonin:', 'procalcitonin');
                     }
                 }
 
-                // Magnesium
+                // Calcium Total (mmol/L)
+                if (data.labs.totalCa && first(data.labs.totalCa) !== undefined) {
+                    const tca = num(first(data.labs.totalCa));
+                    const tcaPrev = num(second(data.labs.totalCa));
+                    const tcaStr = tcaPrev !== undefined ? `*${tca}* (*${tcaPrev}*)` : `*${tca}*`;
+                    if (tca >= 1.00 && tca <= 1.10) {
+                        suggestions.push(`*1 g Ca Gluconate/1hr OR 1 g CaCl₂/1hr, tCa=${tcaStr}*`);
+                    } else if (tca >= 0.85 && tca <= 0.99) {
+                        suggestions.push(`*2 g Ca Gluconate/1hr OR 2 g CaCl₂/1hr, tCa=${tcaStr}*`);
+                    } else if (tca > 0 && tca < 0.85) {
+                        suggestions.push(`*2 g Ca Gluconate/1hr OR 3 g CaCl₂/1hr, tCa=${tcaStr}*`);
+                    }
+                }
+
+                // Magnesium (mEq/L)
                 if (data.labs.mg && first(data.labs.mg) !== undefined) {
                     const mg = num(first(data.labs.mg));
                     const mgPrev = num(second(data.labs.mg));
                     const mgStr = mgPrev !== undefined ? `*${mg}* (*${mgPrev}*)` : `*${mg}*`;
-                    if (mg >= 1.6 && mg <= 1.9) {
-                        suggestions.push(`*Give 4g mag sulfate IV/2hr@2g/hr, Mg: ${mgStr}*`);
-                    } else if (mg >= 1 && mg <= 1.5) {
-                        suggestions.push(`*Give 6g mag sulfate IV/3hr@2g/hr, Mg: ${mgStr}*`);
-                    } else if (mg > 0 && mg <= 1) {
-                        suggestions.push(`*Give 8g mag sulfate IV/4hr@2g/hr, Mg: ${mgStr}*`);
+                    if (mg >= 1.5 && mg <= 2.0) {
+                        suggestions.push(`*2 g Mag sulfate IV over 1hr, Mg: ${mgStr}*`);
+                    } else if (mg > 0 && mg < 1.5) {
+                        suggestions.push(`*2 g Mag sulfate IV over 1hr ×2 doses, Mg: ${mgStr}*`);
                     }
                 }
 
-                // Phosphorus
+                // Phosphorus (mg/dL)
                 if (data.labs.phos && first(data.labs.phos) !== undefined) {
                     const p = num(first(data.labs.phos));
                     const pPrev = num(second(data.labs.phos));
                     const pStr = pPrev !== undefined ? `*${p}* (*${pPrev}*)` : `*${p}*`;
-                    if (p >= 2 && p < 2.5) {
-                        suggestions.push(`*Give 15 mmol phos (22.5 Meq K IV), P=${pStr}*`);
-                    } else if (p >= 1.6 && p <= 1.9) {
-                        suggestions.push(`*Give 30 mmol phos (45 Meq K IV), P=${pStr}*`);
-                    } else if (p > 0 && p <= 1.6) {
-                        suggestions.push(`*Give 40 mmol phos (60 Meq K IV), P=${pStr}*`);
+                    if (p >= 2.0 && p <= 2.5) {
+                        suggestions.push(`*15 mmol K-Phosphate IV over 4hrs, P=${pStr}*`);
+                    } else if (p >= 1.0 && p <= 1.9) {
+                        suggestions.push(`*21 mmol K-Phosphate IV over 4hrs, P=${pStr}*`);
+                    } else if (p > 0 && p < 1.0) {
+                        suggestions.push(`*30 mmol K-Phosphate IV (15 mmol ×2), P=${pStr}*`);
                     }
                 }
             }
@@ -18699,28 +18726,40 @@ function electrolyteWarnings(data) {
     const k = num(first(data.labs.k)), kPrev = num(second(data.labs.k));
     const kStr = (k < 4.0 || k > 5.0) ? `*${k}*` : String(k);
     const kPrevStr = kPrev !== undefined ? `(${kPrev})` : '(--) ';
-    if (k >= 3.3 && k <= 3.9) {
-      out.push(`Give 40 meq K PO or IV, K=${kStr}${kPrevStr}`);
-    }
-    else if (k >= 3.0 && k <= 3.2) {
-      out.push(`Give 60 meq K IV, K=${kStr}${kPrevStr}`);
-    }
-    else if (k > 0 && k <= 2.6) {
-      out.push(`Give 100 meq K and NHO, K=${kStr}${kPrevStr}`);
-    }
-    else if (k > 5) {
+    if (k > 5) {
       out.push(`Hyperkalemic!!, K=${kStr}${kPrevStr}`);
+    } else if (k > 0 && k < 4.0) {
+      // IV potassium
+      if (k >= 3.4 && k <= 3.9) {
+        out.push(`KCl IV: Central 20mEq/2h ×1 or Peripheral 10mEq/1h ×2, K=${kStr}${kPrevStr}`);
+      } else if (k >= 3.1 && k <= 3.3) {
+        out.push(`KCl IV: Central 20mEq/2h ×2 or Peripheral 10mEq/1h ×4, K=${kStr}${kPrevStr}`);
+      } else if (k >= 2.6 && k <= 3.0) {
+        out.push(`KCl IV: Central 20mEq/2h ×2 + 10mEq ×1 or Peripheral 10mEq/1h ×5, K=${kStr}${kPrevStr}`);
+      } else if (k < 2.6) {
+        out.push(`KCl IV: Central 20mEq/2h ×3 or Peripheral 10mEq/1h ×6, K=${kStr}${kPrevStr}`);
+      }
+      // Oral potassium
+      if (k >= 3.7 && k <= 3.9) {
+        out.push(`KCl PO: 20mEq ×1 dose, K=${kStr}${kPrevStr}`);
+      } else if (k >= 3.3 && k <= 3.6) {
+        out.push(`KCl PO: 20mEq ×2 doses (BID), K=${kStr}${kPrevStr}`);
+      } else if (k >= 3.0 && k <= 3.2) {
+        out.push(`KCl PO: 20mEq ×3 doses (TID), K=${kStr}${kPrevStr}`);
+      } else if (k < 3.0) {
+        out.push(`KCl PO: 20mEq ×4 doses (consider IV), K=${kStr}${kPrevStr}`);
+      }
     }
   }
 
-  // Calcium
+  // Calcium Ionized (mg/dL)
   if (data.labs.ca && first(data.labs.ca) !== undefined) {
     const ca = num(first(data.labs.ca)), caPrev = num(second(data.labs.ca));
     const caStr = caPrev !== undefined ? `*${ca}* (*${caPrev}*)` : `*${ca}*`;
-    if (ca >= 3.5 && ca < 4) {
+    if (ca >= 3.5 && ca <= 3.9) {
       out.push(`Give 4g calcium gluconate, 2g/hr, iCa=${caStr}`);
     }
-    else if (ca >= 3 && ca <= 3.4) {
+    else if (ca >= 3.0 && ca <= 3.4) {
       out.push(`Give 6g calcium gluconate 2g/hr, iCa=${caStr}`);
     }
     else if (ca >= 2.5 && ca <= 2.9) {
@@ -18731,33 +18770,45 @@ function electrolyteWarnings(data) {
     }
   }
 
-  // Magnesium
-  if (data.labs.mg && first(data.labs.mg) !== undefined) {
-    const mg = num(first(data.labs.mg)), mgPrev = num(second(data.labs.mg));
-    const mgStr = mgPrev !== undefined ? `*${mg}* (*${mgPrev}*)` : `*${mg}*`;
-    if (mg >= 1.6 && mg <= 1.9) {
-      out.push(`Give 4g mag sulfate IV/2hr@2g/hr, Mg: ${mgStr}`);
+  // Calcium Total (mmol/L)
+  if (data.labs.totalCa && first(data.labs.totalCa) !== undefined) {
+    const tca = num(first(data.labs.totalCa)), tcaPrev = num(second(data.labs.totalCa));
+    const tcaStr = tcaPrev !== undefined ? `*${tca}* (*${tcaPrev}*)` : `*${tca}*`;
+    if (tca >= 1.00 && tca <= 1.10) {
+      out.push(`1 g Ca Gluconate/1hr OR 1 g CaCl₂/1hr, tCa=${tcaStr}`);
     }
-    else if (mg >= 1 && mg <= 1.5) {
-      out.push(`Give 6g mag sulfate IV/3hr@2g/hr, Mg: ${mgStr}`);
+    else if (tca >= 0.85 && tca <= 0.99) {
+      out.push(`2 g Ca Gluconate/1hr OR 2 g CaCl₂/1hr, tCa=${tcaStr}`);
     }
-    else if (mg > 0 && mg <= 1) {
-      out.push(`Give 8g mag sulfate IV/4hr@2g/hr, Mg: ${mgStr}`);
+    else if (tca > 0 && tca < 0.85) {
+      out.push(`2 g Ca Gluconate/1hr OR 3 g CaCl₂/1hr, tCa=${tcaStr}`);
     }
   }
 
-  // Phosphorus
+  // Magnesium (mEq/L)
+  if (data.labs.mg && first(data.labs.mg) !== undefined) {
+    const mg = num(first(data.labs.mg)), mgPrev = num(second(data.labs.mg));
+    const mgStr = mgPrev !== undefined ? `*${mg}* (*${mgPrev}*)` : `*${mg}*`;
+    if (mg >= 1.5 && mg <= 2.0) {
+      out.push(`2 g Mag sulfate IV over 1hr, Mg: ${mgStr}`);
+    }
+    else if (mg > 0 && mg < 1.5) {
+      out.push(`2 g Mag sulfate IV over 1hr ×2 doses, Mg: ${mgStr}`);
+    }
+  }
+
+  // Phosphorus (mg/dL)
   if (data.labs.phos && first(data.labs.phos) !== undefined) {
     const p = num(first(data.labs.phos)), pPrev = num(second(data.labs.phos));
     const pStr = pPrev !== undefined ? `*${p}* (*${pPrev}*)` : `*${p}*`;
-    if (p >= 2 && p < 2.5) {
-      out.push(`Give 15 mmol phos (22.5 Meq K IV), P=${pStr}`);
+    if (p >= 2.0 && p <= 2.5) {
+      out.push(`15 mmol K-Phosphate IV over 4hrs, P=${pStr}`);
     }
-    else if (p >= 1.6 && p <= 1.9) {
-      out.push(`Give 30 mmol phos (45 Meq K IV), P=${pStr}`);
+    else if (p >= 1.0 && p <= 1.9) {
+      out.push(`21 mmol K-Phosphate IV over 4hrs, P=${pStr}`);
     }
-    else if (p > 0 && p <= 1.6) {
-      out.push(`Give 40 mmol phos (60 Meq K IV), P=${pStr}`);
+    else if (p > 0 && p < 1.0) {
+      out.push(`30 mmol K-Phosphate IV (15 mmol ×2), P=${pStr}`);
     }
   }
 
