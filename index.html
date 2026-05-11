@@ -12874,13 +12874,13 @@ extractLabValue('Procalcitonin:', 'procalcitonin');
                     const caPrev = num(second(data.labs.ca));
                     const caStr = caPrev !== undefined ? `*${ca}* (*${caPrev}*)` : `*${ca}*`;
                     if (ca >= 3.5 && ca <= 3.9) {
-                        suggestions.push(`*2 g CaCl₂ IV, iCa=${caStr}*`);
+                        suggestions.push(`*Give 4g calcium gluconate, 2g/hr, iCa=${caStr}*`);
                     } else if (ca >= 3.0 && ca <= 3.4) {
-                        suggestions.push(`*3 g CaCl₂ IV, iCa=${caStr}*`);
+                        suggestions.push(`*Give 6g calcium gluconate 2g/hr, iCa=${caStr}*`);
                     } else if (ca >= 2.5 && ca <= 2.9) {
-                        suggestions.push(`*4 g CaCl₂ IV, iCa=${caStr}*`);
+                        suggestions.push(`*Give 8g calcium gluconate 2g/hr, iCa=${caStr}*`);
                     } else if (ca > 0 && ca < 2.5) {
-                        suggestions.push(`*5 g CaCl₂ IV, iCa=${caStr}*`);
+                        suggestions.push(`*Give 10g calcium gluconate 2g/hr, notify senior! iCa=${caStr}*`);
                     }
                 }
 
@@ -18757,16 +18757,16 @@ function electrolyteWarnings(data) {
     const ca = num(first(data.labs.ca)), caPrev = num(second(data.labs.ca));
     const caStr = caPrev !== undefined ? `*${ca}* (*${caPrev}*)` : `*${ca}*`;
     if (ca >= 3.5 && ca <= 3.9) {
-      out.push(`2 g CaCl₂ IV, iCa=${caStr}`);
+      out.push(`Give 4g calcium gluconate, 2g/hr, iCa=${caStr}`);
     }
     else if (ca >= 3.0 && ca <= 3.4) {
-      out.push(`3 g CaCl₂ IV, iCa=${caStr}`);
+      out.push(`Give 6g calcium gluconate 2g/hr, iCa=${caStr}`);
     }
     else if (ca >= 2.5 && ca <= 2.9) {
-      out.push(`4 g CaCl₂ IV, iCa=${caStr}`);
+      out.push(`Give 8g calcium gluconate 2g/hr, iCa=${caStr}`);
     }
     else if (ca > 0 && ca < 2.5) {
-      out.push(`5 g CaCl₂ IV, iCa=${caStr}`);
+      out.push(`Give 10g calcium gluconate 2g/hr, notify senior! iCa=${caStr}`);
     }
   }
 
