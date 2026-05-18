@@ -3841,11 +3841,11 @@ const helpContent = {
                     } else if (current) {
                         var t = line.trim();
                         if (!t) continue;
-                       if (t[0] === '✓') current.items.push({ type: 'done', text: t.slice(1).trim() });
-						else if (t[0] === '-' || t[0] === '○') current.items.push({ type: 'pending', text: t.slice(1).trim() });
-						else if (t[0] === '◈') current.items.push({ type: 'consult', text: t.slice(1).trim() });
-						else if (t[0] === '⬜︎' || t[0] === '⬡') current.items.push({ type: 'study', text: t.slice(1).trim() });
-						else if (t[0] === '⚙') current.items.push({ type: 'intervention', text: t.slice(1).trim() });
+                        if (t[0] === '✓')      current.items.push({ type: 'done',         text: t.slice(1).trim() });
+                        else if (t[0] === '○') current.items.push({ type: 'pending',      text: t.slice(1).trim() });
+                        else if (t[0] === '◈') current.items.push({ type: 'consult',      text: t.slice(1).trim() });
+                        else if (t[0] === '⬡') current.items.push({ type: 'study',        text: t.slice(1).trim() });
+                        else if (t[0] === '⚙') current.items.push({ type: 'intervention', text: t.slice(1).trim() });
                         else                   current.items.push({ type: 'plain',        text: t });
                     }
                 }
@@ -3856,51 +3856,18 @@ const helpContent = {
             }
         }
 
-       function serializeProblemsList(problems) {
-    try {
-        if (!problems || !problems.length) return '';
-
-        return problems.map(function(p, i) {
-            var header = (i + 1) + '. ' + (p.name || '') + 
-                        ' [' + (p.status || 'ACTIVE').toUpperCase() + ']' +
-                        (p.system ? ' [sys:' + p.system + ']' : '');
-
-            var normalItems = [];
-            var pendingItems = [];
-
-            (p.items || []).forEach(function(it) {
-                if (it.type === 'pending') {
-                    pendingItems.push('- ' + it.text);           // ← changed to "-"
-                } 
-                else if (it.type === 'study') {
-                    normalItems.push('⬜︎ ' + it.text);         // ← changed to ⬜︎
-                } 
-                else if (it.type === 'intervention') {
-                    normalItems.push('⚙ ' + it.text);
-                } 
-                else if (it.type === 'consult') {
-                    normalItems.push('◈ ' + it.text);
-                } 
-                else if (it.type === 'done') {
-                    normalItems.push('✓ ' + it.text);
-                } 
-                else {
-                    normalItems.push(it.text || '');
-                }
-            });
-
-            // Pending items always go to the very bottom
-            var allItems = normalItems;
-            if (pendingItems.length > 0) {
-                allItems = allItems.concat([''], pendingItems);
-            }
-
-            return [header, ...allItems].join('\n');
-        }).join('\n\n');
-    } catch(e) {
-        return '';
-    }
-}
+        function serializeProblemsList(problems) {
+            try {
+                if (!problems || !problems.length) return '';
+                var pfx = { done: '✓', pending: '○', consult: '◈', study: '⬡', intervention: '⚙', plain: '' };
+                return problems.map(function(p, i) {
+                    var items = (p.items || []).map(function(it) {
+                        return pfx[it.type] ? pfx[it.type] + ' ' + it.text : it.text;
+                    });
+                    return ['## ' + (i + 1) + '. [' + (p.status || 'active') + '] ' + (p.system ? '[sys:' + p.system + '] ' : '') + (p.name || '')].concat(items).join('\n');
+                }).join('\n\n');
+            } catch(e) { return ''; }
+        }
 
         function problemsToPlainText(problems) {
             try {
