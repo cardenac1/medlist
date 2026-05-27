@@ -3849,8 +3849,18 @@ const helpContent = {
                         else                   current.items.push({ type: 'plain',        text: t });
                     }
                 }
+
+				                // === REORDER ITEMS: Interventions, Studies, Consults show first ===
+                problems.forEach(problem => {
+                    if (problem.items && problem.items.length > 0) {
+                        problem.items = reorderItems(problem.items);
+                    }
+                });
+
                 if (problems.length === 0 && text.trim()) return { problems: [], legacy: text };
                 return { problems: problems, legacy: '' };
+
+				
             } catch(e) {
                 return { problems: [], legacy: text || '' };
             }
@@ -3868,6 +3878,26 @@ const helpContent = {
                 }).join('\n\n');
             } catch(e) { return ''; }
         }
+
+		// Helper function to reorder items (Interventions, Studies, Consults first)
+function reorderItems(items) {
+    const priority = {
+        'intervention': 1,
+        'study': 2,
+        'consult': 3,
+        'pending': 4,
+        'done': 5,
+        'plain': 6
+    };
+
+    return items.slice().sort((a, b) => {
+        const priA = priority[a.type] ?? 99;
+        const priB = priority[b.type] ?? 99;
+        return priA - priB;
+    });
+}
+
+		
 
         function problemsToPlainText(problems) {
             try {
